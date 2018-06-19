@@ -5,22 +5,23 @@ import re
 import itertools
 import threading
 import sys
-import tools
 
 class Fetcher(object):
 
-	possible_instruments = ["aia", "hmi", "iris", "eve"]
+	possible_instruments = ["aia", "hmi", "iris", "sot"]
 	possible_wavelengths = {
-		"aia" : ["94", "131", "171-175", "191-195", "211", "304", "335", "1600", "1700", "4500"],
-		"hmi" : ["6173-6174"],
-		"iris" : [],
-		"eve" : []
+		"aia" : ["94", "131", "171", "193", "211", "304", "335", "1600", "1700"],
+		"hmi" : ["6173"],
+		"iris" : ["1400", "2796", "2832", "1330"],
+		"sot" : ["6300.8-6303.2"]
 	}
 
 	def __init__(self):
 		self.instrument = ""
 		self.start_date = ""
 		self.end_date = ""
+		self.start_time = ""
+		self.end_time = ""
 		self.wavelength = ""
 
 	def fetchdata(self):
@@ -35,44 +36,77 @@ class Fetcher(object):
 			print "Working...\n"
 			time.sleep(0.15)
 			self.instrument = instr
-		self.askstarttime()
+		self.askstartdate()
 
-	def askstarttime(self):
+	def askstartdate(self):
 		r = re.compile("\d{4}/\d{2}/\d{2}")
 		prompt = "Enter start date: (must be in format yyyy/mm/dd)\n==> "
 		date = raw_input(prompt)
 		if r.match(date) is None:
 			print "Invalid date format.\n"
 			time.sleep(0.15)
-			self.askstarttime()
+			self.askstartdate()
 		else:
 			print "Working...\n"
 			time.sleep(0.15)
 			self.start_date = date
-		self.askendtime()
+		self.askstarttime()
 
-	def askendtime(self):
+	def askstarttime(self):
+		r = re.compile("\d{2}:\d{2}:\d{2}")
+		prompt = "Enter start time: (must be in format hh:mm:ss)\n==> "
+		s_time = raw_input(prompt)
+		if r.match(s_time) is None:
+			print "Invalid time format.\n"
+			time.sleep(0.15)
+			self.askstarttime()
+		else:
+			print "Working...\n"
+			time.sleep(0.15)
+			self.start_time = s_time
+		self.askenddate()
+
+	def askenddate(self):
 		r = re.compile("\d{4}/\d{2}/\d{2}")
 		prompt = "Enter end date: (must be in format yyyy/mm/dd)\n==> "
 		date = raw_input(prompt)
 		if r.match(date) is None:
 			print "Invalid date format.\n"
 			time.sleep(0.15)
-			self.askendtime()
+			self.askenddate()
 		else:
-			if int(date[0:4]) >= int(self.start_date[0:4]) and int(date[5:7]) >= int(self.start_date[5:7]) and int(date[8:]) > int(self.start_date[8:]):
+			if int(date[0:4]) >= int(self.start_date[0:4]) and int(date[5:7]) >= int(self.start_date[5:7]) and int(date[8:]) >= int(self.start_date[8:]):
 				print "Working...\n"
 				time.sleep(0.15)
 				self.end_date = date
 			else:
-				print "End date must be after start date.\n"
+				print "End date must be the same as, or after, the start date.\n"
+				time.sleep(0.15)
+				self.askenddate()
+		self.askendtime()
+
+	def askendtime(self):
+		r = re.compile("\d{2}:\d{2}:\d{2}")
+		prompt = "Enter end time: (must be in format hh:mm:ss)\n==> "
+		e_time = raw_input(prompt)
+		if r.match(e_time) is None:
+			print "Invalid time format.\n"
+			time.sleep(0.15)
+			self.askendtime()
+		else:
+			if int(e_time[0:2]) >= int(self.start_time[0:2]) and int(e_time[3:5]) >= int(self.start_time[3:5]):
+				print "Working...\n"
+				time.sleep(0.15)
+				self.end_time = e_time
+			else:
+				print "End time must be the same as, or after, the start time.\n"
 				time.sleep(0.15)
 				self.askendtime()
 		self.askwavelength()
 
 	def askwavelength(self):
 		print "Available wavelengths (in angstroms) for %s instrument:\n%s" % (self.instrument, self.possible_wavelengths[self.instrument])
-		prompt = "Enter desired wavelength: (entering an invalid wavelength will return no search results)\n==> "
+		prompt = "Enter desired wavelength: (an invalid wavelength will not return search results)\n==> "
 		wave = raw_input(prompt)
 		print "Working...\n"
 		time.sleep(0.15)
@@ -82,7 +116,7 @@ class Fetcher(object):
 	def querysearch(self):
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		self.search_results = Fido.search(a.Time(self.start_date, self.end_date), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom))
+		self.search_results = Fido.search(a.Time("%sT%s" % (self.start_date, self.start_time), "%sT%s" % (self.end_date, self.end_time)), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom))
 		self.done = True
 		time.sleep(1)
 		print self.search_results
