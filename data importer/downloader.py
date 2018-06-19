@@ -1,6 +1,9 @@
 from sunpy.net import Fido, attrs as a
 import astropy.units as u
 import time
+import threading
+import itertools
+import sys
 
 class Downloader(object):
 
@@ -17,7 +20,7 @@ class Downloader(object):
 		self.download()
 
 	def download(self):
-		raw_input("Press ENTER to begin download:\n==> ")
+		raw_input("Press ENTER to begin download of %s files:\n==> " % (len(self.searchresults))))
 		t = threading.Thread(target=self.wheel)
 		t.start()
 		self.download = Fido.fetch(self.searchresults, path = self.dir)
@@ -33,7 +36,7 @@ class Downloader(object):
 	    for c in itertools.cycle(["|", "/", "-", "\\"]):
 	        if self.done:
 	            break
-	        sys.stdout.write("\Downloading to " + self.dir + "... " + c)
+	        sys.stdout.write("\rDownloading to " + self.dir + "... " + c + " ")
 	        sys.stdout.flush()
 	        time.sleep(0.1)
 	    sys.stdout.write("\rCompleted. Files saved to %s\n\n" % (self.dir))
