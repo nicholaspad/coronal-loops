@@ -13,3 +13,9 @@ l.loaddata()
 g = gen.Gen("output.mp4", info[8])
 # g = gen.Gen("output.mp4", 20)
 g.process()
+
+"""
+- auto-clear the source images folder
+- downsize images to 2k or 1k to improve time
+- multi-processing for either downloads or video generation
+"""

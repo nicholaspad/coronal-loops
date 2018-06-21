@@ -6,7 +6,12 @@ class Fetch(object):
 	hv = HelioviewerClient()
 	wavmes = {
 		"aia" : ["94", "131", "171", "193", "211", "304", "335", "1600", "1700", "4500"],
-		"hmi" : ["continuum", "magnetogram"]
+		"hmi" : ["continuum", "magnetogram"],
+		"eit" : ["171", "195", "284", "304"],
+		"swap" : ["174"],
+		"mdi" : ["continuum", "magnetogram"],
+		"sxt" : ["AlMgMn", "thin-Al", "white-light"],
+		"lasco" : ["white-light"]
 		## add others
 	}
 
@@ -23,14 +28,17 @@ class Fetch(object):
 
 
 	def fetchdata(self):
+		print "Gathering data sources...\n"
+
 		datasources = self.hv.get_data_sources()
 
+		print "OBSERV\tINSTR\tWAVELEN/MEAS"
 		for observatory, instruments in datasources.items():
 			for inst, detectors in instruments.items():
 				for det, measurements in detectors.items():
 					for meas, params in measurements.items():
 						if observatory != "STEREO_A" and observatory != "STEREO_B":
-							print("%s\t%s\t%s" % (observatory, inst, meas))
+							print "%s\t%s\t%s" % (observatory, inst, meas)
 
 		prompt = "\nEnter observatory: (e.g. sdo)\n==> "
 		self.observatory = raw_input(prompt)
@@ -40,10 +48,10 @@ class Fetch(object):
 		self.askwavmes()
 	
 	def askwavmes(self):
-		self.displaywavmes(self.instrument)
+		self.displaywavmes(self.instrument.lower())
 		prompt = "\nEnter wavelength/configuration:\n==> "
 		measurement = raw_input(prompt)
-		if(measurement in self.wavmes[self.instrument]):
+		if(measurement in self.wavmes[self.instrument.lower()]):
 			self.measurement = measurement
 			self.askstartdate()
 		else:
@@ -73,7 +81,7 @@ class Fetch(object):
 		self.askother()
 
 	def askother(self):		
-		prompt = "\nEnter time interval in hours: (must be a positive whole number between 1 and 24, inclusive)\n==> "
+		prompt = "\nEnter time interval in hours: (must be a positive whole number between 1 and 24, inc.)\n==> "
 		interval = int(raw_input(prompt))
 		if interval <= 0 or interval >= 25:
 			print "\nInvalid interval."
@@ -101,7 +109,7 @@ class Fetch(object):
 
 	def displaywavmes(self, instrument):
 		print "\nPossibilities for %s instrument:\n" % self.instrument
-		print self.wavmes[instrument]
+		print self.wavmes[instrument.lower()]
 
 	def getinfo(self):
 		return [self.start_date, self.start_time, self.period, self.interval, self.observatory, self.instrument, self.detector, self.measurement, self.fps]

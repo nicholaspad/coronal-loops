@@ -3,7 +3,7 @@ import ssl
 import os
 import glob
 from tqdm import trange
-import time
+import getpass
 from multiprocessing import Pool
 
 class Load(object):
@@ -45,10 +45,10 @@ class Load(object):
 		for i in trange(self.period, desc = "LOADING FILES"):
 			self.hv.download_jp2("%d/%02d/%02d %02d:00:00" % (year, month, day, hour), observatory = self.observatory, instrument = self.instrument, detector = self.detector, measurement = self.measurement)
 
-			files = glob.glob("/Users/padman/sunpy/data/*.jp2")
+			files = glob.glob("/Users/%s/sunpy/data/*.jp2" % getpass.getuser())
 			interest = max(files, key = os.path.getctime)
 
-			os.rename(interest, "/Users/padman/Desktop/lmsal/movie gen/source images/source_%03d.jp2" % ticker)
+			os.rename(interest, "/Users/%s/Desktop/lmsal/movie gen/source images/source_%03d.jp2" % (getpass.getuser(), ticker))
 			ticker += 1
 
 			if (hour + self.interval) >= 24:
@@ -66,5 +66,3 @@ class Load(object):
 				hour += self.interval
 
 		print "\nFiles loaded. Processing starting...\n"
-
-		time.sleep(1)

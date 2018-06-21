@@ -1,16 +1,19 @@
 import cv2
 import os
+import os.path
 import re
 from tqdm import tqdm
+import getpass
 
 class Gen(object):
 
 	def __init__(self, output_name, fps):
 		self.output_name = output_name
-		self.source = "/Users/padman/Desktop/lmsal/movie gen/source images"
+		self.source = "/Users/%s/Desktop/lmsal/movie gen/source images" % getpass.getuser()
 		self.fps = fps
 
 	def process(self):
+		self.checkdir()
 		images = []
 
 		for file in os.listdir(self.source):
@@ -35,6 +38,11 @@ class Gen(object):
 	def sorthelper(self, name):
 		n = re.search('source_(\d+)\.?.*', name)
 		return int(n.group(1), 10)
+
+	def checkdir(self):
+		if os.path.isfile("/Users/%s/Desktop/lmsal/movie gen/%s" % (getpass.getuser(), self.output_name)):
+			print "\nOverwriting old file...\n"
+			os.system("rm /Users/%s/Desktop/lmsal/movie\\ gen/%s" % (getpass.getuser(), self.output_name))
 
 # g = Gen("output.mp4", 12)
 # g.process()
