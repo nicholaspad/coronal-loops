@@ -1,10 +1,13 @@
 import re
+from sunpy.net.helioviewer import HelioviewerClient
 
 class Fetch(object):
 
+	hv = HelioviewerClient()
 	wavmes = {
 		"aia" : ["94", "131", "171", "193", "211", "304", "335", "1600", "1700", "4500"],
 		"hmi" : ["continuum", "magnetogram"]
+		## add others
 	}
 
 	def __init__(self):
@@ -20,6 +23,15 @@ class Fetch(object):
 
 
 	def fetchdata(self):
+		datasources = self.hv.get_data_sources()
+
+		for observatory, instruments in datasources.items():
+			for inst, detectors in instruments.items():
+				for det, measurements in detectors.items():
+					for meas, params in measurements.items():
+						if observatory != "STEREO_A" and observatory != "STEREO_B":
+							print("%s\t%s\t%s" % (observatory, inst, meas))
+
 		prompt = "\nEnter observatory: (e.g. sdo)\n==> "
 		self.observatory = raw_input(prompt)
 		prompt = "\nEnter instrument: (e.g. aia)\n==> "
