@@ -8,12 +8,11 @@ import sys
 
 class Fetcher(object):
 
-	possible_instruments = ["aia", "hmi", "iris", "sot"]
+	possible_instruments = ["aia", "hmi", "iris"]
 	possible_wavelengths = {
-		"aia" : ["94", "131", "171", "193", "211", "304", "335", "1600", "1700"],
-		"hmi" : ["6173"],
-		"iris" : ["1400", "2796", "2832", "1330"],
-		"sot" : ["6300.8-6303.2"]
+		"aia" : [94, 131, 171, 193, 211, 304, 335, 1600, 1700],
+		"hmi" : [6173],
+		"iris" : [1400, 2796, 2832, 1330],
 	}
 
 	def __init__(self):
@@ -26,90 +25,67 @@ class Fetcher(object):
 
 	def fetchdata(self):
 		print "\nAvailable instruments: %s" % (self.possible_instruments)
-		prompt = "Enter observation instrument: (e.g. hmi)\n==> "
+		prompt = "\nEnter observation instrument: (e.g. hmi)\n==> "
 		instr = raw_input(prompt)
 		if instr not in self.possible_instruments:
-			print "Unable to process %s data.\n" % (instr)
-			time.sleep(0.15)
+			print "\n%s data not available." % (instr)			
 			self.fetchdata()
 		else:
-			print "Working...\n"
-			time.sleep(0.15)
 			self.instrument = instr
 		self.askstartdate()
 
 	def askstartdate(self):
 		r = re.compile("\d{4}/\d{2}/\d{2}")
-		prompt = "Enter start date: (must be in format yyyy/mm/dd)\n==> "
+		prompt = "\nEnter start date: (must be in format yyyy/mm/dd)\n==> "
 		date = raw_input(prompt)
 		if r.match(date) is None:
-			print "Invalid date format.\n"
-			time.sleep(0.15)
+			print "\nInvalid date format."
 			self.askstartdate()
 		else:
-			print "Working...\n"
-			time.sleep(0.15)
 			self.start_date = date
 		self.askstarttime()
 
 	def askstarttime(self):
 		r = re.compile("\d{2}:\d{2}:\d{2}")
-		prompt = "Enter start time: (must be in format hh:mm:ss)\n==> "
+		prompt = "\nEnter start time: (must be in format hh:mm:ss)\n==> "
 		s_time = raw_input(prompt)
 		if r.match(s_time) is None:
-			print "Invalid time format.\n"
-			time.sleep(0.15)
+			print "\nInvalid time format."
 			self.askstarttime()
 		else:
-			print "Working...\n"
-			time.sleep(0.15)
 			self.start_time = s_time
 		self.askenddate()
 
 	def askenddate(self):
 		r = re.compile("\d{4}/\d{2}/\d{2}")
-		prompt = "Enter end date: (must be in format yyyy/mm/dd)\n==> "
+		prompt = "\nEnter end date: (must be in format yyyy/mm/dd)\n==> "
 		date = raw_input(prompt)
 		if r.match(date) is None:
-			print "Invalid date format.\n"
-			time.sleep(0.15)
+			print "\nInvalid date format."
 			self.askenddate()
 		else:
 			if int(date[0:4]) >= int(self.start_date[0:4]) and int(date[5:7]) >= int(self.start_date[5:7]) and int(date[8:]) >= int(self.start_date[8:]):
-				print "Working...\n"
-				time.sleep(0.15)
 				self.end_date = date
 			else:
 				print "End date must be the same as, or after, the start date.\n"
-				time.sleep(0.15)
 				self.askenddate()
 		self.askendtime()
 
 	def askendtime(self):
 		r = re.compile("\d{2}:\d{2}:\d{2}")
-		prompt = "Enter end time: (must be in format hh:mm:ss)\n==> "
+		prompt = "\nEnter end time: (must be in format hh:mm:ss)\n==> "
 		e_time = raw_input(prompt)
 		if r.match(e_time) is None:
-			print "Invalid time format.\n"
-			time.sleep(0.15)
+			print "\nInvalid time format."
 			self.askendtime()
 		else:
-			if int(e_time[0:2]) >= int(self.start_time[0:2]) and int(e_time[3:5]) >= int(self.start_time[3:5]):
-				print "Working...\n"
-				time.sleep(0.15)
-				self.end_time = e_time
-			else:
-				print "End time must be the same as, or after, the start time.\n"
-				time.sleep(0.15)
-				self.askendtime()
+			self.end_time = e_time
 		self.askwavelength()
 
 	def askwavelength(self):
-		print "Available wavelengths (in angstroms) for %s instrument:\n%s" % (self.instrument, self.possible_wavelengths[self.instrument])
-		prompt = "Enter desired wavelength: (an invalid wavelength will not return search results)\n==> "
+		print "\nAvailable wavelengths (in angstroms) for %s instrument:\n%s" % (self.instrument, self.possible_wavelengths[self.instrument])
+		prompt = "\nEnter desired wavelength: (an invalid wavelength will not return search results)\n==> "
 		wave = raw_input(prompt)
-		print "Working...\n"
-		time.sleep(0.15)
 		self.wavelength = wave
 		self.querysearch()
 

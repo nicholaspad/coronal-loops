@@ -12,8 +12,6 @@ class Downloader(object):
 	def pipedata(self):
 		prompt = "\nEnter a valid directory to download the above data: (e.g. /Users/<user>/Downloads)\n==> "
 		dir = raw_input(prompt)
-		print "Working...\n"
-		time.sleep(0.15)
 		self.dir = dir
 		self.download()
 
