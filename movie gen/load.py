@@ -4,6 +4,7 @@ import os
 import glob
 from tqdm import trange
 import time
+from multiprocessing import Pool
 
 class Load(object):
 

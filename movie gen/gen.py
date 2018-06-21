@@ -7,7 +7,7 @@ class Gen(object):
 
 	def __init__(self, output_name, fps):
 		self.output_name = output_name
-		self.source = "/Users/padman/Desktop/lmsal/movie gen/source images"
+		self.source = "/Users/LMSAL/Desktop/lmsal/movie gen/source images"
 		self.fps = fps
 
 	def process(self):
@@ -35,3 +35,6 @@ class Gen(object):
 	def sorthelper(self, name):
 		n = re.search('source_(\d+)\.?.*', name)
 		return int(n.group(1), 10)
+
+g = Gen("output.mp4", 12)
+g.process()
