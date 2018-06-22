@@ -2,7 +2,7 @@ import fetcher as fet
 import downloader as dow
 
 fe = fet.Fetcher()
-fe.fetchdata()
+fe.fetch()
 
-dl = dow.Downloader(fe.getsearchresults())
-dl.pipedata()
+dl = dow.Downloader(fe.getsearch())
+dl.pipe()

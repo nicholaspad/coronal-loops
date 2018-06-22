@@ -1,7 +1,7 @@
-import re
-import ssl
 from sunpy.net.helioviewer import HelioviewerClient
 from datetime import datetime
+import re
+import ssl
 
 class Fetch(object):
 
@@ -56,7 +56,7 @@ class Fetch(object):
 			self.measurement = measurement
 			self.askdatetime()
 		else:
-			print "\nWavelength/configuration not available."
+			print "\nNot available."
 			self.askwavmes()
 
 	def askdatetime(self):
@@ -77,13 +77,13 @@ class Fetch(object):
 		self.askother()
 
 	def askother(self):		
-		prompt = "\nEnter time interval in minutes: (must be a positive whole number)\n==> "
+		prompt = "\nEnter cadence in minutes:\n==> "
 		self.interval = int(raw_input(prompt))
 
-		prompt = "\nEnter number of time intervals: (must be a positive whole number)\n==> "
+		prompt = "\nEnter number of cadences:\n==> "
 		self.period = int(raw_input(prompt))
 
-		prompt = "\nEnter frames per second: (must be a positive whole number)\n==> "
+		prompt = "\nEnter frames per second:\n==> "
 		self.fps = int(raw_input(prompt))
 
 	def displaywavmes(self, instrument):

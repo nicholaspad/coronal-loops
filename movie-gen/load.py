@@ -38,10 +38,11 @@ class Load(object):
 	def processdata(self):
 		print "\nClearing source folders...\n"
 		os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
+		print ""
 
 		ticker = 0
 
-		for i in trange(self.period, desc = "WORKING"):
+		for i in trange(self.period, desc = "LOADING DATA", smoothing = 1):
 			f = self.hv.download_jp2("%s/%s/%s %s" % (self.time.date().year, self.time.date().month, self.time.date().day, str(self.time.time())), observatory = self.observatory, instrument = self.instrument, detector = self.detector, measurement = self.measurement)
 
 			with open(f) as file:
@@ -50,12 +51,10 @@ class Load(object):
 			ticker += 1
 			self.time = self.time + timedelta(minutes = self.interval)
 
-		print "\nFiles loaded and resized. Generating movie...\n"
+		os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/movie-gen/source-images/img_%%3d.jp2 -pix_fmt yuv420p -s 2048x2048 /Users/%s/Desktop/lmsal/movie-gen/%s.mp4" % (self.fps, getpass.getuser(), getpass.getuser(), str(self.time.date())))
 
-		os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/movie-gen/source-images/img_%%3d.jp2 -pix_fmt yuv420p -s 1024x1024 /Users/%s/Desktop/lmsal/movie-gen/output.mp4" % (self.fps, getpass.getuser(), getpass.getuser()))
-
-		print "\nMovie generated and saved to working directory. Clearing source folders..."
+		print "\nClearing source folders..."
 
 		os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
 
-		print "\nDone.\n"
+		print "\nDone. Saved to working directory.\n"
