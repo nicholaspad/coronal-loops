@@ -1,6 +1,7 @@
 import re
 import ssl
 from sunpy.net.helioviewer import HelioviewerClient
+from datetime import datetime
 
 class Fetch(object):
 
@@ -17,8 +18,6 @@ class Fetch(object):
 
 	def __init__(self):
 		ssl._create_default_https_context = ssl._create_unverified_context
-		self.start_date = ""
-		self.start_time = ""
 		self.observatory = ""
 		self.instrument = ""
 		self.detector = ""
@@ -26,6 +25,7 @@ class Fetch(object):
 		self.interval = -1
 		self.period = -1
 		self.fps = -1
+		self.time = None
 
 
 	def fetchdata(self):
@@ -54,63 +54,41 @@ class Fetch(object):
 		measurement = raw_input(prompt)
 		if(measurement.lower() in self.wavmes[self.instrument.lower()]):
 			self.measurement = measurement
-			self.askstartdate()
+			self.askdatetime()
 		else:
 			print "\nWavelength/configuration not available."
 			self.askwavmes()
 
-	def askstartdate(self):
-		r = re.compile("\d{4}/\d{2}/\d{2}")
-		prompt = "\nEnter start date: (must be in format yyyy/mm/dd)\n==> "
+	def askdatetime(self):
+		prompt = "\nEnter start date: (MUST be in format yyyy/mm/dd)\n==> "
 		date = raw_input(prompt)
-		if r.match(date) is None:
-			print "\nInvalid date format."
-			self.askstartdate()
-		else:
-			self.start_date = date
-			self.askstarttime()
 
-	def askstarttime(self):
-		r = re.compile("\d{2}:\d{2}:\d{2}")
-		prompt = "\nEnter start time: (must be in format hh:mm:ss)\n==> "
-		s_time = raw_input(prompt)
-		if r.match(s_time) is None:
-			print "\nInvalid time format."
-			self.askstarttime()
-		else:
-			self.start_time = s_time
-			self.askother()
+		prompt = "\nEnter start time: (MUST be in format hh:mm:ss)\n==> "
+		time = raw_input(prompt)
+
+		hour = int(time[0:2])
+		minute = int(time[3:5])
+		second = int(time[6:])
+		day = int(date[8:])
+		month = int(date[5:7])
+		year = int(date[0:4])
+
+		self.time = datetime(year, month, day, hour, minute, second)
+		self.askother()
 
 	def askother(self):		
-		prompt = "\nEnter time interval in hours: (must be a positive whole number between 1 and 24, inc.)\n==> "
-		interval = int(raw_input(prompt))
-		if interval <= 0 or interval >= 25:
-			print "\nInvalid interval."
-			self.askother()
-		else:
-			self.interval = interval
+		prompt = "\nEnter time interval in minutes: (must be a positive whole number)\n==> "
+		self.interval = int(raw_input(prompt))
 
-		while True:
-			prompt = "\nEnter number of time intervals: (must be a positive whole number)\n==> "
-			period = int(raw_input(prompt))
-			if period <= 0:
-				print "\nMust be a positive whole number."
-			else:
-				self.period = period
-				break
+		prompt = "\nEnter number of time intervals: (must be a positive whole number)\n==> "
+		self.period = int(raw_input(prompt))
 
-		while True:
-			prompt = "\nEnter desired frames per second:\n==> "
-			fps = int(raw_input(prompt))
-			if fps <= 0:
-				print "\nMust be a positive whole number."
-			else:
-				self.fps = fps
-				break
+		prompt = "\nEnter frames per second: (must be a positive whole number)\n==> "
+		self.fps = int(raw_input(prompt))
 
 	def displaywavmes(self, instrument):
 		print "\nPossibilities for %s instrument:\n" % self.instrument
 		print self.wavmes[instrument.lower()]
 
 	def getinfo(self):
-		return [self.start_date, self.start_time, self.period, self.interval, self.observatory, self.instrument, self.detector, self.measurement, self.fps]
+		return [self.time, self.period, self.interval, self.observatory, self.instrument, self.detector, self.measurement, self.fps]

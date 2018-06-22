@@ -4,6 +4,7 @@ import os
 import glob
 from tqdm import tqdm, trange
 import getpass
+from datetime import timedelta
 
 class Load(object):
 
@@ -23,10 +24,9 @@ class Load(object):
 		12 : 31
 	}
 
-	def __init__(self, start_date, start_time, period, interval, observatory, instrument, detector, measurement, fps):
+	def __init__(self, time, period, interval, observatory, instrument, detector, measurement, fps):
 		ssl._create_default_https_context = ssl._create_unverified_context
-		self.start_date = start_date
-		self.start_time = start_time
+		self.time = time
 		self.period = period
 		self.interval = interval
 		self.observatory = observatory
@@ -35,38 +35,20 @@ class Load(object):
 		self.measurement = measurement
 		self.fps = fps
 
-	def loadandgendata(self):
-		hour = int(self.start_time[0:2])
-		day = int(self.start_date[8:])
-		month = int(self.start_date[5:7])
-		year = int(self.start_date[0:4])
-
+	def processdata(self):
 		print "\nClearing source folders...\n"
 		os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
 
 		ticker = 0
 
 		for i in trange(self.period, desc = "WORKING"):
-			f = self.hv.download_jp2("%d/%02d/%02d %02d:00:00" % (year, month, day, hour), observatory = self.observatory, instrument = self.instrument, detector = self.detector, measurement = self.measurement)
+			f = self.hv.download_jp2("%s/%s/%s %s" % (self.time.date().year, self.time.date().month, self.time.date().day, str(self.time.time())), observatory = self.observatory, instrument = self.instrument, detector = self.detector, measurement = self.measurement)
 
 			with open(f) as file:
 				os.rename(f, "/Users/%s/Desktop/lmsal/movie-gen/source-images/img_%03d.jp2" % (getpass.getuser(), ticker))
 
 			ticker += 1
-
-			if (hour + self.interval) >= 24:
-				hour = (hour + self.interval) % 24
-				if (day + 1) > self.month_lengths[month]:
-					day = 1
-					if (month + 1) > 12:
-						month = 1
-						year += 1
-					else:
-						month += 1
-				else:
-					day += 1
-			else:
-				hour += self.interval
+			self.time = self.time + timedelta(minutes = self.interval)
 
 		print "\nFiles loaded and resized. Generating movie...\n"
 
