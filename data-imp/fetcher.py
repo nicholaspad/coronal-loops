@@ -1,4 +1,5 @@
 from sunpy.net import Fido, attrs as a
+import sunpy.net.vso as vso
 from datetime import datetime
 import astropy.units as u
 import time
@@ -64,7 +65,7 @@ class Fetcher(object):
 		year = int(date[0:4])
 
 		self.e_time = datetime(year, month, day, hour, minute, second)
-		self.askwavmes()
+		self.askother()
 
 	def askwavmes(self):
 		self.displaywavmes(self.instrument)
@@ -72,23 +73,23 @@ class Fetcher(object):
 		wavelength = int(raw_input(prompt))
 		if(wavelength in self.wavmes[self.instrument.lower()]):
 			self.wavelength = wavelength
-			self.askother()
+			self.search()
 		else:
 			print "\nNot available."
 			self.askwavmes()
 
 	def askother(self):
-		prompt = "\nEnter cadence in seconds:\n==> "
+		prompt = "\nEnter cadence in minutes:\n==> "
 		self.cadence = int(raw_input(prompt))
 
 		# ask for more information, like extent, resolution, and pixels
 
-		self.search()
+		self.askwavmes()
 
 	def search(self):
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom))
+		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.minute))
 		self.done = True
 		print self.results
 
@@ -105,6 +106,7 @@ class Fetcher(object):
 	        sys.stdout.flush()
 	        time.sleep(0.08)
 	    sys.stdout.write("\rData search complete. Displaying...\n\n")
+	    time.sleep(0.05)
 
 	def getsearch(self):
-		return self.search
+		return self.results

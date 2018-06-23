@@ -5,6 +5,7 @@ import glob
 from tqdm import tqdm, trange
 import getpass
 from datetime import timedelta
+import sys
 
 class Load(object):
 
@@ -36,9 +37,13 @@ class Load(object):
 		self.fps = fps
 
 	def processdata(self):
-		print "\nClearing source folders...\n"
-		os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
-		print ""
+		clear = raw_input("Clear source folders? [y/n]\n==> ")
+		if clear == "y":
+			print "\nClearing source folders...\n"
+			os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
+			print ""
+		else:
+			sys.exit()
 
 		ticker = 0
 
