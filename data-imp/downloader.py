@@ -20,6 +20,7 @@ class Downloader(object):
 			print "\nClearing source folders...\n"
 			os.system("rm /Users/%s/Desktop/lmsal/data-imp/source-fits/*.fits" % getpass.getuser())
 		else:
+			print "\nProgram will not overwrite. Exiting...\n"
 			sys.exit()
 		raw_input("\nPress ENTER to begin download of file(s):\n==> ")
 		print ""

@@ -20,6 +20,7 @@ class Fetcher(object):
 		self.instrument = ""
 		self.wavelength = -1
 		self.cadence = -1
+		self.level = -1
 		self.s_time = None
 		self.e_time = None
 		self.results = None
@@ -82,6 +83,9 @@ class Fetcher(object):
 		prompt = "\nEnter cadence in minutes:\n==> "
 		self.cadence = int(raw_input(prompt))
 
+		prompt = "\nEnter processing level:\n==> "
+		self.level = float(raw_input(prompt))
+
 		# ask for more information, like extent, resolution, and pixels
 
 		self.askwavmes()
@@ -89,7 +93,7 @@ class Fetcher(object):
 	def search(self):
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.minute))
+		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.minute), a.Level(self.level))
 		self.done = True
 		print self.results
 
