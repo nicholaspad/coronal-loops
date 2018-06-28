@@ -8,6 +8,8 @@ import itertools
 import threading
 import sys
 
+cut_vid = None
+
 class Fetcher(object):
 
 	possible_instruments = ["aia", "hmi"]
@@ -20,14 +22,22 @@ class Fetcher(object):
 		self.instrument = ""
 		self.wavelength = -1
 		self.cadence = -1
-		self.level = -1
 		self.s_time = None
 		self.e_time = None
 		self.results = None
 
-		# http://docs.sunpy.org/en/v0.9.0/code_ref/net.html#module-sunpy.net.dataretriever
-
 	def fetch(self):
+		ask = raw_input("\nGenerate video? [y/n]\n==> ")
+		if ask == "y":
+			ask = raw_input("\nCutout? [y/n]\n==> ")
+			if ask == "y":
+				global cut_vid
+				cut_vid = True
+			else:
+				global cut_vid
+				cut_vid = False
+				# connect to non-cutout algorithm
+
 		print "\nAvailable instruments: %s" % (self.possible_instruments)
 		prompt = "\nEnter instrument:\n==> "
 		instrument = raw_input(prompt)
@@ -80,20 +90,14 @@ class Fetcher(object):
 			self.askwavmes()
 
 	def askother(self):
-		prompt = "\nEnter cadence in minutes:\n==> "
+		prompt = "\nEnter cadence in seconds:\n==> "
 		self.cadence = int(raw_input(prompt))
-
-		prompt = "\nEnter processing level:\n==> "
-		self.level = float(raw_input(prompt))
-
-		# ask for more information, like extent, resolution, and pixels
-
 		self.askwavmes()
 
 	def search(self):
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.minute), a.Level(self.level))
+		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.second))
 		self.done = True
 		print self.results
 

@@ -43,6 +43,7 @@ class Load(object):
 			os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
 			print ""
 		else:
+			print "\nPlease manually clear source folders.\n"
 			sys.exit()
 
 		ticker = 0
@@ -57,9 +58,5 @@ class Load(object):
 			self.time = self.time + timedelta(minutes = self.interval)
 
 		os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/movie-gen/source-images/img_%%3d.jp2 -pix_fmt yuv420p -s 2048x2048 /Users/%s/Desktop/lmsal/movie-gen/%s.mp4" % (self.fps, getpass.getuser(), getpass.getuser(), str(self.time.date())))
-
-		print "\nClearing source folders..."
-
-		os.system("rm /Users/%s/Desktop/lmsal/movie-gen/source-images/*.jp2" % getpass.getuser())
 
 		print "\nDone. Saved to working directory.\n"

@@ -6,6 +6,7 @@ import itertools
 import sys
 import time
 import os
+import fetcher as fe
 
 class Downloader(object):
 
@@ -14,20 +15,24 @@ class Downloader(object):
 		self.dir = "/Users/%s/Desktop/lmsal/data-imp/source-fits" % getpass.getuser()
 
 	def pipe(self):
-		time.sleep(0.05)
 		clear = raw_input("Clear source folders? [y/n]\n==> ")
 		if clear == "y":
-			print "\nClearing source folders...\n"
+			print "\nClearing source folders..."
 			os.system("rm /Users/%s/Desktop/lmsal/data-imp/source-fits/*.fits" % getpass.getuser())
-		else:
-			print "\nProgram will not overwrite. Exiting...\n"
-			sys.exit()
-		raw_input("\nPress ENTER to begin download of file(s):\n==> ")
-		print ""
+		raw_input("\nPress ENTER to begin download:\n==> ")
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		Fido.fetch(self.search, path = self.dir)
+		Fido.fetch(self.search, path = self.dir, progress = False)
 		self.done = True
+		time.sleep(0.1)
+		if fe.cut_vid:
+			print "\nCalling find.py in ar-find..."
+			os.system("python ../ar-find/find.py")
+			pass
+		elif fe.cut_vid == False:
+			pass
+		elif fe.cut_vid == None:
+			print "\nExiting..."
 
 	done = False
 	def wheel(self):
@@ -37,4 +42,4 @@ class Downloader(object):
 	        sys.stdout.write("\rDownloading... " + c + " ")
 	        sys.stdout.flush()
 	        time.sleep(0.08)
-	    sys.stdout.write("\rDownload complete.\n")
+	    sys.stdout.write("\rDone.")
