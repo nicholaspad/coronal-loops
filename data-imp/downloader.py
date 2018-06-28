@@ -24,7 +24,7 @@ class Downloader(object):
 		t.start()
 		Fido.fetch(self.search, path = self.dir, progress = False)
 		self.done = True
-		time.sleep(0.1)
+		time.sleep(1)
 		if fe.cut_vid:
 			print "\nCalling find.py in ar-find..."
 			os.system("python ../ar-find/find.py")
@@ -42,4 +42,4 @@ class Downloader(object):
 	        sys.stdout.write("\rDownloading... " + c + " ")
 	        sys.stdout.flush()
 	        time.sleep(0.08)
-	    sys.stdout.write("\rDone.")
+	    sys.stdout.write("\rDone.                 ")

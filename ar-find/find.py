@@ -4,14 +4,16 @@ import getpass
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from scipy import ndimage
 import sunpy.cm as cm
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates import frames
 import sunpy.map as smap
 from sunpy.physics.differential_rotation import solar_rotate_coordinate
+import time
+from tqdm import tqdm
 
-# BRIGHTEST REGION MUST BE IN THE AREA OF THE SUN, NOT IN THE CORONA
-# SOLAR_ROTATE_COORDINATE WILL NOT WORK IF COORDINATE IS OFF THE SUN
+start_time = time.time()
 
 class Color:
    PURPLE = '\033[95m'
@@ -30,6 +32,7 @@ os.system("rm /Users/%s/Desktop/lmsal/ar-find/source-cutouts/*.jpg" % getpass.ge
 
 print Color.BOLD + Color.PURPLE + "\nImporting FITS files into datacube..." + Color.END
 mapcube = smap.Map("../data-imp/source-fits/*.fits", cube = True)
+
 print Color.RED + Color.BOLD + "\nMAPCUBE GENERATED ==>\n%s" % mapcube + Color.END
 
 print Color.BOLD + Color.PURPLE + "\nIdentifying active region..." + Color.END
@@ -47,44 +50,44 @@ locs = []
 for i in range(len(mapcube)):
 	locs.append(solar_rotate_coordinate(init_loc, mapcube[i].date))
 
-print Color.BOLD + Color.PURPLE + "\nGenerating cutouts..." + Color.END
-
-# ARGS
 dim = 500 * u.arcsec
-fps = 5
+fps = 10
 dpi = 300
-color = "sdoaia94"
+color = "sdoaia%s" % str(int(mapcube[0].measurement.value))
+low_scale = 0
+high_scale = 100000
 
-for i in range(len(mapcube)):
-	print Color.PURPLE + "FILE ==>\n%s" % mapcube[i].name
+print Color.RED + Color.BOLD
+for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS"):
 	bl = SkyCoord(locs[i].Tx - dim/2, locs[i].Ty - dim/2, frame = mapcube[i].coordinate_frame)
 	tr = SkyCoord(locs[i].Tx + dim/2, locs[i].Ty + dim/2, frame = mapcube[i].coordinate_frame)
 
-	print "\nREGION %03d BOTTOM LEFT ==>\n%s" % (i, bl)
-	print "\nREGION %03d TOP RIGHT ==>\n%s" % (i, tr)
-
 	cutout = mapcube[i].submap(bl, tr)
-	print "\nIMAGE %03d GENERATED ==>\n%s" % (i, cutout) + Color.END
 
 	fig = plt.figure()
 	ax = plt.subplot(projection = cutout)
 	cutout.plot_settings["cmap"] = cm.get_cmap(name = color)
 	cutout.plot()
 
-	px = np.argwhere(cutout.data == cutout.data.max()) * u.pixel
-	coord = cutout.pixel_to_world(px[:, 1], px[:, 0])
-	loc = SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[i].date), observer = get_earth(str(mapcube[i].date)), frame = frames.Helioprojective)
-	ax.plot_coord(loc, "bx")
+	data = cutout.data
+	ci = list(ndimage.measurements.center_of_mass(data))
+	ci = [int(ci[0] + 0.5) * u.pixel, int(ci[1] + 0.5) * u.pixel]
+ 	coord = cutout.pixel_to_world(ci[0], ci[1])
+ 	loc = SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[i].date), observer = get_earth(str(mapcube[i].date)), frame = frames.Helioprojective)
+	ax.plot_coord(loc, "rx")
 	
 	ax.grid(False)
+	plt.style.use('dark_background')
+	plt.xlabel("Longitude [arcsec]")
+	plt.ylabel("Latitude [arcsec]")
+	plt.clim(low_scale, high_scale)
+	plt.colorbar()
 
-	plt.savefig("source-cutouts/cutout_%03d.jpg" % i, bbox_inches = "tight", dpi = dpi)
-
-	print Color.BOLD + Color.RED + "\n--------------------\nCUTOUT %03d GENERATED\n--------------------\n" % i + Color.END
+	plt.savefig("/Users/%s/Desktop/lmsal/ar-find/source-cutouts/cutout_%03d.jpg" % (getpass.getuser(), i), dpi = dpi)
 
 	plt.close()
 
-print Color.BOLD + Color.PURPLE + "\nGENERATING VIDEO...\n" + Color.END
+print Color.PURPLE + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
 os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-find/source-cutouts/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-find/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 print Color.BOLD + Color.GREEN + "\nDONE" + Color.END
@@ -93,4 +96,6 @@ print Color.BOLD + Color.GREEN + "\nDONE" + Color.END
 # if clear == "y":
 # 	print "\nClearing source folders..."
 # 	os.system("rm /Users/%s/Desktop/lmsal/data-imp/source-fits/*.fits" % getpass.getuser())
-print "\nExiting...\n" + Color.END
+
+elapsed_time = time.time() - start_time
+print "\nEXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
