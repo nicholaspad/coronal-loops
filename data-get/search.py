@@ -6,6 +6,7 @@ import time
 import re
 import itertools
 import threading
+import os
 import sys
 
 cut_vid = None
@@ -19,6 +20,7 @@ class Search(object):
 	}
 
 	def __init__(self):
+		os.system("clear")
 		self.instrument = ""
 		self.wavelength = -1
 		self.cadence = -1

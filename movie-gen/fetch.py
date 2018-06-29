@@ -2,6 +2,7 @@ from sunpy.net.helioviewer import HelioviewerClient
 from datetime import datetime
 import re
 import ssl
+import os
 
 class Fetch(object):
 
@@ -18,6 +19,7 @@ class Fetch(object):
 
 	def __init__(self):
 		ssl._create_default_https_context = ssl._create_unverified_context
+		os.system("clear")
 		self.observatory = ""
 		self.instrument = ""
 		self.detector = ""
