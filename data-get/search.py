@@ -10,7 +10,7 @@ import sys
 
 cut_vid = None
 
-class Fetcher(object):
+class Search(object):
 
 	possible_instruments = ["aia", "hmi"]
 	wavmes = {
@@ -26,7 +26,7 @@ class Fetcher(object):
 		self.e_time = None
 		self.results = None
 
-	def fetch(self):
+	def go(self):
 		ask = raw_input("\nGenerate video? [y/n]\n==> ")
 		if ask == "y":
 			ask = raw_input("\nCutout? [y/n]\n==> ")

@@ -28,10 +28,10 @@ class Color:
    END = '\033[0m'
 
 print Color.BOLD + Color.PURPLE + "\nClearing source folders..." + Color.END
-os.system("rm /Users/%s/Desktop/lmsal/ar-find/source-cutouts/*.jpg" % getpass.getuser())
+os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
 print Color.BOLD + Color.PURPLE + "\nImporting FITS files into datacube..." + Color.END
-mapcube = smap.Map("../data-imp/source-fits/*.fits", cube = True)
+mapcube = smap.Map("../data-get/src/*.fits", cube = True)
 
 print Color.RED + Color.BOLD + "\nMAPCUBE GENERATED ==>\n%s" % mapcube + Color.END
 
@@ -83,12 +83,12 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS"):
 	plt.clim(low_scale, high_scale)
 	plt.colorbar()
 
-	plt.savefig("/Users/%s/Desktop/lmsal/ar-find/source-cutouts/cutout_%03d.jpg" % (getpass.getuser(), i), dpi = dpi)
+	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), i), dpi = dpi)
 
 	plt.close()
 
 print Color.PURPLE + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-find/source-cutouts/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-find/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 print Color.BOLD + Color.GREEN + "\nDONE" + Color.END
 

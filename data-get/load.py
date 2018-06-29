@@ -6,32 +6,32 @@ import itertools
 import sys
 import time
 import os
-import fetcher as fe
+import search as s
 
-class Downloader(object):
+class Load(object):
 
 	def __init__(self, search):
 		self.search = search
-		self.dir = "/Users/%s/Desktop/lmsal/data-imp/source-fits" % getpass.getuser()
+		self.dir = "/Users/%s/Desktop/lmsal/data-get/src" % getpass.getuser()
 
-	def pipe(self):
+	def go(self):
 		clear = raw_input("Clear source folders? [y/n]\n==> ")
 		if clear == "y":
 			print "\nClearing source folders..."
-			os.system("rm /Users/%s/Desktop/lmsal/data-imp/source-fits/*.fits" % getpass.getuser())
+			os.system("rm /Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser())
 		raw_input("\nPress ENTER to begin download:\n==> ")
 		t = threading.Thread(target=self.wheel)
 		t.start()
 		Fido.fetch(self.search, path = self.dir, progress = False)
 		self.done = True
 		time.sleep(1)
-		if fe.cut_vid:
-			print "\nCalling find.py in ar-find..."
-			os.system("python ../ar-find/find.py")
+		if s.cut_vid:
+			print "\nCalling run.py in ar-cut..."
+			os.system("python ../ar-cut/run.py")
 			pass
-		elif fe.cut_vid == False:
+		elif s.cut_vid == False:
 			pass
-		elif fe.cut_vid == None:
+		elif s.cut_vid == None:
 			print "\nExiting..."
 
 	done = False
