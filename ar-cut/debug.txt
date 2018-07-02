@@ -1,0 +1,12 @@
+QI: works
+QII: does not work
+	- (3,-452)
+	- (452,-5)
+	SHOULD BE
+	- 
+QIII: works
+QIV: does not work
+	- (-452,3)
+	- (-5,452)
+
+Selection in QII and QIV needs to have coordinates switched
