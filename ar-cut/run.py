@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector
 import numpy as np
 import os
+from regions import PixCoord, CirclePixelRegion
 from scipy import ndimage
 import sunpy.cm as cm
 from sunpy.coordinates.ephemeris import get_earth
@@ -44,67 +45,84 @@ def line_select_callback(eclick, erelease):
 	x2, y2 = erelease.xdata * u.pixel, erelease.ydata * u.pixel
 	plt.close()
 
-"""
-Clears source folders and imports all FITS files into a datacube.
-"""
-print Color.BOLD + Color.PURPLE + "\nClearing source folders..."
-os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
-
-print "\nImporting FITS files into datacube..." + Color.END
-mapcube = smap.Map("../data-get/src/*.fits", cube = True)
-
-if len(mapcube) == 0:
-	print Color.BOLD + Color.RED + "\nNO DATA. EXITING..."
-	os.exit(0)
-
-print Color.RED + Color.BOLD + "\nMAPCUBE GENERATED\n==> %s" % mapcube + Color.END
-
-"""
-Identifies an Active Region, either automatically or specified by the user.
-"""
-if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY IDENTIFY ACTIVE REGION? [y/n]\n==> ") == "y"):
-	print Color.BOLD + Color.PURPLE + "\nIdentifying active region..." + Color.END
-	px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
-
-	init_coord = mapcube[0].pixel_to_world(px[:, 1], px[:, 0])
-
-	auto_sel = True
-	fig = plt.figure()
-	plt.style.use('dark_background')
-else:
-	print Color.PURPLE + "\nOPENING PLOT..."
+def cutout_selection(mapcube):
+	print Color.DARKCYAN + "\nOPENING PLOT..."
 	fig = plt.figure()
 	ax = plt.subplot(111, projection = smap.Map(mapcube[0]))
 	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
 	mapcube[0].plot()
 	ax.grid(False)
 	plt.style.use('dark_background')
-	plt.title("DRAG A SELECTION")
+	plt.title("DRAG A SELECTION CENTERED SOMEWHERE ON THE SUN")
 	plt.xlabel("Longitude [arcsec]")
 	plt.ylabel("Latitude [arcsec]")
 	selector = RectangleSelector(ax, line_select_callback, drawtype='box', useblit=True, button=[1, 3], minspanx=5, minspany=5, spancoords='pixels', interactive=True)
 	plt.connect('key_press_event', selector)
 	plt.show()
-
-	init_coord = mapcube[0].pixel_to_world((y2 + y1)/2.0, (x2 + x1)/2.0)
-
-	auto_sel = False
 	os.system("open -a Terminal")
+	return mapcube[0].pixel_to_world((x2 + x1)/2.0, (y2 + y1)/2.0)
+
+
+"""
+Clears source folders and imports all FITS files into a datacube.
+"""
+print Color.BOLD + Color.DARKCYAN + "\nCLEARING SOURCE FOLDERS..." + Color.END
+os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
+
+print Color.BOLD + Color.DARKCYAN + "\nINITIALIZING DATACUBE..."
+mapcube = smap.Map("../data-get/src/*.fits", cube = True)
+
+if len(mapcube) == 0:
+	print Color.BOLD + Color.RED + "\nNO DATA. EXITING..."
+	os.exit(0)
+
+print Color.UNDERLINE + "\nMAPCUBE GENERATED" + Color.END + Color.DARKCYAN + "\n%s" % mapcube + Color.END
+
+"""
+Identifies an Active Region, either automatically or specified by the user.
+"""
+if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y/n]\n==> ") == "y"):
+	print Color.BOLD + Color.DARKCYAN + "\nIDENTIFYING ACTIVE REGION..." + Color.END
+	px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
+
+	if len(px) > 1:
+		temp = ndimage.measurements.center_of_mass(np.array(px))
+		px = px[int(temp[0] + 0.5)]
+
+	"""
+	If the brightest location returns NaN value, default to user input.
+	"""
+	center = PixCoord(x = 2042.62868084, y = 2025.38421103)
+	radius = 1610
+	region = CirclePixelRegion(center, radius)
+	point = PixCoord(px[1], px[0])
+	if not region.contains(point):
+		print Color.BOLD + Color.YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB. DEFAULTING TO USER SELECTION..."
+		init_coord = cutout_selection(mapcube)
+	else:
+		init_coord = mapcube[0].pixel_to_world(px[1], px[0])
+
+	auto_sel = True
+	fig = plt.figure()
+	plt.style.use('dark_background')
+else:
+	init_coord = cutout_selection(mapcube)
+	auto_sel = False
 
 """
 Creates a SkyCoord (Helioprojective coordinate) based on the location of the Active Region.
 """
-print Color.END + Color.PURPLE + "\nHELIOPROJECTIVE COORDINATE ==>\n(%s, %s)" % (init_coord.Tx, init_coord.Ty)
+print Color.END + Color.DARKCYAN + Color.UNDERLINE + "\nHELIOPROJECTIVE COORDINATE" + Color.END + Color.DARKCYAN + "\n(%s, %s)" % (init_coord.Tx, init_coord.Ty)
 init_time = str(mapcube[0].date)
-print "\nINITIAL TIME ==>\n%s" % str(init_time)
+print Color.UNDERLINE + "\nINITIAL TIME" + Color.END + Color.DARKCYAN + "\n%s" % str(init_time)
 init_loc = SkyCoord(init_coord.Tx, init_coord.Ty, obstime = init_time, observer=get_earth(init_time), frame = frames.Helioprojective)
-print "\nINITIAL LOCATION OBJECT ==>\n%s" % init_loc + Color.END
+print Color.UNDERLINE + "\nINITIAL LOCATION OBJECT" + Color.END + Color.DARKCYAN + "\n%s" % init_loc + Color.END
 
 """
 Calculates coordinates of future cutouts, based on the date from FITS file metadata.
 Essentially, this keeps the cutout centered on the Active Region.
 """
-print Color.BOLD + Color.PURPLE + "\nCalculating future coordinates..." + Color.END
+print Color.BOLD + Color.DARKCYAN + "\nCALCULATING FUTURE COORDINATES..." + Color.END
 locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
 
 """
@@ -124,8 +142,8 @@ Determines the region dimensions based on the user's selection.
 If Active Region was automatically found, a square region is used.
 """
 if auto_sel:
-	xdim = 800 * u.arcsec
-	ydim = 800 * u.arcsec
+	xdim = 1000 * u.arcsec
+	ydim = 1000 * u.arcsec
 else:
 	coord1 = mapcube[0].pixel_to_world(x1, y1)
 	coord2 = mapcube[0].pixel_to_world(x2, y2)
@@ -138,7 +156,7 @@ color = "sdoaia%s" % str(int(mapcube[0].measurement.value))
 """
 Uses matplotlib and astropy SkyCoord to generate cutoutouts, based on the coordinates calculated previously.
 """
-print Color.RED + Color.BOLD
+print Color.DARKCYAN + Color.BOLD
 for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 	c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
 	c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
@@ -182,11 +200,11 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 """
 Uses ffmpeg to generate a video with the specified fps. Video is saved to the working directory.
 """
-print Color.PURPLE + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
+os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 2048x2048 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
-print Color.BOLD + Color.RED + "\nDONE - EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
+print Color.BOLD + Color.CYAN + "\nDONE - EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
 os.system("open output.mp4")
 
 """
