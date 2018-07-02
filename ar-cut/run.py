@@ -69,17 +69,21 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY IDENTIFY ACTIVE REGION? [
 	init_coord = mapcube[0].pixel_to_world(px[:, 1], px[:, 0])
 
 	auto_sel = True
+	fig = plt.figure()
+	plt.style.use('dark_background')
 else:
 	print Color.PURPLE + "\nOPENING PLOT..."
 	fig = plt.figure()
 	ax = plt.subplot(111, projection = smap.Map(mapcube[0]))
+	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
 	mapcube[0].plot()
+	ax.grid(False)
+	plt.style.use('dark_background')
 	plt.title("DRAG A SELECTION")
 	plt.xlabel("Longitude [arcsec]")
 	plt.ylabel("Latitude [arcsec]")
 	selector = RectangleSelector(ax, line_select_callback, drawtype='box', useblit=True, button=[1, 3], minspanx=5, minspany=5, spancoords='pixels', interactive=True)
 	plt.connect('key_press_event', selector)
-	plt.style.use('dark_background')
 	plt.show()
 
 	init_coord = mapcube[0].pixel_to_world((y2 + y1)/2.0, (x2 + x1)/2.0)
@@ -107,9 +111,9 @@ locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(ma
 Gathers some information to generate the cutouts.
 """
 if(raw_input(Color.BOLD + Color.RED + "\nUSE DEFAULT SETTINGS? [y/n]\n==> ") == "y"):
+	fps = 12
 	low_scale = 0
 	high_scale = 20000
-	fps = 12
 else:
 	fps = int(raw_input("\nENTER FPS VALUE:\n==> "))
 	low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
@@ -123,8 +127,8 @@ if auto_sel:
 	xdim = 800 * u.arcsec
 	ydim = 800 * u.arcsec
 else:
-	coord1 = mapcube[0].pixel_to_world(y1, x1)
-	coord2 = mapcube[0].pixel_to_world(y2, x2)
+	coord1 = mapcube[0].pixel_to_world(x1, y1)
+	coord2 = mapcube[0].pixel_to_world(x2, y2)
 	xdim = coord2.Tx - coord1.Tx
 	ydim = coord2.Ty - coord1.Ty
 
@@ -139,20 +143,10 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 	c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
 	c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
 
-	if (c1.Tx.value < 0 and c1.Ty.value > 0) or (c1.Tx.value > 0 and c1.Ty.value < 0):
-		c1 = SkyCoord(c1.Ty.value * u.arcsec, c1.Tx.value * u.arcsec,frame=c1.frame)
-		c2 = SkyCoord(c2.Ty.value * u.arcsec, c2.Tx.value * u.arcsec,frame=c2.frame)
-
-	### FIX THE ABOVE LOGIC, BUT IT'S THE RIGHT IDEA
-
 	cutout = mapcube[i].submap(c1, c2)
 
-	print c1
-	print c2
-	raw_input()
-
 	"""
-	Set up basic matplotlib pyplot.
+	Set up skeleton matplotlib pyplot.
 	"""
 	fig = plt.figure()
 	ax = plt.subplot(projection = cutout)
@@ -167,10 +161,10 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 	ci = [int(ci[1] + 0.5) * u.pixel, int(ci[0] + 0.5) * u.pixel]
  	coord = cutout.pixel_to_world(ci[0], ci[1])
  	loc = SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[i].date), observer = get_earth(mapcube[i].date), frame = frames.Helioprojective)
-	ax.plot_coord(loc, "b3")
+	ax.plot_coord(loc, "g3")
 	
 	"""
-	More plot setup,
+	More plot setup.
 	"""
 	ax.grid(False)
 	plt.style.use('dark_background')
@@ -189,14 +183,14 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 Uses ffmpeg to generate a video with the specified fps. Video is saved to the working directory.
 """
 print Color.PURPLE + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 1562x1498 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.RED + "\nDONE - EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
 os.system("open output.mp4")
 
 """
-Closing the program and asking if user wants to clear the source folders.
+Close the program and ask if user wants to clear the source folders.
 """
 # clear = raw_input("\nClear source FITS folders? [y/n]\n==> ")
 # if clear == "y":
