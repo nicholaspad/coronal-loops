@@ -69,7 +69,7 @@ def cutout_selection(mapcube):
 """
 Clears source folders and imports all FITS files into a datacube.
 """
-print Color.BOLD + Color.DARKCYAN + "\nCLEARING SOURCE FOLDERS..." + Color.END
+print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS..." + Color.END
 os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
 print Color.BOLD + Color.DARKCYAN + "\nINITIALIZING DATACUBE..."
@@ -90,7 +90,7 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y
 
 	if len(px) > 1:
 		temp = ndimage.measurements.center_of_mass(np.array(px))
-		px = px[int(temp[0] + 0.5)]
+		px = [px[int(temp[0] + 0.5)]]
 
 	"""
 	If the brightest location returns NaN value (due to being outside the solar limb), default to user input.
@@ -98,12 +98,12 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y
 	center = PixCoord(x = 2042.62868084, y = 2025.38421103)
 	radius = 1610
 	region = CirclePixelRegion(center, radius)
-	point = PixCoord(px[1], px[0])
+	point = PixCoord(px[0][1], px[0][0])
 	if not region.contains(point):
 		print Color.BOLD + Color.YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB. DEFAULTING TO USER SELECTION..."
 		init_coord = cutout_selection(mapcube)
 	else:
-		init_coord = mapcube[0].pixel_to_world(px[1], px[0])
+		init_coord = mapcube[0].pixel_to_world(px[0][1], px[0][0])
 
 	auto_sel = True
 	fig = plt.figure()
@@ -208,6 +208,7 @@ os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desk
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
+print "MOVE THE VIDEO TO ANOTHER LOCATION TO PREVENT AN OVERWRITE!"
 print "EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
 os.system("open /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser())
 
