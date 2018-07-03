@@ -45,6 +45,9 @@ def line_select_callback(eclick, erelease):
 	x2, y2 = erelease.xdata * u.pixel, erelease.ydata * u.pixel
 	plt.close()
 
+"""
+Method that prompts user to select a region of the sun.
+"""
 def cutout_selection(mapcube):
 	print Color.DARKCYAN + "\nOPENING PLOT..."
 	fig = plt.figure()
@@ -70,7 +73,7 @@ print Color.BOLD + Color.DARKCYAN + "\nCLEARING SOURCE FOLDERS..." + Color.END
 os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
 print Color.BOLD + Color.DARKCYAN + "\nINITIALIZING DATACUBE..."
-mapcube = smap.Map("../data-get/src/*.fits", cube = True)
+mapcube = smap.Map("/Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser(), cube = True)
 
 if len(mapcube) == 0:
 	print Color.BOLD + Color.RED + "\nNO DATA. EXITING..."
@@ -90,7 +93,7 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y
 		px = px[int(temp[0] + 0.5)]
 
 	"""
-	If the brightest location returns NaN value, default to user input.
+	If the brightest location returns NaN value (due to being outside the solar limb), default to user input.
 	"""
 	center = PixCoord(x = 2042.62868084, y = 2025.38421103)
 	radius = 1610
@@ -128,10 +131,10 @@ locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(ma
 """
 Gathers some information to generate the cutouts.
 """
-if(raw_input(Color.BOLD + Color.RED + "\nUSE DEFAULT SETTINGS? [y/n]\n==> ") == "y"):
+if(raw_input(Color.BOLD + Color.RED + "\nUSE DEFAULT SETTINGS (12 FPS, LOW SCALE 0, HIGH SCALE 50000)? [y/n]\n==> ") == "y"):
 	fps = 12
 	low_scale = 0
-	high_scale = 20000
+	high_scale = 50000
 else:
 	fps = int(raw_input("\nENTER FPS VALUE:\n==> "))
 	low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
@@ -198,14 +201,15 @@ for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
 	plt.close()
 
 """
-Uses ffmpeg to generate a video with the specified fps. Video is saved to the working directory.
+Uses ffmpeg to generate a video. Video is saved to the working directory.
 """
 print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
 os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 2048x2048 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
-print Color.BOLD + Color.CYAN + "\nDONE - EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
-os.system("open output.mp4")
+print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
+print "EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
+os.system("open /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser())
 
 """
 Close the program and ask if user wants to clear the source folders.

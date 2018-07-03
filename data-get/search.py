@@ -9,7 +9,7 @@ import threading
 import os
 import sys
 
-cut_vid = None
+vid = None
 
 class Search(object):
 
@@ -31,14 +31,8 @@ class Search(object):
 	def go(self):
 		ask = raw_input("\nGenerate video? [y/n]\n==> ")
 		if ask == "y":
-			ask = raw_input("\nCutout? [y/n]\n==> ")
-			if ask == "y":
-				global cut_vid
-				cut_vid = True
-			else:
-				global cut_vid
-				cut_vid = False
-				# connect to non-cutout algorithm
+			global vid
+			vid = True
 
 		print "\nAvailable instruments: %s" % (self.possible_instruments)
 		prompt = "\nEnter instrument:\n==> "

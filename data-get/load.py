@@ -25,13 +25,13 @@ class Load(object):
 		Fido.fetch(self.search, path = self.dir, progress = False)
 		self.done = True
 		time.sleep(1)
-		if s.cut_vid:
+		if s.vid:
 			print "\nCalling run.py in ar-cut..."
 			os.system("python ../ar-cut/run.py")
 			pass
-		elif s.cut_vid == False:
+		elif s.vid == False:
 			pass
-		elif s.cut_vid == None:
+		elif s.vid == None:
 			print "\nExiting..."
 
 	done = False
