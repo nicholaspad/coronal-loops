@@ -55,16 +55,43 @@ def cutout_selection(mapcube):
 	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
 	mapcube[0].plot()
 	ax.grid(False)
-	plt.style.use('dark_background')
 	plt.title("DRAG A SELECTION CENTERED SOMEWHERE ON THE SUN")
 	plt.xlabel("Longitude [arcsec]")
 	plt.ylabel("Latitude [arcsec]")
-	selector = RectangleSelector(ax, line_select_callback, drawtype='box', useblit=True, button=[1, 3], minspanx=5, minspany=5, spancoords='pixels', interactive=True)
+	selector = RectangleSelector(ax, line_select_callback, drawtype = 'box', useblit = True, button = [1, 3], minspanx = 5, minspany = 5, spancoords = 'pixels', interactive = True)
 	plt.connect('key_press_event', selector)
+	plt.clim(0, 40000)
+	plt.style.use('dark_background')
 	plt.show()
 	os.system("open -a Terminal")
 	return mapcube[0].pixel_to_world((x2 + x1)/2.0, (y2 + y1)/2.0)
 
+"""
+Method that calculates the location of the center of intensity of the first cutout.
+"""
+def calc_ci(mapcube, xdim, ydim, locs, id):
+	c1 = SkyCoord(locs[id].Tx - xdim/2.0, locs[id].Ty - ydim/2.0, frame = mapcube[id].coordinate_frame)
+	c2 = SkyCoord(locs[id].Tx + xdim/2.0, locs[id].Ty + ydim/2.0, frame = mapcube[id].coordinate_frame)
+
+	cutout = mapcube[id].submap(c1, c2)
+	data = cutout.data
+
+	for i in range(len(data)):
+		for j in range(len(data[0])):
+			if data[i][j] < 4000:
+				data[i][j] = 0
+
+	ci = list(ndimage.measurements.center_of_mass(data))
+	ci = [int(ci[1] + 0.5) * u.pixel, int(ci[0] + 0.5) * u.pixel]
+
+ 	coord = cutout.pixel_to_world(ci[0], ci[1])
+
+ 	return SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[id].date), observer = get_earth(mapcube[id].date), frame = frames.Helioprojective)
+
+def calc_bounds(mapcube, locs):
+	id = len(mapcube)/2
+	# locs[id] is a SkyCoords
+	
 
 """
 Clears source folders and imports all FITS files into a datacube.
@@ -72,7 +99,7 @@ Clears source folders and imports all FITS files into a datacube.
 print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS..." + Color.END
 os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
-print Color.BOLD + Color.DARKCYAN + "\nINITIALIZING DATACUBE..."
+print Color.BOLD + Color.DARKCYAN + "\nIMPORTING DATA..."
 mapcube = smap.Map("/Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser(), cube = True)
 
 if len(mapcube) == 0:
@@ -95,7 +122,7 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y
 	"""
 	If the brightest location returns NaN value (due to being outside the solar limb), default to user input.
 	"""
-	center = PixCoord(x = 2042.62868084, y = 2025.38421103)
+	center = PixCoord(x = 2043, y = 2025)
 	radius = 1610
 	region = CirclePixelRegion(center, radius)
 	point = PixCoord(px[0][1], px[0][0])
@@ -119,13 +146,12 @@ print Color.END + Color.DARKCYAN + Color.UNDERLINE + "\nHELIOPROJECTIVE COORDINA
 init_time = str(mapcube[0].date)
 print Color.UNDERLINE + "\nINITIAL TIME" + Color.END + Color.DARKCYAN + "\n%s" % str(init_time)
 init_loc = SkyCoord(init_coord.Tx, init_coord.Ty, obstime = init_time, observer=get_earth(init_time), frame = frames.Helioprojective)
-print Color.UNDERLINE + "\nINITIAL LOCATION OBJECT" + Color.END + Color.DARKCYAN + "\n%s" % init_loc + Color.END
+print Color.UNDERLINE + "\nINITIAL LOCATION" + Color.END + Color.DARKCYAN + "\n%s" % init_loc + Color.END
 
 """
 Calculates coordinates of future cutouts, based on the date from FITS file metadata.
-Essentially, this keeps the cutout centered on the Active Region.
 """
-print Color.BOLD + Color.DARKCYAN + "\nCALCULATING FUTURE COORDINATES..." + Color.END
+print Color.BOLD + Color.DARKCYAN + "\nCALCULATING FUTURE COORDINATES BASED ON SOLAR ROTATION..." + Color.END
 locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
 
 """
@@ -134,7 +160,7 @@ Gathers some information to generate the cutouts.
 if(raw_input(Color.BOLD + Color.RED + "\nUSE DEFAULT SETTINGS (12 FPS, LOW SCALE 0, HIGH SCALE 50000)? [y/n]\n==> ") == "y"):
 	fps = 12
 	low_scale = 0
-	high_scale = 50000
+	high_scale = 40000
 else:
 	fps = int(raw_input("\nENTER FPS VALUE:\n==> "))
 	low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
@@ -145,77 +171,73 @@ Determines the region dimensions based on the user's selection.
 If Active Region was automatically found, a square region is used.
 """
 if auto_sel:
-	xdim = 1000 * u.arcsec
-	ydim = 1000 * u.arcsec
+	xdim = 700 * u.arcsec
+	ydim = 700 * u.arcsec
 else:
 	coord1 = mapcube[0].pixel_to_world(x1, y1)
 	coord2 = mapcube[0].pixel_to_world(x2, y2)
 	xdim = coord2.Tx - coord1.Tx
 	ydim = coord2.Ty - coord1.Ty
+dpi = 600
+#color = "sdoaia%s" % str(int(mapcube[0].measurement.value))
+color = "sdoaia1600"
 
-dpi = 300
-color = "sdoaia%s" % str(int(mapcube[0].measurement.value))
+"""
+Instantiates a SkyCoord containing the initial center of intensity location.
+"""
+print Color.DARKCYAN + Color.BOLD + "\nCALCULATING INITIAL CENTER OF INTENSITY...\n"
+init_ci = calc_ci(mapcube, xdim, ydim, locs, 0)
 
 """
 Uses matplotlib and astropy SkyCoord to generate cutoutouts, based on the coordinates calculated previously.
 """
-print Color.DARKCYAN + Color.BOLD
-for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS..."):
-	c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
-	c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
+id = 0
 
-	cutout = mapcube[i].submap(c1, c2)
+for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS"):
+	if(mapcube[i].date.second == mapcube[0].date.second):
+		c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
+		c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
 
-	"""
-	Set up skeleton matplotlib pyplot.
-	"""
-	fig = plt.figure()
-	ax = plt.subplot(projection = cutout)
-	cutout.plot_settings["cmap"] = cm.get_cmap(name = color)
-	cutout.plot()
+		"""
+		Set up skeleton matplotlib pyplot.
+		"""
+		cutout = mapcube[i].submap(c1, c2)
+		fig = plt.figure()
+		ax = plt.subplot(projection = cutout)
+		cutout.plot_settings["cmap"] = cm.get_cmap(name = color)
+		cutout.plot()
 
-	"""
-	Calculate and mark the center of intensity of the current cutout.
-	"""
-	data = cutout.data
-	ci = list(ndimage.measurements.center_of_mass(data))
-	ci = [int(ci[1] + 0.5) * u.pixel, int(ci[0] + 0.5) * u.pixel]
- 	coord = cutout.pixel_to_world(ci[0], ci[1])
- 	loc = SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[i].date), observer = get_earth(mapcube[i].date), frame = frames.Helioprojective)
-	ax.plot_coord(loc, "g3")
-	
-	"""
-	More plot setup.
-	"""
-	ax.grid(False)
-	plt.style.use('dark_background')
-	plt.xlabel("Longitude [arcsec]")
-	plt.ylabel("Latitude [arcsec]")
-	plt.clim(low_scale, high_scale)
-	plt.colorbar()
+		loc = solar_rotate_coordinate(init_ci, mapcube[i].date)
+		ax.plot_coord(loc, "b3")
+		
+		"""
+		More plot setup.
+		"""
+		ax.grid(False)
+		plt.style.use('dark_background')
+		plt.xlabel("Longitude [arcsec]")
+		plt.ylabel("Latitude [arcsec]")
+		plt.clim(low_scale, high_scale)
+		plt.colorbar()
 
-	"""
-	Save the plot to a specified location.
-	"""
-	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), i), dpi = dpi)
-	plt.close()
+		"""
+		Save the cutout to a specified location.
+		"""
+		plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), id), dpi = dpi)
+		plt.close()
+
+		id += 1
 
 """
 Uses ffmpeg to generate a video. Video is saved to the working directory.
 """
 print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -s 2048x2048 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -q:v 1 -s 1920x1440 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
-print "MOVE THE VIDEO TO ANOTHER LOCATION TO PREVENT AN OVERWRITE!"
-print "EXECUTION TIME: %s\n" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
+print "MOVE VIDEO TO PREVENT AN OVERWRITE!"
+print "EXECUTION TIME: %s" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
+print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS...\n" + Color.END
+os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 os.system("open /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser())
-
-"""
-Close the program and ask if user wants to clear the source folders.
-"""
-# clear = raw_input("\nClear source FITS folders? [y/n]\n==> ")
-# if clear == "y":
-# 	print "\nClearing source folders..."
-# 	os.system("rm /Users/%s/Desktop/lmsal/data-imp/source-fits/*.fits" % getpass.getuser())

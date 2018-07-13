@@ -27,7 +27,7 @@ class Load(object):
 		time.sleep(1)
 		if s.vid:
 			print "\nCalling run.py in ar-cut..."
-			os.system("python ../ar-cut/run.py")
+			os.system("python /Users/%s/Desktop/lmsal/ar-cut/run.py" % getpass.getuser())
 			pass
 		elif s.vid == False:
 			pass
