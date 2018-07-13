@@ -22,7 +22,7 @@ class Search(object):
 	def __init__(self):
 		os.system("clear")
 		self.instrument = ""
-		self.wavelength = -1
+		self.wavs = []
 		self.cadence = -1
 		self.s_time = None
 		self.e_time = None
@@ -35,17 +35,13 @@ class Search(object):
 			vid = True
 
 		print "\nAvailable instruments: %s" % (self.possible_instruments)
-		prompt = "\nEnter instrument:\n==> "
-		instrument = raw_input(prompt)
+		instrument = raw_input("\nEnter instrument:\n==> ")
 		self.instrument = instrument
 		self.askstartdatetime()
 
 	def askstartdatetime(self):
-		prompt = "\nEnter start date: (MUST be in format yyyy/mm/dd)\n==> "
-		date = raw_input(prompt)
-
-		prompt = "\nEnter start time: (MUST be in format hh:mm:ss)\n==> "
-		time = raw_input(prompt)
+		date = raw_input("\nEnter start date: (MUST be in format yyyy/mm/dd)\n==> ")
+		time = raw_input("\nEnter start time: (MUST be in format hh:mm:ss)\n==> ")
 
 		hour = int(time[0:2])
 		minute = int(time[3:5])
@@ -58,11 +54,8 @@ class Search(object):
 		self.askenddatetime()
 
 	def askenddatetime(self):
-		prompt = "\nEnter end date: (MUST be in format yyyy/mm/dd)\n==> "
-		date = raw_input(prompt)
-
-		prompt = "\nEnter end time: (MUST be in format hh:mm:ss)\n==> "
-		time = raw_input(prompt)
+		date = raw_input("\nEnter end date: (MUST be in format yyyy/mm/dd)\n==> ")
+		time = raw_input("\nEnter end time: (MUST be in format hh:mm:ss)\n==> ")
 
 		hour = int(time[0:2])
 		minute = int(time[3:5])
@@ -76,24 +69,27 @@ class Search(object):
 
 	def askwavmes(self):
 		self.displaywavmes(self.instrument)
-		prompt = "\nEnter wavelength/configuration:\n==> "
-		wavelength = int(raw_input(prompt))
-		if(wavelength in self.wavmes[self.instrument.lower()]):
-			self.wavelength = wavelength
-			self.search()
-		else:
-			print "\nNot available."
-			self.askwavmes()
+		self.num_wav = int(raw_input("\nEnter number of wavelengths (up to 4):\n==> "))
+		for i in range(self.num_wav):
+			self.wavs.append(int(raw_input("\nEnter wavelength/configuration:\n==> ")))
+		self.search()
 
 	def askother(self):
-		prompt = "\nEnter cadence in seconds:\n==> "
-		self.cadence = int(raw_input(prompt))
+		self.cadence = int(raw_input("\nEnter cadence in seconds:\n==> "))
 		self.askwavmes()
 
 	def search(self):
+		print ""
 		t = threading.Thread(target=self.wheel)
 		t.start()
-		self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavelength) * u.angstrom), a.vso.Sample(self.cadence * u.second))
+		if self.num_wav == 1:
+			self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavs[0]) * u.angstrom), a.vso.Sample(self.cadence * u.second))
+		elif self.num_wav == 2:
+			self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavs[0]) * u.angstrom) | a.Wavelength(float(self.wavs[1]) * u.angstrom), a.vso.Sample(self.cadence * u.second))
+		elif self.num_wav == 3:
+			self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavs[0]) * u.angstrom) | a.Wavelength(float(self.wavs[1]) * u.angstrom) | a.Wavelength(float(self.wavs[2]) * u.angstrom), a.vso.Sample(self.cadence * u.second))
+		elif self.num_wav == 4:
+			self.results = Fido.search(a.Time("%s/%s/%sT%s" % (self.s_time.date().year, self.s_time.date().month, self.s_time.date().day, str(self.s_time.time())), "%s/%s/%sT%s" % (self.e_time.date().year, self.e_time.date().month, self.e_time.date().day, str(self.e_time.time()))), a.Instrument(self.instrument), a.Wavelength(float(self.wavs[0]) * u.angstrom) | a.Wavelength(float(self.wavs[1]) * u.angstrom) | a.Wavelength(float(self.wavs[2]) * u.angstrom) | a.Wavelength(float(self.wavs[3]) * u.angstrom), a.vso.Sample(self.cadence * u.second))
 		self.done = True
 		print self.results
 

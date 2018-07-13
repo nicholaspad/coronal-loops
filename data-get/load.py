@@ -20,6 +20,7 @@ class Load(object):
 			print "\nClearing source folders..."
 			os.system("rm /Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser())
 		raw_input("\nPress ENTER to begin download:\n==> ")
+		print ""
 		t = threading.Thread(target=self.wheel)
 		t.start()
 		Fido.fetch(self.search, path = self.dir, progress = False)
@@ -32,7 +33,7 @@ class Load(object):
 		elif s.vid == False:
 			pass
 		elif s.vid == None:
-			print "\nExiting..."
+			print "\nExiting...\n"
 
 	done = False
 	def wheel(self):
@@ -42,4 +43,4 @@ class Load(object):
 	        sys.stdout.write("\rDownloading... " + c + " ")
 	        sys.stdout.flush()
 	        time.sleep(0.08)
-	    sys.stdout.write("\rDone.                 ")
+	    sys.stdout.write("\rDone.                 ",)

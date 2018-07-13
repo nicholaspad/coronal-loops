@@ -10,6 +10,7 @@ from scipy import ndimage
 import sunpy.cm as cm
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates import frames
+from sunpy.image.coalignment import mapcube_coalign_by_match_template as mc_coalign
 import sunpy.map as smap
 from sunpy.physics.differential_rotation import solar_rotate_coordinate
 import time
@@ -75,10 +76,11 @@ def calc_ci(mapcube, xdim, ydim, locs, id):
 
 	cutout = mapcube[id].submap(c1, c2)
 	data = cutout.data
+	threshold = np.amax(data) - 500
 
 	for i in range(len(data)):
 		for j in range(len(data[0])):
-			if data[i][j] < 4000:
+			if data[i][j] < threshold:
 				data[i][j] = 0
 
 	ci = list(ndimage.measurements.center_of_mass(data))
@@ -88,10 +90,32 @@ def calc_ci(mapcube, xdim, ydim, locs, id):
 
  	return SkyCoord(coord.Tx, coord.Ty, obstime = str(mapcube[id].date), observer = get_earth(mapcube[id].date), frame = frames.Helioprojective)
 
-def calc_bounds(mapcube, locs):
-	id = len(mapcube)/2
-	# locs[id] is a SkyCoords
-	
+def calc_num_wav(mapcube):
+	count = 0
+	wav = []
+	for i in range(len(mapcube)):
+		if mapcube[i].wavelength.value not in wav:
+			wav.append(mapcube[i].wavelength.value)
+			count += 1
+	return count
+
+def sort_mapcube(mapcube, num_wav):
+	sorted = []
+	wavelengths = []
+
+	for i in range(num_wav):
+		sorted.append([])
+		wavelengths.append(mapcube[i].wavelength.value)
+
+	for i in range(len(mapcube)):
+		for j in range(len(wavelengths)):
+			if mapcube[i].wavelength.value == wavelengths[j]:
+				sorted[j].append(mapcube[i])
+
+	return sorted
+
+###################################################################################################
+###################################################################################################
 
 """
 Clears source folders and imports all FITS files into a datacube.
@@ -99,14 +123,19 @@ Clears source folders and imports all FITS files into a datacube.
 print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS..." + Color.END
 os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
-print Color.BOLD + Color.DARKCYAN + "\nIMPORTING DATA..."
+print Color.BOLD + Color.DARKCYAN + "\nIMPORTING DATA..." + Color.END
 mapcube = smap.Map("/Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser(), cube = True)
+print Color.BOLD + Color.DARKCYAN + "\nALIGNING DATACUBE..." + Color.END
+mapcube = mc_coalign(mapcube)
+num_wav = calc_num_wav(mapcube)
+print Color.BOLD + Color.DARKCYAN + "\nSORTING DATACUBE..." + Color.END
+mapcube_sorted = sort_mapcube(mapcube, num_wav)
 
 if len(mapcube) == 0:
-	print Color.BOLD + Color.RED + "\nNO DATA. EXITING..."
+	print Color.BOLD + Color.RED + "\nNO DATA. EXITING..." + Color.END
 	os.exit(0)
 
-print Color.UNDERLINE + "\nMAPCUBE GENERATED" + Color.END + Color.DARKCYAN + "\n%s" % mapcube + Color.END
+print Color.DARKCYAN + Color.UNDERLINE + "\nMAPCUBE GENERATED" + Color.END + Color.DARKCYAN + "\n%s" % mapcube + Color.END
 
 """
 Identifies an Active Region, either automatically or specified by the user.
@@ -151,7 +180,7 @@ print Color.UNDERLINE + "\nINITIAL LOCATION" + Color.END + Color.DARKCYAN + "\n%
 """
 Calculates coordinates of future cutouts, based on the date from FITS file metadata.
 """
-print Color.BOLD + Color.DARKCYAN + "\nCALCULATING FUTURE COORDINATES BASED ON SOLAR ROTATION..." + Color.END
+print Color.BOLD + Color.DARKCYAN + "\nCALCULATING FUTURE ROTATIONAL COORDINATES..." + Color.END
 locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
 
 """
@@ -171,16 +200,14 @@ Determines the region dimensions based on the user's selection.
 If Active Region was automatically found, a square region is used.
 """
 if auto_sel:
-	xdim = 700 * u.arcsec
-	ydim = 700 * u.arcsec
+	xdim = 600 * u.arcsec
+	ydim = 600 * u.arcsec
 else:
 	coord1 = mapcube[0].pixel_to_world(x1, y1)
 	coord2 = mapcube[0].pixel_to_world(x2, y2)
 	xdim = coord2.Tx - coord1.Tx
 	ydim = coord2.Ty - coord1.Ty
 dpi = 600
-#color = "sdoaia%s" % str(int(mapcube[0].measurement.value))
-color = "sdoaia1600"
 
 """
 Instantiates a SkyCoord containing the initial center of intensity location.
@@ -193,51 +220,53 @@ Uses matplotlib and astropy SkyCoord to generate cutoutouts, based on the coordi
 """
 id = 0
 
-for i in tqdm(range(len(mapcube)), desc = "GENERATING CUTOUTS"):
-	if(mapcube[i].date.second == mapcube[0].date.second):
-		c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
-		c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
+for i in tqdm(range(len(mapcube_sorted[0])), desc = "GENERATING CUTOUTS", bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{remaining} remaining, ' '{rate_fmt}{postfix}]'):
+	c1 = SkyCoord(locs[i].Tx - xdim/2.0, locs[i].Ty - ydim/2.0, frame = mapcube[i].coordinate_frame)
+	c2 = SkyCoord(locs[i].Tx + xdim/2.0, locs[i].Ty + ydim/2.0, frame = mapcube[i].coordinate_frame)
 
-		"""
-		Set up skeleton matplotlib pyplot.
-		"""
-		cutout = mapcube[i].submap(c1, c2)
-		fig = plt.figure()
-		ax = plt.subplot(projection = cutout)
-		cutout.plot_settings["cmap"] = cm.get_cmap(name = color)
+	"""
+	Set up skeleton matplotlib pyplot.
+	"""
+	fig = plt.figure()
+
+	for j in range(num_wav):
+		cutout = mapcube_sorted[j][i].submap(c1, c2)
+		ax = plt.subplot(1, num_wav, j + 1, projection = cutout)
+		cutout.plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
 		cutout.plot()
 
-		loc = solar_rotate_coordinate(init_ci, mapcube[i].date)
-		ax.plot_coord(loc, "b3")
-		
-		"""
-		More plot setup.
-		"""
+		loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
+		ax.plot_coord(loc, "w3")
+
 		ax.grid(False)
 		plt.style.use('dark_background')
 		plt.xlabel("Longitude [arcsec]")
 		plt.ylabel("Latitude [arcsec]")
 		plt.clim(low_scale, high_scale)
-		plt.colorbar()
 
-		"""
-		Save the cutout to a specified location.
-		"""
-		plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), id), dpi = dpi)
-		plt.close()
+		if j != 0:
+			plt.ylabel("")
 
-		id += 1
+	"""
+	Save the cutout to a specified location.
+	"""
+	plt.tight_layout(w_pad = 3.25)
+	plt.margins(x = 4, y = 4)
+	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), id), dpi = dpi)
+	plt.close()
+
+	id += 1
 
 """
-Uses ffmpeg to generate a video. Video is saved to the working directory.
+Uses ffmpeg to generate a video called output.mp4. Video is saved to the working directory.
 """
 print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -pix_fmt yuv420p -q:v 1 -s 1920x1440 /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
 print "MOVE VIDEO TO PREVENT AN OVERWRITE!"
 print "EXECUTION TIME: %s" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
-print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS...\n" + Color.END
-os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
+# print Color.BOLD + Color.DARKCYAN + "CLEARING SOURCE FOLDERS...\n" + Color.END
+# os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 os.system("open /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser())
