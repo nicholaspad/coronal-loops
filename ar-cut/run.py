@@ -10,7 +10,6 @@ from scipy import ndimage
 import sunpy.cm as cm
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates import frames
-from sunpy.image.coalignment import mapcube_coalign_by_match_template as mc_coalign
 import sunpy.map as smap
 from sunpy.physics.differential_rotation import solar_rotate_coordinate
 import time
@@ -115,7 +114,6 @@ def sort_mapcube(mapcube, num_wav):
 	return sorted
 
 ###################################################################################################
-###################################################################################################
 
 """
 Clears source folders and imports all FITS files into a datacube.
@@ -125,8 +123,6 @@ os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.jpg" % getpass.getuser())
 
 print Color.BOLD + Color.DARKCYAN + "\nIMPORTING DATA..." + Color.END
 mapcube = smap.Map("/Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser(), cube = True)
-print Color.BOLD + Color.DARKCYAN + "\nALIGNING DATACUBE..." + Color.END
-mapcube = mc_coalign(mapcube)
 num_wav = calc_num_wav(mapcube)
 print Color.BOLD + Color.DARKCYAN + "\nSORTING DATACUBE..." + Color.END
 mapcube_sorted = sort_mapcube(mapcube, num_wav)
@@ -230,28 +226,32 @@ for i in tqdm(range(len(mapcube_sorted[0])), desc = "GENERATING CUTOUTS", bar_fo
 	fig = plt.figure()
 
 	for j in range(num_wav):
-		cutout = mapcube_sorted[j][i].submap(c1, c2)
-		ax = plt.subplot(1, num_wav, j + 1, projection = cutout)
-		cutout.plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
-		cutout.plot()
-
-		loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
-		ax.plot_coord(loc, "w3")
-
+		mapcube_sorted[j][i].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
+		ax = plt.subplot(111, projection = mapcube_sorted[j][i])
+		mapcube_sorted[j][i].plot()
 		ax.grid(False)
-		plt.style.use('dark_background')
-		plt.xlabel("Longitude [arcsec]")
-		plt.ylabel("Latitude [arcsec]")
-		plt.clim(low_scale, high_scale)
+		# cutout = mapcube_sorted[j][i].submap(c1, c2)
+		# ax = plt.subplot(1, num_wav, j + 1, projection = cutout)
+		# cutout.plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
+		# cutout.plot()
 
-		if j != 0:
-			plt.ylabel("")
+		# loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
+		# ax.plot_coord(loc, "w3")
+
+		# ax.grid(False)
+		# plt.style.use('dark_background')
+		# plt.xlabel("Longitude [arcsec]")
+		# plt.ylabel("Latitude [arcsec]")
+		# plt.clim(low_scale, high_scale)
+
+		# if j != 0:
+		# 	plt.ylabel("")
 
 	"""
 	Save the cutout to a specified location.
 	"""
-	plt.tight_layout(w_pad = 3.25)
-	plt.margins(x = 4, y = 4)
+	# plt.tight_layout(w_pad = 3.25)
+	# plt.margins(x = 4, y = 4)
 	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), id), dpi = dpi)
 	plt.close()
 
@@ -260,8 +260,8 @@ for i in tqdm(range(len(mapcube_sorted[0])), desc = "GENERATING CUTOUTS", bar_fo
 """
 Uses ffmpeg to generate a video called output.mp4. Video is saved to the working directory.
 """
-print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+# print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
+# os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
