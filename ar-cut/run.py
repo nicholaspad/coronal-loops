@@ -230,28 +230,28 @@ for i in tqdm(range(len(mapcube_sorted[0])), desc = "GENERATING CUTOUTS", bar_fo
 		ax = plt.subplot(111, projection = mapcube_sorted[j][i])
 		mapcube_sorted[j][i].plot()
 		ax.grid(False)
-		# cutout = mapcube_sorted[j][i].submap(c1, c2)
-		# ax = plt.subplot(1, num_wav, j + 1, projection = cutout)
-		# cutout.plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
-		# cutout.plot()
+		cutout = mapcube_sorted[j][i].submap(c1, c2)
+		ax = plt.subplot(1, num_wav, j + 1, projection = cutout)
+		cutout.plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value)))
+		cutout.plot()
 
-		# loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
-		# ax.plot_coord(loc, "w3")
+		loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
+		ax.plot_coord(loc, "w3")
 
-		# ax.grid(False)
-		# plt.style.use('dark_background')
-		# plt.xlabel("Longitude [arcsec]")
-		# plt.ylabel("Latitude [arcsec]")
-		# plt.clim(low_scale, high_scale)
+		ax.grid(False)
+		plt.style.use('dark_background')
+		plt.xlabel("Longitude [arcsec]")
+		plt.ylabel("Latitude [arcsec]")
+		plt.clim(low_scale, high_scale)
 
-		# if j != 0:
-		# 	plt.ylabel("")
+		if j != 0:
+			plt.ylabel("")
 
 	"""
 	Save the cutout to a specified location.
 	"""
-	# plt.tight_layout(w_pad = 3.25)
-	# plt.margins(x = 4, y = 4)
+	plt.tight_layout(w_pad = 3.25)
+	plt.margins(x = 4, y = 4)
 	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cutout_%03d.jpg" % (getpass.getuser(), id), dpi = dpi)
 	plt.close()
 
@@ -260,8 +260,8 @@ for i in tqdm(range(len(mapcube_sorted[0])), desc = "GENERATING CUTOUTS", bar_fo
 """
 Uses ffmpeg to generate a video called output.mp4. Video is saved to the working directory.
 """
-# print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-# os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
+print Color.DARKCYAN + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
+os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cutout_%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (fps, getpass.getuser(), getpass.getuser()))
 
 elapsed_time = time.time() - start_time
 print Color.BOLD + Color.CYAN + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % getpass.getuser()
