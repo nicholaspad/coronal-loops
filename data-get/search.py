@@ -69,7 +69,7 @@ class Search(object):
 
 	def askwavmes(self):
 		self.displaywavmes(self.instrument)
-		self.num_wav = int(raw_input("\nEnter number of wavelengths (up to 4):\n==> "))
+		self.num_wav = int(raw_input("\nEnter NUMBER of wavelengths (up to 4):\n==> "))
 		for i in range(self.num_wav):
 			self.wavs.append(int(raw_input("\nEnter wavelength/configuration:\n==> ")))
 		self.search()
@@ -94,7 +94,7 @@ class Search(object):
 		print self.results
 
 	def displaywavmes(self, instrument):
-		print "\nPossibilities for %s instrument:\n" % self.instrument
+		print "\nPossibilities for %s instrument:" % self.instrument
 		print self.wavmes[instrument.lower()]
 
 	done = False
