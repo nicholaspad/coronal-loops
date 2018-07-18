@@ -25,15 +25,7 @@ class Load(object):
 		t.start()
 		Fido.fetch(self.search, path = self.dir, progress = False)
 		self.done = True
-		time.sleep(1)
-		if s.vid:
-			print "\nCalling run.py in ar-cut..."
-			os.system("python /Users/%s/Desktop/lmsal/ar-cut/run.py" % getpass.getuser())
-			pass
-		elif s.vid == False:
-			pass
-		elif s.vid == None:
-			print "\nExiting...\n"
+		print "\nExiting..."
 
 	done = False
 	def wheel(self):

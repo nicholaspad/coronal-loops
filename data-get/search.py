@@ -9,8 +9,6 @@ import threading
 import os
 import sys
 
-vid = None
-
 class Search(object):
 
 	possible_instruments = ["aia", "hmi"]
@@ -29,11 +27,6 @@ class Search(object):
 		self.results = None
 
 	def go(self):
-		ask = raw_input("\nGenerate video? [y/n]\n==> ")
-		if ask == "y":
-			global vid
-			vid = True
-
 		print "\nAvailable instruments: %s" % (self.possible_instruments)
 		instrument = raw_input("\nEnter instrument:\n==> ")
 		self.instrument = instrument

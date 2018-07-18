@@ -1,0 +1,9 @@
+clean up code
+	- have single variable "username" for getpass.getuser()
+	- use of the Color class; be consistent with the colors
+	- yellow for information, red for user input
+	- get rid of multiple files; transfer all code to run.py
+	- have an options box at the top
+	- rename variables
+	- print out a summary of user-inputted information before prompting to begin search
+	- for long lines, use breaks
