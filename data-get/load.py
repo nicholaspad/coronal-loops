@@ -12,15 +12,13 @@ class Load(object):
 
 	def __init__(self, search):
 		self.search = search
-		self.dir = "/Users/%s/Desktop/lmsal/data-get/src" % getpass.getuser()
+		self.dir = "/Users/%s/Desktop/lmsal/resources/fits-files" % getpass.getuser()
 
 	def go(self):
-		clear = raw_input("Clear source folders? [y/n]\n==> ")
-		if clear == "y":
+		if raw_input("Clear source folders? [y/n]\n==> ") == "y":
 			print "\nClearing source folders..."
-			os.system("rm /Users/%s/Desktop/lmsal/data-get/src/*.fits" % getpass.getuser())
+			os.system("rm /Users/%s/Desktop/lmsal/resources/fits-files/*.fits" % getpass.getuser())
 		raw_input("\nPress ENTER to begin download:\n==> ")
-		print ""
 		t = threading.Thread(target=self.wheel)
 		t.start()
 		Fido.fetch(self.search, path = self.dir, progress = False)
@@ -29,10 +27,11 @@ class Load(object):
 
 	done = False
 	def wheel(self):
+		print ""
 	    for c in itertools.cycle(["|", "/", "-", "\\"]):
 	        if self.done:
 	            break
 	        sys.stdout.write("\rDownloading... " + c + " ")
 	        sys.stdout.flush()
 	        time.sleep(0.08)
-	    sys.stdout.write("\rDone.                 ",)
+	    sys.stdout.write("\rDone.               ",)

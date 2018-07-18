@@ -15,16 +15,10 @@ from sunpy.physics.differential_rotation import solar_rotate_coordinate
 import time
 from tqdm import tqdm
 
-# # # # # # # # # # # # # # # # # # # # # # # # # #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
+
+
+
+
 # # # # # # # # # # # OPTIONS # # # # # # # # # # #
 # ----------------------------------------------- #
 default_cutout_width = 600 * u.arcsec
@@ -41,20 +35,13 @@ plot_center_of_intensity = True
 generate_video = True
 open_video_upon_finish = True
 # ----------------------------------------------- #
-clear_source_fits_folders = False
+clear_source_images = True
 # ----------------------------------------------- #
 # # # # # # # # # # # # # # # # # # # # # # # # # #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-#                                                 #
-# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+
+
 
 """
 Starts an execution timer and clears the console.
@@ -138,7 +125,8 @@ def calc_ci(mapcube, xdim, ydim, locs, id):
 				data[i][j] = 0
 
 	ci = list(ndimage.measurements.center_of_mass(data))
-	ci = [int(ci[1] + 0.5) * u.pixel, int(ci[0] + 0.5) * u.pixel]
+	ci = [int(ci[1] + 0.5) * u.pixel,
+			int(ci[0] + 0.5) * u.pixel]
 
  	coord = cutout.pixel_to_world(ci[0], ci[1])
 
@@ -172,11 +160,14 @@ def sort_mapcube(mapcube, num_wav):
 Clears source folders and imports all FITS files into a datacube.
 """
 print Color.BOLD + Color.YELLOW + "CLEARING SOURCE FOLDERS..." + Color.END
-os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.png" % username)
+os.system("rm /Users/%s/Desktop/lmsal/resources/cutout-images/*.png" % username)
 
 print Color.BOLD + Color.YELLOW + "\nIMPORTING DATA..." + Color.END
-mapcube = smap.Map("/Users/%s/Desktop/lmsal/data-get/src/*.fits" % username, cube = True)
+mapcube = smap.Map("/Users/%s/Desktop/lmsal/resources/fits-files/*.fits" % username,
+					cube = True)
+
 num_wav = calc_num_wav(mapcube)
+
 print Color.BOLD + Color.YELLOW + "\nSORTING DATACUBE..." + Color.END
 mapcube_sorted = sort_mapcube(mapcube, num_wav)
 
@@ -202,8 +193,9 @@ if(raw_input(Color.BOLD + Color.RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y
 	radius = 1610
 	region = CirclePixelRegion(center, radius)
 	point = PixCoord(px[0][1], px[0][0])
+
 	if not region.contains(point):
-		print Color.BOLD + Color.YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB. DEFAULTING TO USER SELECTION..."
+		print Color.BOLD + Color.YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
 		init_coord = cutout_selection(mapcube)
 	else:
 		init_coord = mapcube[0].pixel_to_world(px[0][1], px[0][0])
@@ -308,7 +300,7 @@ for i in tqdm(range(len(mapcube_sorted[0])),
 			
 	# plt.tight_layout(h_pad = 3.5)
 
-	plt.savefig("/Users/%s/Desktop/lmsal/ar-cut/src/cut%03d.png" % (username, i), dpi = default_quality)
+	plt.savefig("/Users/%s/Desktop/lmsal/resources/cutout-images/cut%03d.png" % (username, i), dpi = default_quality)
 	plt.close()
 
 """
@@ -316,17 +308,16 @@ Use ffmpeg to generate a video. Video saves to the working directory.
 """
 if(generate_video):
 	print Color.YELLOW + Color.BOLD + "\nGENERATING VIDEO...\n" + Color.END
-	os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/ar-cut/src/cut%%3d.png -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % (default_frames_per_second, username, username))
+	os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i /Users/%s/Desktop/lmsal/resources/cutout-images/cut%%3d.png -q:v 2 -vcodec mpeg4 -b:v 800k /Users/%s/Desktop/lmsal/output.mp4" % (default_frames_per_second, username, username))
 
 	elapsed_time = time.time() - start_time
-	print Color.BOLD + Color.YELLOW + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % username
-	print "MOVE VIDEO TO PREVENT AN OVERWRITE!"
+	print Color.BOLD + Color.YELLOW + "\nDONE: VIDEO SAVED TO /Users/%s/Desktop/lmsal" % username
 
-if(clear_source_fits_folders):
-	print Color.BOLD + Color.YELLOW + "CLEARING SOURCE FOLDERS...\n" + Color.END
-	os.system("rm /Users/%s/Desktop/lmsal/ar-cut/src/*.png" % username)
+if(clear_source_images):
+	print Color.BOLD + Color.YELLOW + "CLEARING SOURCE IMAGES...\n" + Color.END
+	os.system("rm /Users/%s/Desktop/lmsal/resources/cutout-images/*.png" % username)
 
 print "EXECUTION TIME: %s" % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) + Color.END
 
 if(open_video_upon_finish):
-	os.system("open /Users/%s/Desktop/lmsal/ar-cut/output.mp4" % username)
+	os.system("open /Users/%s/Desktop/lmsal/output.mp4" % username)
