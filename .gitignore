@@ -109,3 +109,6 @@ venv.bak/
 *.jp2
 *.fits
 *.jpg
+*.png
+*.xml
+*.zip
