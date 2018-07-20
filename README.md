@@ -1,3 +1,3 @@
 # Lockheed Martin Solar and Astrophysics Laboratory
-## Repository for Nicholas Padmanabhan
-Contains many Python programs.
+### Nicholas Padmanabhan
+Contains some Python programs :)
