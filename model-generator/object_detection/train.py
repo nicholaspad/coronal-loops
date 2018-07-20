@@ -49,6 +49,11 @@ import getpass
 
 from google.protobuf import text_format
 
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../slim"))
+
 from object_detection import trainer
 from object_detection.builders import input_reader_builder
 from object_detection.builders import model_builder

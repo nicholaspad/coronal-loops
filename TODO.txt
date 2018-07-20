@@ -1,6 +1,0 @@
-clean up code
-	- yellow for information, red for user input
-	- print out a summary of user-inputted information before prompting to begin search
-	- for long lines, use breaks
-	- simplify colors (BOLDYELLOW UNDERLINEYELLOW and BOLDRED)
-	- ^ and implement the colors class (from color text import Colors)

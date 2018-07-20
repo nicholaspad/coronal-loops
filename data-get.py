@@ -1,10 +1,10 @@
-import astropy.units as u
+from colortext import Color
 from datetime import datetime
+from sunpy.net import Fido, attrs as a
+import astropy.units as u
 import getpass
 import itertools
 import os
-from sunpy.net import Fido, attrs as a
-import sunpy.net.vso as vso
 import time
 
 
@@ -35,14 +35,14 @@ wavelengths = {
 
 ###
 
-print "\nAvailable instruments: %s" % possible_instruments
+print Color.BOLD_YELLOW + "\nAvailable instruments: %s" % possible_instruments + Color.RESET
 
-instrument = raw_input("\nEnter instrument:\n==> ").lower()
+instrument = raw_input(Color.BOLD_RED + "\nEnter instrument:\n==> ").lower()
 
 ###
 
-temp_date = raw_input("\nEnter start date: (format yyyy/mm/dd)\n==> ")
-temp_time = raw_input("\nEnter start time: (format hh:mm:ss)\n==> ")
+temp_date = raw_input(Color.BOLD_RED + "\nEnter start date: (format yyyy/mm/dd)\n==> ")
+temp_time = raw_input(Color.BOLD_RED + "\nEnter start time: (format hh:mm:ss)\n==> ")
 
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
@@ -55,8 +55,8 @@ start_time = datetime(year, month, day, hour, minute, second)
 
 ###
 
-temp_date = raw_input("\nEnter end date: (format yyyy/mm/dd)\n==> ")
-temp_time = raw_input("\nEnter end time: (format hh:mm:ss)\n==> ")
+temp_date = raw_input(Color.BOLD_RED + "\nEnter end date: (format yyyy/mm/dd)\n==> ")
+temp_time = raw_input(Color.BOLD_RED + "\nEnter end time: (format hh:mm:ss)\n==> ")
 
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
@@ -69,47 +69,56 @@ end_time = datetime(year, month, day, hour, minute, second)
 
 ###
 
-cadence = int(raw_input("\nEnter cadence in seconds:\n==> "))
+cadence = int(raw_input(Color.BOLD_RED + "\nEnter cadence in seconds:\n==> "))
 
 ###
 
-number_of_wavelengths = int(raw_input("\nEnter NUMBER of wavelengths: (up to 4)\n==> "))
+if instrument == "aia":
+	print Color.BOLD_YELLOW + "\nWavelengths for %s: %s" % (instrument, wavelengths["aia"]) + Color.RESET
+	wavelength = int(raw_input(Color.BOLD_RED + "\nEnter wavelength:\n==> "))
 
-print "\nWavelengths for %s: %s" % (instrument, wavelengths[instrument])
-inputted_wavelengths = []
-
-for i in range(number_of_wavelengths):
-	inputted_wavelengths.append(int(raw_input("\nEnter wavelength %d:\n==> " % (i + 1))))
+elif instrument == "hmi":
+	wavelength = 6173
 
 ###
-print "\nSearching..."
+print Color.BOLD_YELLOW + "\nSearching..." + Color.RESET
 
-if number_of_wavelengths == 1:
-	results = Fido.search(a.Time("%s" % start_time.replace(microsecond = 0).isoformat(), "%s" % end_time.replace(microsecond = 0).isoformat()), a.Instrument(instrument), a.Wavelength(float(inputted_wavelengths[0]) * u.angstrom), a.vso.Sample(cadence * u.second))
-elif number_of_wavelengths == 2:
-	results = Fido.search(a.Time("%s" % start_time.replace(microsecond = 0).isoformat(), "%s" % end_time.replace(microsecond = 0).isoformat()), a.Instrument(instrument), a.Wavelength(float(inputted_wavelengths[0]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[1]) * u.angstrom), a.vso.Sample(cadence * u.second))
-elif number_of_wavelengths == 3:
-	results = Fido.search(a.Time("%s" % start_time.replace(microsecond = 0).isoformat(), "%s" % end_time.replace(microsecond = 0).isoformat()), a.Instrument(instrument), a.Wavelength(float(inputted_wavelengths[0]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[1]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[2]) * u.angstrom), a.vso.Sample(cadence * u.second))
-elif number_of_wavelengths == 4:
-	results = Fido.search(a.Time("%s" % start_time.replace(microsecond = 0).isoformat(), "%s" % end_time.replace(microsecond = 0).isoformat()), a.Instrument(instrument), a.Wavelength(float(inputted_wavelengths[0]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[1]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[2]) * u.angstrom) | a.Wavelength(float(inputted_wavelengths[3]) * u.angstrom), a.vso.Sample(cadence * u.second))
+if instrument == "aia" and wavelength != 1600 and wavelength != 1700:
+	results = Fido.search(
+		a.jsoc.Time("%s" % start_time.replace(microsecond = 0).isoformat(),
+				"%s" % end_time.replace(microsecond = 0).isoformat()),
+		a.jsoc.Notify("padman@lmsal.com"),
+		a.jsoc.Series("aia.lev1_euv_12s"),
+		a.jsoc.Wavelength(wavelength * u.angstrom),
+		a.Sample(cadence * u.second))
 
-print "\nData search complete. Displaying...\n"
+elif instrument == "aia" and (wavelength == 1600 or wavelength == 1700):
+	results = Fido.search(
+		a.jsoc.Time("%s" % start_time.replace(microsecond = 0).isoformat(),
+				"%s" % end_time.replace(microsecond = 0).isoformat()),
+		a.jsoc.Notify("padman@lmsal.com"),
+		a.jsoc.Series("aia.lev1_uv_24s"),
+		a.jsoc.Wavelength(wavelength * u.angstrom),
+		a.Sample(cadence * u.second))
+
+print Color.BOLD_YELLOW + "\nData search complete. Displaying...\n" + Color.RESET
 print results
 
 ###
 
-if raw_input("Clear source folders? [y/n]\n==> ") == "y":
-	print "\nClearing source folders..."
+if raw_input(Color.BOLD_RED + "Clear source folders? [y/n]\n==> ") == "y":
+	print Color.BOLD_YELLOW + "\nClearing source folders..." + Color.RESET
 	os.system("rm %s/resources/fits-files/*.fits" % main_dir)
 
 ###
 
-raw_input("\nPress ENTER to begin download:\n==> ")
-print "\nDownloading..."
+raw_input(Color.BOLD_RED + "\nPress ENTER to begin download:\n==> ")
+print Color.BOLD_YELLOW + "\nDownloading to resources/fits-files...\n" + Color.RESET
 
 Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = False)
+os.system("rm %s/resources/fits-files/*.spikes.fits" % main_dir)
 
-print "\nDONE: Files saved to /resources/fits-files"
+print Color.BOLD_YELLOW + "\nDONE: Files saved to resources/fits-files" + Color.RESET
 
 ###
 

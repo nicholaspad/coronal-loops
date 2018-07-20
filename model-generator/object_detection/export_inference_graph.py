@@ -56,13 +56,20 @@ Example Usage:
 python export_inference_graph.py \
     --input_type image_tensor \
     --pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
-    --checkpoint_path training/model.ckpt-4040 \
-    --inference_graph_path ssd_mobilenet_v1_coco_2018_01_28/active_region_frozen_graph.pb
+    --checkpoint_path training/model.ckpt-9310 \
+    --inference_graph_path active_region/active_region_frozen_graph.pb
 """
 import tensorflow as tf
 from google.protobuf import text_format
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../slim"))
+
 from object_detection import exporter
 from object_detection.protos import pipeline_pb2
+
 
 slim = tf.contrib.slim
 flags = tf.app.flags
