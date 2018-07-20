@@ -34,11 +34,11 @@ generate_detection_video = False
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
-print Color.BOLD_YELLOW + "\nCLEARING SOURCE FOLDERS..." + Color.RESET
+print Color.BOLD_YELLOW + "CLEARING SOURCE FOLDERS..." + Color.RESET
 os.system("rm %s/resources/region-detection-images/*.jpg" % main_dir)
 
 print Color.BOLD_YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/model-generator/object_detection/active_region/active_region_frozen_graph.pb" % main_dir
+graph_path = "%s/model-generator/object_detection/exported_active_region_graph/active_region_frozen_graph.pb" % main_dir
 label_path = os.path.join("%s/model-generator/object_detection/training" % main_dir, "object-detection.pbtxt")
 
 print Color.BOLD_YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET

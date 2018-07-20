@@ -27,16 +27,13 @@ python train.py --logtostderr --train_dir=training/ --pipeline_config_path=ssd_m
 Keep the above process running until loss value reaches about 1.0.
 
 STEP 9
-Run in generate-model directory (must in bash shell):
+Run in generate-model directory if import errors occur (must in bash shell):
 export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
 
 STEP 10
-Export the inference graph by running inside object_detection directory (update CKPT_NUM):
+Export inference graph by running inside object_detection directory (update CKPT_NUM):
 python export_inference_graph.py \
     --input_type image_tensor \
     --pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
     --checkpoint_path training/model.ckpt-CKPT_NUM \
-    --inference_graph_path active_region/active_region_frozen_graph.pb
-
-STEP 11
-Use active_region/active_region_frozen_graph.pb and training/object-detection.pbtxt as inputs to the active region detection script!
+    --inference_graph_path exported_active_region_graph/active_region_frozen_graph.pb
