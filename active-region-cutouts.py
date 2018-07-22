@@ -13,9 +13,10 @@ import lycon
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys
 import sunpy.cm as cm
 import sunpy.map as smap
-import time
+
 
 
 
@@ -24,22 +25,17 @@ import time
 # ----------------------------------------------- #
 ask_to_change_default_settings = False
 # ----------------------------------------------- #
+# applicable if only_fulldisk_images is False
 default_cutout_width = 600 * u.arcsec
 default_cutout_height = 600 * u.arcsec
 # ----------------------------------------------- #
 default_low_scale = 0
 default_high_scale = 40000
-# ----------------------------------------------- #
-default_frames_per_second = 12
 default_quality = 600 #dpi
 # ----------------------------------------------- #
 only_fulldisk_images = True
 plot_center_of_intensity = False
-# ----------------------------------------------- #
 crop_cut_to_only_sun = True
-generate_no_detection_video = False
-# ----------------------------------------------- #
-clear_source_images = False
 # ----------------------------------------------- #
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -61,7 +57,6 @@ Method that prompts user to select a region of the sun.
 """
 def cutout_selection(mapcube):
 	print Color.BOLD_YELLOW + "\nOPENING PLOT..."
-	fig = plt.figure()
 
 	ax = plt.subplot(111, projection = smap.Map(mapcube[0]))
 	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
@@ -157,8 +152,8 @@ Clears source folders and imports all FITS files into a datacube.
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
-print Color.BOLD_YELLOW + "CLEARING SOURCE FOLDERS..." + Color.RESET
-os.system("rm %s/resources/cutout-images/*.jpg" % main_dir)
+print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
+os.system("mv %s/resources/cutout-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.BOLD_YELLOW + "\nIMPORTING DATA..." + Color.RESET
 mapcube = smap.Map("%s/resources/fits-files/*.image_lev1.fits" % main_dir, cube = True)
@@ -230,8 +225,7 @@ if not only_fulldisk_images:
 Gathers some information to generate the cutouts.
 """
 if ask_to_change_default_settings:
-	if(raw_input(Color.BOLD_RED + "\nUSE DEFAULT SETTINGS (LOW SCALE 0, HIGH SCALE 40000, 12 FPS)? [y/n]\n==> ") == "n"):
-		default_frames_per_second = int(raw_input("\nENTER FPS VALUE:\n==> "))
+	if(raw_input(Color.BOLD_RED + "\nUSE DEFAULT SETTINGS (LOW SCALE 0, HIGH SCALE 40000)? [y/n]\n==> ") == "n"):
 		default_low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
 		default_high_scale = int(raw_input("\nENTER HIGH SCALE VALUE:\n==> "))
 
@@ -333,14 +327,4 @@ for i in tqdm(
 	
 	plt.close()
 
-"""
-Use ffmpeg to generate a video. Video saves to the working directory.
-"""
-if generate_no_detection_video:
-	os.system("python %s/video-generators/no-detection-video.py --framerate %d" % (main_dir, default_frames_per_second))
-else:
-	print "\nDONE: IMAGES SAVED TO resources/cutout-images\n" + Color.RESET
-
-if clear_source_images:
-	print Color.BOLD_YELLOW + "\nCLEARING SOURCE IMAGES..." + Color.RESET
-	os.system("rm %s/resources/cutout-images/*.jpg" % main_dir)
+print "\nDONE: IMAGES SAVED TO resources/cutout-images\n" + Color.RESET

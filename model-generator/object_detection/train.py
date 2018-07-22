@@ -44,13 +44,11 @@ Example usage:
 import functools
 import json
 import os
+import sys
 import tensorflow as tf
-import getpass
 
 from google.protobuf import text_format
 
-import sys
-import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../slim"))
 

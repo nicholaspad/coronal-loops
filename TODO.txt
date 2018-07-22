@@ -1,12 +1,9 @@
 TODO
-- implement capability to select a Segment when retrieving HMI data
-import drms
-c = drms.Client()
-si = c.info("hmi.M_720s") [or some other data series]
-print si.segments.index.values
 
 - implement model for detecting active regions on HMI images
 - use masking with threshold value to single out active regions
 - sync with AIA detection in order to trace magnetic field lines and correspond them with HMI magnetic field data (which set of poles corresponds to which set of lines)
 
-- line detection (very difficult, read the second paper Georgios sent me)
+- line detection (very difficult, read the second research article)
+
+- train models for other AIA wavelengths

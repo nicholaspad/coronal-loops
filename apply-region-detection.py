@@ -1,4 +1,3 @@
-from collections import defaultdict
 from colortext import Color
 from matplotlib import pyplot as plt
 from tqdm import tqdm
@@ -34,11 +33,11 @@ generate_detection_video = False
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
-print Color.BOLD_YELLOW + "CLEARING SOURCE FOLDERS..." + Color.RESET
-os.system("rm %s/resources/region-detection-images/*.jpg" % main_dir)
+print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
+os.system("mv %s/resources/region-detection-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.BOLD_YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/model-generator/object_detection/exported_active_region_graph/active_region_frozen_graph.pb" % main_dir
+graph_path = "%s/model-generator/object_detection/inference_graphs/aia193.pb" % main_dir
 label_path = os.path.join("%s/model-generator/object_detection/training" % main_dir, "object-detection.pbtxt")
 
 print Color.BOLD_YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
@@ -99,8 +98,5 @@ with detection_graph.as_default():
 
 			plt.close()
 			i += 1
-
-if generate_detection_video:
-	os.system("python %s/video-generators/detection-video.py --framerate %d" % (main_dir, default_frames_per_second))
 
 print Color.BOLD_YELLOW + "\nDONE\n" + Color.RESET
