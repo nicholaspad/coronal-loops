@@ -1,0 +1,4 @@
+*
+!.gitignore
+!object_detection/
+!README.md

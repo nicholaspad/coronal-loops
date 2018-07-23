@@ -180,7 +180,7 @@ os.system("mv %s/resources/fits-files/*.fits %s/resources/discarded-files" % (ma
 
 print Color.BOLD_YELLOW + "\nDOWNLOADING TO resources/fits-files...\n"
 
-Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = True)
+Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = False)
 os.system("rm %s/resources/fits-files/*.spikes.fits" % main_dir)
 
 print "\nDONE: FILES SAVED TO resources/fits-files" + Color.RESET

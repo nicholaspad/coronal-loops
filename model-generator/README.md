@@ -31,9 +31,9 @@ Run in generate-model directory if import errors occur (must in bash shell):
 export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
 
 STEP 10
-Export inference graph by running inside object_detection directory (update CKPT_NUM and INSTR):
+Export inference graph by running inside object_detection directory (update CKPT_NUM and INSTR_WAV):
 python export_inference_graph.py \
     --input_type image_tensor \
     --pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
     --checkpoint_path training/model.ckpt-CKPT_NUM \
-    --inference_graph_path inference_graphs/INSTR.pb
+    --inference_graph_path inference_graphs/INSTR_WAV.pb
