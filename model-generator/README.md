@@ -16,20 +16,29 @@ Note: object_detection directory on GitHub does not include TensorFlow training 
 
 6. Copy data and images directories to object_detection directory.
 
-7. Train the model until reaching a loss number of about 1.0:
+7. Train the model (run in object_detection directory):
 
-==> python train.py --logtostderr --train_dir=training/ --pipeline_config_path=ssd_mobilenet_v1_coco_2018_01_28/pipeline.config
+==> python model_main.py \
+	--pipeline_config_path=models/model/pipeline.config \
+	--model_dir=training \
+	--num_train_steps=50000 \
+	--num_eval_steps=2000 \
+	--logtostderr
 
-8. Export the inference graph (change CKPT_NUM and GRAPH_NAME):
+8. Export the inference graph (run in object_detection directory) (change CKPT_NUM and GRAPH_NAME):
 
-==> python export-inference-graph.py \
+==> python export_inference_graph.py \
     --input_type image_tensor \
-    --pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
-    --checkpoint_path training/model.ckpt-CKPT_NUM \
-    --inference_graph_path inference_graphs/GRAPH_NAME.pb
+    --pipeline_config_path models/model/pipeline.config \
+    --trained_checkpoint_prefix training/model.ckpt-0 \
+    --output_directory inference_graphs/
 
 -------------
 
-If import errors occur, run:
+If import errors occur, run in model-generator directory:
 
 ==> export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
+
+Command for running apply-region-detection.py:
+
+==> export PYTHONPATH=$PYTHONPATH:`pwd`/model-generator:`pwd`model-generator/slim

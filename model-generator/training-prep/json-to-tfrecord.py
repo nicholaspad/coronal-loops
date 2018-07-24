@@ -16,15 +16,15 @@ with open("temp.txt", "w") as f:
 	for i in range(len(data)):
 		for j in range(len(data[i]["Label"]["ACTIVE REGION"])):
 			f.write("%s,%d,%d,%s,%d,%d,%d,%d\n" % (
-													data[i]["External ID"],
-													2204,
-													2204,
-													"ACTIVE REGION",
-													data[i]["Label"]["ACTIVE REGION"][j]["geometry"][1]["x"],
-													data[i]["Label"]["ACTIVE REGION"][j]["geometry"][1]["y"],
-													data[i]["Label"]["ACTIVE REGION"][j]["geometry"][3]["x"],
-													data[i]["Label"]["ACTIVE REGION"][j]["geometry"][3]["y"]
-													))
+					data[i]["External ID"],
+					2204,
+					2204,
+					"ACTIVE REGION",
+					data[i]["Label"]["ACTIVE REGION"][j]["geometry"][1]["x"],
+					data[i]["Label"]["ACTIVE REGION"][j]["geometry"][1]["y"],
+					data[i]["Label"]["ACTIVE REGION"][j]["geometry"][3]["x"],
+					data[i]["Label"]["ACTIVE REGION"][j]["geometry"][3]["y"]
+					))
 
 with open("temp.txt") as f:
 	info = [line.split(",") for line in f]
@@ -43,8 +43,8 @@ for name in names:
 		with open("images/%s.xml" % name[:-4], "w") as f:
 			f.write("<annotation>\n")
 			f.write("\t<folder>images</folder>\n")
-			f.write("\t<filename>%s.jpg</filename>\n" % name[:-4])
-			f.write("\t<path>/Users/%s/Desktop/lmsal/model-generator/training-prep/images/%s.jpg</path>\n" % (getpass.getuser(), name[:-4]))
+			f.write("\t<filename>%s</filename>\n" % name)
+			f.write("\t<path>/Users/%s/Desktop/lmsal/model-generator/training-prep/images/.jpg</path>\n" % (getpass.getuser(), name))
 			f.write("\t<source>\n")
 			f.write("\t\t<database>Unknown</database>\n")
 			f.write("\t</source>\n")
@@ -56,7 +56,7 @@ for name in names:
 			f.write("\t<segmented>0</segmented>\n")
 
 			for j in range(len(info)):
-				if info[j][0] == ("%s.jpg" % name[:-4]):
+				if info[j][0] == ("%s" % name):
 					f.write("\t<object>\n")
 					f.write("\t\t<name>active region</name>\n")
 					f.write("\t\t<pose>Unspecified</pose>\n")
@@ -81,7 +81,7 @@ names.sort()
 
 train_files = int(num_files * 0.95)
 
-if train_files % 2 == 0:
+if train_files % 2 != 0:
 	train_files -= 1
 
 train_names = []

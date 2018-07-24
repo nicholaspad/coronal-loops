@@ -6,10 +6,7 @@ import lycon
 import numpy as np
 import os
 import skimage.io
-import sys
 import tensorflow as tf
-
-sys.path.append("model-generator/")
 
 from utils import label_map_util
 from utils import visualization_utils as vis_util
@@ -37,7 +34,7 @@ print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/disca
 os.system("mv %s/resources/region-detection-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.BOLD_YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/model-generator/object_detection/inference_graphs/aia193.pb" % main_dir
+graph_path = "%s/model-generator/object_detection/inference_graphs/aia193old.pb" % main_dir
 label_path = os.path.join("%s/model-generator/object_detection/training" % main_dir, "object-detection.pbtxt")
 
 print Color.BOLD_YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
@@ -59,7 +56,10 @@ category_index = label_map_util.create_category_index(categories)
 
 print Color.BOLD_YELLOW + "\nIMPORTING IMAGES..." + Color.RESET
 number_of_images = len(next(os.walk("%s/resources/cutout-images" % main_dir))[2]) - 2
-cutout_path = [os.path.join("%s/resources/cutout-images" % main_dir, "cut-{:03}.jpg".format(i)) for i in range(0, number_of_images)]
+names = os.listdir("/Users/%s/Desktop/lmsal/resources/cutout-images" % getpass.getuser())
+names.sort()
+
+cutout_path = [os.path.join("%s/resources/cutout-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
 image_size = (12, 9)
 
 print ""

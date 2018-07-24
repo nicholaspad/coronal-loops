@@ -119,3 +119,4 @@ model-generator/slim/
 model-generator/utils/
 model-generator/object_detection/*
 !model-generator/object_detection/inference_graphs/
+model-generator/pycocotools/
