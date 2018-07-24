@@ -17,10 +17,12 @@ Note: object_detection directory on GitHub does not include TensorFlow training 
 6. Copy data and images directories to object_detection directory.
 
 7. Train the model until reaching a loss number of about 1.0:
-	==> python train.py --logtostderr --train_dir=training/ --pipeline_config_path=ssd_mobilenet_v1_coco_2018_01_28/pipeline.config
+
+==> python train.py --logtostderr --train_dir=training/ --pipeline_config_path=ssd_mobilenet_v1_coco_2018_01_28/pipeline.config
 
 8. Export the inference graph (change CKPT_NUM and GRAPH_NAME):
-	==> python export-inference-graph.py \
+
+==> python export-inference-graph.py \
     --input_type image_tensor \
     --pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
     --checkpoint_path training/model.ckpt-CKPT_NUM \
@@ -29,4 +31,5 @@ Note: object_detection directory on GitHub does not include TensorFlow training 
 -------------
 
 If import errors occur, run:
-	==> export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
+
+==> export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
