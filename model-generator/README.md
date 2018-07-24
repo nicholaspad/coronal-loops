@@ -1,4 +1,5 @@
 INSTRUCTIONS FOR PREPARING TRAINING OBJECTS AND DIRECTORIES
+
 Note: object_detection directory on GitHub does not include TensorFlow training files (too large). Contact me for the training files (including train.py and export_inference_graph.py).
 
 -------------
