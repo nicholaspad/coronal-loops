@@ -1,6 +1,0 @@
-*.pyc
-*.json
-!*.py
-!data/
-!images/train
-!images/test
