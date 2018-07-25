@@ -1,12 +1,9 @@
 TODO
 
 - implement model for detecting active regions on HMI images
-- use masking with threshold value to single out active regions
-- sync with AIA detection in order to trace magnetic field lines and correspond them with HMI magnetic field data (which set of poles corresponds to which set of lines)
-
-- line detection (very difficult, read the second research article)
-
 - train models for other AIA wavelengths
+
+- attempt to retrain AIA193 with simpler images and more test images!
 
 Once AR recognition is working well (only have to be able to do the initial verification):
 - compare HMI and AIA data
