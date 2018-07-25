@@ -25,13 +25,28 @@ Note: object_detection directory on GitHub does not include TensorFlow training 
 	--num_eval_steps=2000 \
 	--logtostderr
 
-8. Export the inference graph (run in object_detection directory) (change CKPT_NUM and GRAPH_NAME):
+[old]
+
+==> python train.py \
+	--logtostderr \
+	--train_dir=training/ \
+	--pipeline_config_path=ssd_mobilenet_v1_coco_2018_01_28/pipeline.config
+
+8. Export the inference graph (run in object_detection directory):
 
 ==> python export_inference_graph.py \
     --input_type image_tensor \
     --pipeline_config_path models/model/pipeline.config \
     --trained_checkpoint_prefix training/model.ckpt-0 \
-    --output_directory inference_graphs/
+    --output_directory /Users/padman/Desktop/lmsal/models
+
+[old]
+
+==> python export_inference_graph.py \
+	--input_type image_tensor \
+	--pipeline_config_path ssd_mobilenet_v1_coco_2018_01_28/pipeline.config \
+	--checkpoint_path training/model.ckpt-0 \
+	--inference_graph_path /Users/padman/Desktop/lmsal/models/NAME.pb
 
 -------------
 

@@ -1,5 +1,9 @@
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
 from astropy.coordinates import SkyCoord
 from colortext import Color
+import cv2
 from matplotlib.widgets import RectangleSelector
 from regions import PixCoord, CirclePixelRegion
 from scipy import ndimage
@@ -9,7 +13,6 @@ from sunpy.physics.differential_rotation import solar_rotate_coordinate
 from tqdm import tqdm
 import astropy.units as u
 import getpass
-import lycon
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -56,7 +59,7 @@ def line_select_callback(eclick, erelease):
 Method that prompts user to select a region of the sun.
 """
 def cutout_selection(mapcube):
-	print Color.BOLD_YELLOW + "\nOPENING PLOT..."
+	print Color.YELLOW + "\nOPENING PLOT..."
 
 	ax = plt.subplot(111, projection = smap.Map(mapcube[0]))
 	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
@@ -152,15 +155,15 @@ Clears source folders and imports all FITS files into a datacube.
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
-print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
+print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
 os.system("mv %s/resources/cutout-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
-print Color.BOLD_YELLOW + "\nIMPORTING DATA..." + Color.RESET
-mapcube = smap.Map("%s/resources/fits-files/*.fits" % main_dir, cube = True)
+print Color.YELLOW + "\nIMPORTING DATA..." + Color.RESET
+mapcube = smap.Map("%s/resources/discarded-files/*.fits" % main_dir, cube = True)
 
 num_wav = calc_num_wav(mapcube)
 
-print Color.BOLD_YELLOW + "\nSORTING DATA..." + Color.RESET
+print Color.YELLOW + "\nSORTING DATA..." + Color.RESET
 mapcube_sorted = sort_mapcube(mapcube, num_wav)
 
 if len(mapcube) == 0:
@@ -172,7 +175,7 @@ Identifies an Active Region, either automatically or specified by the user.
 """
 if not only_fulldisk_images:
 	if(raw_input(Color.BOLD_RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y/n]\n==> ") == "y"):
-		print Color.BOLD_YELLOW + "\nIDENTIFYING..." + Color.RESET
+		print Color.YELLOW + "\nIDENTIFYING..." + Color.RESET
 		px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
 
 		if len(px) > 1:
@@ -188,7 +191,7 @@ if not only_fulldisk_images:
 		point = PixCoord(px[0][1], px[0][0])
 
 		if not region.contains(point):
-			print Color.BOLD_YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
+			print Color.YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
 			init_coord = cutout_selection(mapcube)
 		else:
 			init_coord = mapcube[0].pixel_to_world(px[0][1], px[0][0])
@@ -212,13 +215,13 @@ if not only_fulldisk_images:
 						observer = get_earth(init_time),
 						frame = frames.Helioprojective)
 
-	print Color.BOLD_YELLOW + Color.UNDERLINE_YELLOW + "\nINITIAL LOCATION" + Color.RESET
+	print Color.UNDERLINE_YELLOW + "\nINITIAL LOCATION" + Color.RESET
 	print Color.YELLOW + "x: %s arcsec\ny: %s arcsec" % (init_loc.Tx, init_loc.Ty) + Color.RESET
 
 	"""
 	Calculates coordinates of future cutouts, based on the date from FITS file metadata.
 	"""
-	print Color.BOLD_YELLOW + "\nCALCULATING FUTURE ROTATIONAL COORDINATES..." + Color.RESET
+	print Color.YELLOW + "\nCALCULATING FUTURE ROTATIONAL COORDINATES..." + Color.RESET
 	locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
 
 """
@@ -244,7 +247,7 @@ if not only_fulldisk_images:
 Instantiates a SkyCoord containing the initial center of intensity location.
 """
 if not only_fulldisk_images:
-	print Color.BOLD_YELLOW + "\nCALCULATING INITIAL CENTER OF INTENSITY..."
+	print Color.YELLOW + "\nCALCULATING INITIAL CENTER OF INTENSITY..."
 	init_ci = calc_ci(
 					mapcube,
 					default_cutout_width,
@@ -258,7 +261,7 @@ print ""
 id = 0
 for i in tqdm(
 			range(len(mapcube_sorted[0])),
-			desc = Color.BOLD_YELLOW + "GENERATING CUTOUTS",
+			desc = Color.YELLOW + "GENERATING CUTOUTS",
 			bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, ' '{rate_fmt}]'):
 	
 	if not only_fulldisk_images:
@@ -312,13 +315,13 @@ for i in tqdm(
 			plt.ylabel("")
 			
 	if mapcube_sorted[j][i].exposure_time != 0:
-		plt.savefig("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+		plt.savefig("%s/resources/temp/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
 
 		if crop_cut_to_only_sun:
-			cut = lycon.load("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id))
+			cut = cv2.imread("%s/resources/temp/cut-%03d.jpg" % (main_dir, id))
 			scale = default_quality/300.0
 			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-			lycon.save("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), crop_data)
+			cv2.imwrite("%s/resources/temp/cut-%03d.jpg" % (main_dir, id), crop_data)
 
 		id += 1
 	

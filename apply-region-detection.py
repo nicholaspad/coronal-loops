@@ -1,8 +1,11 @@
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
 from colortext import Color
+import cv2
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import getpass
-import lycon
 import numpy as np
 import os
 import skimage.io
@@ -30,14 +33,14 @@ generate_detection_video = False
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
-print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
+print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
 os.system("mv %s/resources/region-detection-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
-print Color.BOLD_YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/model-generator/object_detection/inference_graphs/aia193old.pb" % main_dir
-label_path = os.path.join("%s/model-generator/object_detection/training" % main_dir, "object-detection.pbtxt")
+print Color.YELLOW + "\nSETTING PATHS..." + Color.RESET
+graph_path = "%s/models/aia193old.pb" % main_dir
+label_path = os.path.join("%s/model-generator/object_detection/data" % main_dir, "active_region.pbtxt")
 
-print Color.BOLD_YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
+print Color.YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
 n_classes = 1
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -47,14 +50,14 @@ with detection_graph.as_default():
 		od_graph_def.ParseFromString(serialized_graph)
 		tf.import_graph_def(od_graph_def, name = "")
 
-print Color.BOLD_YELLOW + "\nINDEXING DETECTION CATEGORIES..." + Color.RESET
+print Color.YELLOW + "\nINDEXING DETECTION CATEGORIES..." + Color.RESET
 label_map = label_map_util.load_labelmap(label_path)
 categories = label_map_util.convert_label_map_to_categories(label_map,
 															max_num_classes = n_classes,
 															use_display_name = True)
 category_index = label_map_util.create_category_index(categories)
 
-print Color.BOLD_YELLOW + "\nIMPORTING IMAGES..." + Color.RESET
+print Color.YELLOW + "\nIMPORTING IMAGES..." + Color.RESET
 number_of_images = len(next(os.walk("%s/resources/cutout-images" % main_dir))[2]) - 2
 names = os.listdir("/Users/%s/Desktop/lmsal/resources/cutout-images" % getpass.getuser())
 names.sort()
@@ -68,7 +71,7 @@ with detection_graph.as_default():
 	with tf.Session(graph = detection_graph) as sess:
 		for image_path in tqdm(
 							cutout_path,
-							desc = Color.BOLD_YELLOW + "DETECTING ACTIVE REGIONS",
+							desc = Color.YELLOW + "DETECTING ACTIVE REGIONS",
 							bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, ' '{rate_fmt}]'):
 		
 			image_np = skimage.io.imread(image_path)
@@ -94,9 +97,10 @@ with detection_graph.as_default():
 					line_thickness = box_border_thickness)
 
 			plt.figure()
-			lycon.save("%s/resources/region-detection-images/cut-detected-%03d.jpg" % (main_dir, i), image_np)
+			image_np = np.roll(image_np, 1, axis = -1)
+			cv2.imwrite("%s/resources/region-detection-images/cut-detected-%03d.jpg" % (main_dir, i), image_np)
 
 			plt.close()
 			i += 1
 
-print Color.BOLD_YELLOW + "\nDONE\n" + Color.RESET
+print Color.YELLOW + "\nDONE\n" + Color.RESET

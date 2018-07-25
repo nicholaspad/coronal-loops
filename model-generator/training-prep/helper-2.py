@@ -1,6 +1,9 @@
 from __future__ import division
 from __future__ import absolute_import
 
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
 import io
 import pandas as pd
 import tensorflow as tf

@@ -72,7 +72,7 @@ segments = {
 
 os.system("clear")
 
-print Color.BOLD_YELLOW + "INSTRUMENTS:"
+print Color.YELLOW + "INSTRUMENTS:"
 pp.pprint(possible_instruments)
 
 instrument = raw_input(Color.BOLD_RED + "\nINSTRUMENT:\n==> ").lower()
@@ -112,34 +112,34 @@ cadence = int(raw_input(Color.BOLD_RED + "\nCADENCE (SECONDS):\n==> "))
 ###
 
 if instrument == "aia":
-	print Color.BOLD_YELLOW + "\nAIA WAVELENGTHS (ANGSTROMS):"
+	print Color.YELLOW + "\nAIA WAVELENGTHS (ANGSTROMS):"
 	pp.pprint(wavelengths["aia"])
 	wavelength = int(raw_input(Color.BOLD_RED + "\nWAVELENGTH:\n==> "))
 
 elif instrument == "hmi":
-	print Color.BOLD_YELLOW + "\nDATA SERIES:"
+	print Color.YELLOW + "\nDATA SERIES:"
 	pp.pprint(wavelengths["hmi"])
 	seriesId = raw_input(Color.BOLD_RED + "\nSERIES ID: (ENTER NUMBER)\n==> ")
 	series = wavelengths["hmi"][seriesId].split(" ")[0]
 
 	if series == "hmi.M_720s":
-		print Color.BOLD_YELLOW + "\nDATA SEGMENT SET TO MAGNETOGRAM"
+		print Color.YELLOW + "\nDATA SEGMENT SET TO MAGNETOGRAM"
 		segment = "magnetogram"
 
 	elif series == "hmi.B_720s":
-		print Color.BOLD_YELLOW + "\nHMI.B_720s DATA SEGMENTS:"
+		print Color.YELLOW + "\nHMI.B_720s DATA SEGMENTS:"
 		pp.pprint(segments["hmi.B_720s"])
 		segmentId = raw_input(Color.BOLD_RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
 		segment = segments["hmi.B_720s"][segmentId]
 
 	elif series == "hmi.sharp_720s":
-		print Color.BOLD_YELLOW + "\nHMI.SHARP_720s DATA SEGMENTS:"
+		print Color.YELLOW + "\nHMI.SHARP_720s DATA SEGMENTS:"
 		pp.pprint(segments["hmi.sharp_720s"])
 		segmentId = raw_input(Color.BOLD_RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
 		segment = segments["hmi.sharp_720s"][segmentId]
 
 ###
-print Color.BOLD_YELLOW + "\nSEARCHING..." + Color.RESET
+print Color.YELLOW + "\nSEARCHING..." + Color.RESET
 
 if instrument == "aia":
 	if wavelength != 1600 and wavelength != 1700:
@@ -169,16 +169,16 @@ elif instrument == "hmi":
 			a.jsoc.Segment(segment),
 			a.Sample(cadence * u.second))
 
-print Color.BOLD_YELLOW + "\nSEARCH COMPLETE. DISPLAYING...\n" + Color.RESET
+print Color.YELLOW + "\nSEARCH COMPLETE. DISPLAYING...\n" + Color.RESET
 print results
 
 ###
 raw_input(Color.BOLD_RED + "PRESS ENTER TO DOWNLOAD\n==> ")
 
-print Color.BOLD_YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
+print Color.YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
 os.system("mv %s/resources/fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
 
-print Color.BOLD_YELLOW + "\nDOWNLOADING TO resources/fits-files...\n"
+print Color.YELLOW + "\nDOWNLOADING TO resources/fits-files...\n"
 
 Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = False)
 

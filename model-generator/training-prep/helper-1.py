@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
 from colortext import Color
 import glob
 import os
@@ -30,13 +33,13 @@ def main():
 		image_path = os.path.join(os.getcwd(), "images/{}".format(directory))
 		xml_df = xml_to_csv(image_path)
 		xml_df.to_csv("{}_labels.csv".format(directory), index=None)
-		print Color.BOLD_YELLOW + "Successfully generated {}_labels.csv".format(directory) + Color.RESET
+		print Color.YELLOW + "Successfully generated {}_labels.csv".format(directory) + Color.RESET
 	os.system("mv test_labels.csv data && mv train_labels.csv data")
 	os.system("python helper-2.py --csv_input=data/train_labels.csv  --output_path=data/train.record")
 	os.system("python helper-2.py --csv_input=data/test_labels.csv  --output_path=data/test.record")
 	os.system("rm data/test_labels.csv && rm data/train_labels.csv")
-	print Color.BOLD_YELLOW + "Successfully created train.record and test.record"
-	print Color.BOLD_YELLOW + "Copy contents of 'data' directory to 'object_detection/data' and begin training with train.py" + Color.RESET
-	os.system("rm images/test/*.jpg && rm images/test/*.xml && rm images/train/*.jpg && rm images/train/*.xml && rm images/*.xml")
+	print Color.YELLOW + "Successfully created train.record and test.record"
+	print Color.YELLOW + "Copy contents of 'data' directory to 'object_detection/data' and begin training with model_main.py" + Color.RESET
+	os.system("rm -rf images/test && rm -rf images/train && rm images/*.xml")
 
 main()
