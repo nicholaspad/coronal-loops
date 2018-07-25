@@ -7,3 +7,11 @@ TODO
 - line detection (very difficult, read the second research article)
 
 - train models for other AIA wavelengths
+
+Once AR recognition is working well (only have to be able to do the initial verification):
+- compare HMI and AIA data
+- http://docs.sunpy.org/en/v0.9.0/generated/gallery/Finding_Local_Peaks_in_Solar_Data.html
+- ^ use to generate 3D plots to analyze surface brightness of the active regions over time
+- maybe implement Gaussian blurs and analysis of smoothed pixels
+- edge-detection, line tracing of AR loops
+- try to apply edge enhancing algorithms http://docs.sunpy.org/en/v0.9.0/generated/gallery/loop_edge_enhance.html

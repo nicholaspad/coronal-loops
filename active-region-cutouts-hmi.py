@@ -29,8 +29,8 @@ ask_to_change_default_settings = False
 default_cutout_width = 600 * u.arcsec
 default_cutout_height = 600 * u.arcsec
 # ----------------------------------------------- #
-default_low_scale = 0
-default_high_scale = 40000
+default_low_scale = -120
+default_high_scale = 120
 default_quality = 600 #dpi
 # ----------------------------------------------- #
 only_fulldisk_images = True
@@ -46,6 +46,9 @@ crop_cut_to_only_sun = True
 """
 Action listener for region selection.
 """
+def mask_data(mapcube):
+	pass
+
 def line_select_callback(eclick, erelease):
 	global x1, x2, y1, y2, plt
 	x1, y1 = eclick.xdata * u.pixel, eclick.ydata * u.pixel
@@ -88,9 +91,6 @@ def cutout_selection(mapcube):
 									(x2 + x1)/2.0,
 									(y2 + y1)/2.0)
 
-"""
-Method that calculates the location of the center of intensity of the first cutout.
-"""
 def calc_ci(mapcube, xdim, ydim, locs, id):
 	c1 = SkyCoord(
 				locs[id].Tx - xdim/2.0,
@@ -122,30 +122,6 @@ def calc_ci(mapcube, xdim, ydim, locs, id):
  					observer = get_earth(mapcube[id].date),
  					frame = frames.Helioprojective)
 
-def calc_num_wav(mapcube):
-	count = 0
-	wav = []
-	for i in range(len(mapcube)):
-		if mapcube[i].wavelength.value not in wav:
-			wav.append(mapcube[i].wavelength.value)
-			count += 1
-	return count
-
-def sort_mapcube(mapcube, num_wav):
-	sorted = []
-	wavelengths = []
-
-	for i in range(num_wav):
-		sorted.append([])
-		wavelengths.append(mapcube[i].wavelength.value)
-
-	for i in range(len(mapcube)):
-		for j in range(len(wavelengths)):
-			if mapcube[i].wavelength.value == wavelengths[j]:
-				sorted[j].append(mapcube[i])
-
-	return sorted
-
 """
 Clears source folders and imports all FITS files into a datacube.
 """
@@ -156,12 +132,10 @@ print Color.BOLD_YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/disca
 os.system("mv %s/resources/cutout-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.BOLD_YELLOW + "\nIMPORTING DATA..." + Color.RESET
-mapcube = smap.Map("%s/resources/fits-files/*.image_lev1.fits" % main_dir, cube = True)
+mapcube = smap.Map("%s/resources/fits-files/*.fits" % main_dir, cube = True)
 
-num_wav = calc_num_wav(mapcube)
-
-print Color.BOLD_YELLOW + "\nSORTING DATA..." + Color.RESET
-mapcube_sorted = sort_mapcube(mapcube, num_wav)
+print Color.BOLD_YELLOW + "\nMASKING DATA..." + Color.RESET
+# mapcube = mask_data(mapcube_sorted)
 
 if len(mapcube) == 0:
 	print Color.BOLD_RED + "\nNO DATA. EXITING..." + Color.RESET
@@ -171,7 +145,7 @@ if len(mapcube) == 0:
 Identifies an Active Region, either automatically or specified by the user.
 """
 if not only_fulldisk_images:
-	if(raw_input(Color.BOLD_RED + "\nAUTOMATICALLY FIND BRIGHTEST REGION? [y/n]\n==> ") == "y"):
+	if(raw_input(Color.BOLD_RED + "\nAUTOMATICALLY FIND MOST INTENSE REGION? [y/n]\n==> ") == "y"):
 		print Color.BOLD_YELLOW + "\nIDENTIFYING..." + Color.RESET
 		px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
 
@@ -188,17 +162,17 @@ if not only_fulldisk_images:
 		point = PixCoord(px[0][1], px[0][0])
 
 		if not region.contains(point):
-			print Color.BOLD_YELLOW + "\nBRIGHTEST LOCATION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
+			print Color.BOLD_YELLOW + "\nMOST INTENSE REGION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
 			init_coord = cutout_selection(mapcube)
 		else:
 			init_coord = mapcube[0].pixel_to_world(px[0][1], px[0][0])
 
 		auto_sel = True
-		fig = plt.figure()
 		plt.style.use("dark_background")
 	else:
 		init_coord = cutout_selection(mapcube)
 		auto_sel = False
+		plt.style.use("dark_background")
 
 	"""
 	Creates a SkyCoord (Helioprojective coordinate) based on the location of the Active Region.
@@ -257,7 +231,7 @@ Uses matplotlib and astropy SkyCoord to generate cutoutouts, based on the coordi
 print ""
 id = 0
 for i in tqdm(
-			range(len(mapcube_sorted[0])),
+			range(len(mapcube)),
 			desc = Color.BOLD_YELLOW + "GENERATING CUTOUTS",
 			bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, ' '{rate_fmt}]'):
 	
@@ -272,58 +246,38 @@ for i in tqdm(
 					locs[i].Ty + default_cutout_height/2.0,
 					frame = mapcube[i].coordinate_frame)
 
-	"""
-	Set up skeleton matplotlib pyplot.
-	"""
-	fig = plt.figure()
+	ax = plt.subplot(111, projection = mapcube[i])
+	mapcube[i].plot()
+	ax.grid(False)
 
-	for j in range(num_wav):
-		wavelength_for_cmap = "sdoaia%s" % str(int(mapcube_sorted[j][i].measurement.value))
-		mapcube_sorted[j][i].plot_settings["cmap"] = cm.get_cmap(name = wavelength_for_cmap)
-		ax = plt.subplot(111, projection = mapcube_sorted[j][i])
-		mapcube_sorted[j][i].plot()
-		ax.grid(False)
-
-		if only_fulldisk_images:
-			mapcube_sorted[j][i].plot()
-			plt.style.use("dark_background")
-			plt.xlabel("Longitude [arcsec]")
-			plt.ylabel("Latitude [arcsec]")
-			plt.clim(default_low_scale, default_high_scale)
-		else:
-			cutout = mapcube_sorted[j][i].submap(c1, c2)
-			ax = plt.subplot(
-							1,
-							num_wav,
-							j + 1,
-							projection = cutout)
-			cutout.plot_settings["cmap"] = cm.get_cmap(name = wavelength_for_cmap)
-			cutout.plot()
-
-		if plot_center_of_intensity and not only_fulldisk_images:
-			loc = solar_rotate_coordinate(init_ci, mapcube_sorted[j][i].date)
-			ax.plot_coord(loc, "w3")
-
-		ax.grid(False)
-		plt.style.use('dark_background')
+	if only_fulldisk_images:
+		mapcube[i].plot(vmin = default_low_scale, vmax = default_high_scale)
+		plt.style.use("dark_background")
 		plt.xlabel("Longitude [arcsec]")
 		plt.ylabel("Latitude [arcsec]")
-		plt.clim(default_low_scale, default_high_scale)
+	else:
+		cutout = mapcube[i].submap(c1, c2)
+		ax = plt.subplot(111, projection = cutout)
+		cutout.plot()
 
-		if j != 0:
-			plt.ylabel("")
-			
-	# plt.tight_layout(h_pad = 3.5)
-	if mapcube_sorted[j][i].exposure_time != 0:
-		plt.savefig("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+	if plot_center_of_intensity and not only_fulldisk_images:
+		loc = solar_rotate_coordinate(init_ci, mapcube[i].date)
+		ax.plot_coord(loc, "w3")
 
-		if crop_cut_to_only_sun:
-			cut = lycon.load("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id))
-			scale = default_quality/300.0
-			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-			lycon.save("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), crop_data)
+	ax.grid(False)
+	plt.style.use("dark_background")
+	plt.xlabel("Longitude [arcsec]")
+	plt.ylabel("Latitude [arcsec]")
 
-		id += 1
+	plt.savefig("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+
+	if crop_cut_to_only_sun:
+		cut = lycon.load("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id))
+		scale = default_quality/300.0
+		crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
+		lycon.save("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), crop_data)
+
+	id += 1
 	
 	plt.close()
 

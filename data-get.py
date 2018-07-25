@@ -173,7 +173,7 @@ print Color.BOLD_YELLOW + "\nSEARCH COMPLETE. DISPLAYING...\n" + Color.RESET
 print results
 
 ###
-raw_input(Color.BOLD_RED + "\nPRESS ENTER TO DOWNLOAD\n==> ")
+raw_input(Color.BOLD_RED + "PRESS ENTER TO DOWNLOAD\n==> ")
 
 print Color.BOLD_YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
 os.system("mv %s/resources/fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
@@ -181,7 +181,9 @@ os.system("mv %s/resources/fits-files/*.fits %s/resources/discarded-files" % (ma
 print Color.BOLD_YELLOW + "\nDOWNLOADING TO resources/fits-files...\n"
 
 Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = False)
-os.system("rm %s/resources/fits-files/*.spikes.fits" % main_dir)
+
+if instrument == "aia":
+	os.system("rm %s/resources/fits-files/*.spikes.fits" % main_dir)
 
 print "\nDONE: FILES SAVED TO resources/fits-files" + Color.RESET
 
