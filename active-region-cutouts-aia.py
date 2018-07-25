@@ -159,7 +159,7 @@ print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-
 os.system("mv %s/resources/cutout-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.YELLOW + "\nIMPORTING DATA..." + Color.RESET
-mapcube = smap.Map("%s/resources/discarded-files/*.fits" % main_dir, cube = True)
+mapcube = smap.Map("%s/resources/fits-files/*.fits" % main_dir, cube = True)
 
 num_wav = calc_num_wav(mapcube)
 
@@ -315,13 +315,13 @@ for i in tqdm(
 			plt.ylabel("")
 			
 	if mapcube_sorted[j][i].exposure_time != 0:
-		plt.savefig("%s/resources/temp/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+		plt.savefig("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
 
 		if crop_cut_to_only_sun:
-			cut = cv2.imread("%s/resources/temp/cut-%03d.jpg" % (main_dir, id))
+			cut = cv2.imread("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id))
 			scale = default_quality/300.0
 			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-			cv2.imwrite("%s/resources/temp/cut-%03d.jpg" % (main_dir, id), crop_data)
+			cv2.imwrite("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), crop_data)
 
 		id += 1
 	
