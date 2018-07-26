@@ -278,7 +278,6 @@ for i in tqdm(
 		cut = cv2.imread("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id))
 		scale = default_quality/300.0
 		crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-		crop_data = np.roll(crop_data, 1, axis = -1)
 		cv2.imwrite("%s/resources/cutout-images/cut-%03d.jpg" % (main_dir, id), crop_data)
 
 	id += 1
