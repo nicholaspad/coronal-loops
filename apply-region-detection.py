@@ -1,6 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 
+import argparse
 from colortext import Color
 import cv2
 from matplotlib import pyplot as plt
@@ -9,7 +10,10 @@ import getpass
 import numpy as np
 import os
 import skimage.io
+import sys
 import tensorflow as tf
+
+sys.path.append("model-generator/old-training")
 
 from utils import label_map_util
 from utils import visualization_utils as vis_util
@@ -29,16 +33,27 @@ generate_detection_video = False
 
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--model")
+parser.add_argument("--instr")
+args = parser.parse_args()
+
+if args.model == None or args.instr == None:
+	print Color.YELLOW + "SPECIFY DETECTION MODEL AND INSTRUMENT WITH --model <filename> --instr <name>" + Color.RESET
+	sys.exit()
 
 os.system("clear")
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
 print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-os.system("mv %s/resources/region-detection-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
+if args.instr == "aia":
+	os.system("mv %s/resources/aia-detected-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
+elif args.instr == "hmi":
+	os.system("mv %s/resources/hmi-detected-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
 
 print Color.YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/models/aia193old.pb" % main_dir
-label_path = os.path.join("%s/model-generator/object_detection/data" % main_dir, "active_region.pbtxt")
+graph_path = "%s/models/%s" % (main_dir, args.model)
+label_path = "%s/model-generator/old-training/object_detection/training/object-detection.pbtxt" % main_dir
 
 print Color.YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
 n_classes = 1
@@ -58,11 +73,17 @@ categories = label_map_util.convert_label_map_to_categories(label_map,
 category_index = label_map_util.create_category_index(categories)
 
 print Color.YELLOW + "\nIMPORTING IMAGES..." + Color.RESET
-number_of_images = len(next(os.walk("%s/resources/cutout-images" % main_dir))[2]) - 2
-names = os.listdir("/Users/%s/Desktop/lmsal/resources/cutout-images" % getpass.getuser())
-names.sort()
+if args.instr == "aia":
+	number_of_images = len(next(os.walk("%s/resources/aia-images" % main_dir))[2]) - 2
+	names = os.listdir("%s/resources/aia-images" % main_dir)
+	names.sort()
+	cutout_path = [os.path.join("%s/resources/aia-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
+elif args.instr == "hmi":
+	number_of_images = len(next(os.walk("%s/resources/hmi-images" % main_dir))[2]) - 2
+	names = os.listdir("%s/resources/hmi-images" % main_dir)
+	names.sort()
+	cutout_path = [os.path.join("%s/resources/hmi-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
 
-cutout_path = [os.path.join("%s/resources/cutout-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
 image_size = (12, 9)
 
 print ""
@@ -97,8 +118,13 @@ with detection_graph.as_default():
 					line_thickness = box_border_thickness)
 
 			plt.figure()
-			image_np = np.roll(image_np, 1, axis = -1)
-			cv2.imwrite("%s/resources/region-detection-images/cut-detected-%03d.jpg" % (main_dir, i), image_np)
+
+			image_np = image_np[:,:,::-1]
+
+			if args.instr == "aia":
+				cv2.imwrite("%s/resources/aia-detected-images/detected-%03d.jpg" % (main_dir, i), image_np)
+			elif args.instr == "hmi":
+				cv2.imwrite("%s/resources/hmi-detected-images/detected-%03d.jpg" % (main_dir, i), image_np)
 
 			plt.close()
 			i += 1

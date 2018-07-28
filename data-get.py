@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
 from colortext import Color
 from datetime import datetime
 from sunpy.net import Fido, attrs as a
@@ -5,20 +8,6 @@ import astropy.units as u
 import getpass
 import os
 import pprint
-
-
-
-
-
-# # # # # # # # # # # OPTIONS # # # # # # # # # # #
-# ----------------------------------------------- #
-make_active_region_cutouts = False
-# ----------------------------------------------- #
-# # # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-
-
 
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 pp = pprint.PrettyPrinter()
@@ -33,7 +22,8 @@ wavelengths = {
 	"hmi" : {
 			"1" : "hmi.M_720s - LoS MAGNETOGRAM",
 			"2" : "hmi.B_720s - VECTOR MAGNETOGRAM",
-			"3" : "hmi.sharp_720s - SHARP"
+			"3" : "hmi.sharp_720s - SHARP",
+			"4" : "hmi.Ic_noLimbDark_720s - CONTINUUM"
 			}
 	}
 
@@ -138,7 +128,12 @@ elif instrument == "hmi":
 		segmentId = raw_input(Color.BOLD_RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
 		segment = segments["hmi.sharp_720s"][segmentId]
 
+	elif series == "hmi.Ic_noLimbDark_720s":
+		print Color.YELLOW + "\nDATA SEGMENT SET TO CONTINUUM"
+		segment = "continuum"
+
 ###
+
 print Color.YELLOW + "\nSEARCHING..." + Color.RESET
 
 if instrument == "aia":
@@ -173,21 +168,19 @@ print Color.YELLOW + "\nSEARCH COMPLETE. DISPLAYING...\n" + Color.RESET
 print results
 
 ###
+
 raw_input(Color.BOLD_RED + "PRESS ENTER TO DOWNLOAD\n==> ")
 
 print Color.YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-os.system("mv %s/resources/fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
-
-print Color.YELLOW + "\nDOWNLOADING TO resources/fits-files...\n"
-
-Fido.fetch(results, path = "%s/resources/fits-files" % main_dir, progress = False)
-
 if instrument == "aia":
-	os.system("rm %s/resources/fits-files/*.spikes.fits" % main_dir)
+	os.system("mv %s/resources/aia-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
+	print Color.YELLOW + "\nDOWNLOADING TO resources/aia-fits-files...\n"
+	Fido.fetch(results, path = "%s/resources/aia-fits-files" % main_dir, progress = False)
+	os.system("rm %s/resources/aia-fits-files/*.spikes.fits" % main_dir)
 
-print "\nDONE: FILES SAVED TO resources/fits-files" + Color.RESET
-
-###
-
-if make_active_region_cutouts:
-	os.system("python %s/active-region-cutouts.py" % main_dir)
+elif instrument == "hmi":
+	os.system("mv %s/resources/hmi-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
+	print Color.YELLOW + "\nDOWNLOADING TO resources/hmi-fits-files...\n"
+	Fido.fetch(results, path = "%s/resources/hmi-fits-files" % main_dir, progress = False)
+	
+print "\nDONE" + Color.RESET

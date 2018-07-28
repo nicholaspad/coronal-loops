@@ -16,11 +16,11 @@ parser.add_argument("--framerate")
 args = parser.parse_args()
 
 if args.framerate == None:
-	print Color.BOLD_YELLOW + "SPECIFY FRAMERATE WITH --framerate <value>" + Color.RESET
+	print Color.YELLOW + "SPECIFY FRAMERATE WITH --framerate <value>" + Color.RESET
 	sys.exit()
 
-print Color.BOLD_YELLOW + "\nGENERATING VIDEO...\n" + Color.RESET
+print Color.YELLOW + "\nGENERATING VIDEO...\n" + Color.RESET
 os.system("ffmpeg -y -f image2 -start_number 000 -framerate %s -i %s/resources/cutout-images/cut-%%3d.jpg -q:v 2 -vcodec mpeg4 -b:v 800k \"%s/videos/%s.mp4\"" % (args.framerate, main_dir, main_dir, video_name))
 
-print Color.BOLD_YELLOW + "\nDONE: VIDEO SAVED TO videos/" + Color.RESET
+print Color.YELLOW + "\nDONE: VIDEO SAVED TO videos/" + Color.RESET
 os.system("open \"%s/videos/%s.mp4\"" % (main_dir, video_name))
