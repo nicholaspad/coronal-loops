@@ -1,0 +1,14 @@
+NOTES
+
+- large spreadsheet that ID's and keeps track of active regions (size, location, time and date, total flux, total intensity, average intensity)
+
+process:
+logging of loop information over large dataset
+	- ensure that loop is within the solar disk (pixel bounds check)
+image subtraction to remove noise
+edge detection algorithm applied to loop locations
+use locations of the coronal loops to determine total magnetic flux
+use algorithm to automatically determine bounds of coronal loops
+calculate average electromagnetic intensity, record
+calculate total magnetic flux (HMI), record
+generate large graph and best fit trend

@@ -262,6 +262,8 @@ for i in tqdm(
 			cut = cv2.imread("%s/resources/hmi-images/cut-%03d.jpg" % (main_dir, id))
 			scale = default_quality/300.0
 			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
+			crop_data = np.flip(crop_data, 0)
+			crop_data = np.flip(crop_data, 1)
 			# crop_data[np.where((crop_data == [255, 255, 255]).all(axis = 2))] = [0, 0, 0]
 			# cv2.putText(crop_data, mapcube[i].date.strftime("%Y-%m-%d %H:%M:%S"), (10, 40), 0, 1.2, (255, 255, 255), 2, cv2.LINE_AA)
 			cv2.imwrite("%s/resources/hmi-images/cut-%03d.jpg" % (main_dir, id), crop_data)
