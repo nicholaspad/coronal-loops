@@ -147,11 +147,11 @@ elif args.instr == "aia":
 	mapcube = smap.Map("%s/resources/aia-fits-files/*.fits" % main_dir, cube = True)
 
 if len(mapcube) == 0:
-	print Color.BOLD_RED + "\nNO DATA. EXITING..." + Color.RESET
+	print Color.RED + "\nNO DATA. EXITING..." + Color.RESET
 	sys.exit()
 
 if not only_fulldisk_images:
-	if(raw_input(Color.BOLD_RED + "\nAUTOMATICALLY FIND MOST INTENSE REGION? [y/n]\n==> ") == "y"):
+	if(raw_input(Color.RED + "\nAUTOMATICALLY FIND MOST INTENSE REGION? [y/n]\n==> ") == "y"):
 		print Color.YELLOW + "\nIDENTIFYING..." + Color.RESET
 		px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
 
@@ -193,7 +193,7 @@ if not only_fulldisk_images:
 	locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
 
 if ask_to_change_default_settings:
-	if(raw_input(Color.BOLD_RED + "\nUSE DEFAULT SETTINGS (LOW SCALE 0, HIGH SCALE 40000)? [y/n]\n==> ") == "n"):
+	if(raw_input(Color.RED + "\nUSE DEFAULT SETTINGS (LOW SCALE 0, HIGH SCALE 40000)? [y/n]\n==> ") == "n"):
 		default_low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
 		default_high_scale = int(raw_input("\nENTER HIGH SCALE VALUE:\n==> "))
 

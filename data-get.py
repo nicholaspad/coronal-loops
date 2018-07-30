@@ -65,12 +65,12 @@ os.system("clear")
 print Color.YELLOW + "INSTRUMENTS:"
 pp.pprint(possible_instruments)
 
-instrument = raw_input(Color.BOLD_RED + "\nINSTRUMENT:\n==> ").lower()
+instrument = raw_input(Color.RED + "\nINSTRUMENT:\n==> ").lower()
 
 ###
 
-temp_date = raw_input(Color.BOLD_RED + "\nSTART DATE: (FORMAT YYYY/MM/DD)\n==> ")
-temp_time = raw_input(Color.BOLD_RED + "\nSTART TIME: (FORMAT HH:MM:SS)\n==> ")
+temp_date = raw_input(Color.RED + "\nSTART DATE: (FORMAT YYYY/MM/DD)\n==> ")
+temp_time = raw_input(Color.RED + "\nSTART TIME: (FORMAT HH:MM:SS)\n==> ")
 
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
@@ -83,8 +83,8 @@ start_time = datetime(year, month, day, hour, minute, second)
 
 ###
 
-temp_date = raw_input(Color.BOLD_RED + "\nEND DATE: (FORMAT YYYY/MM/DD)\n==> ")
-temp_time = raw_input(Color.BOLD_RED + "\nEND TIME: (FORMAT HH:MM:SS)\n==> ")
+temp_date = raw_input(Color.RED + "\nEND DATE: (FORMAT YYYY/MM/DD)\n==> ")
+temp_time = raw_input(Color.RED + "\nEND TIME: (FORMAT HH:MM:SS)\n==> ")
 
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
@@ -97,19 +97,19 @@ end_time = datetime(year, month, day, hour, minute, second)
 
 ###
 
-cadence = int(raw_input(Color.BOLD_RED + "\nCADENCE (SECONDS):\n==> "))
+cadence = int(raw_input(Color.RED + "\nCADENCE (SECONDS):\n==> "))
 
 ###
 
 if instrument == "aia":
 	print Color.YELLOW + "\nAIA WAVELENGTHS (ANGSTROMS):"
 	pp.pprint(wavelengths["aia"])
-	wavelength = int(raw_input(Color.BOLD_RED + "\nWAVELENGTH:\n==> "))
+	wavelength = int(raw_input(Color.RED + "\nWAVELENGTH:\n==> "))
 
 elif instrument == "hmi":
 	print Color.YELLOW + "\nDATA SERIES:"
 	pp.pprint(wavelengths["hmi"])
-	seriesId = raw_input(Color.BOLD_RED + "\nSERIES ID: (ENTER NUMBER)\n==> ")
+	seriesId = raw_input(Color.RED + "\nSERIES ID: (ENTER NUMBER)\n==> ")
 	series = wavelengths["hmi"][seriesId].split(" ")[0]
 
 	if series == "hmi.M_720s":
@@ -119,13 +119,13 @@ elif instrument == "hmi":
 	elif series == "hmi.B_720s":
 		print Color.YELLOW + "\nHMI.B_720s DATA SEGMENTS:"
 		pp.pprint(segments["hmi.B_720s"])
-		segmentId = raw_input(Color.BOLD_RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
+		segmentId = raw_input(Color.RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
 		segment = segments["hmi.B_720s"][segmentId]
 
 	elif series == "hmi.sharp_720s":
 		print Color.YELLOW + "\nHMI.SHARP_720s DATA SEGMENTS:"
 		pp.pprint(segments["hmi.sharp_720s"])
-		segmentId = raw_input(Color.BOLD_RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
+		segmentId = raw_input(Color.RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
 		segment = segments["hmi.sharp_720s"][segmentId]
 
 	elif series == "hmi.Ic_noLimbDark_720s":
@@ -169,7 +169,7 @@ print results
 
 ###
 
-raw_input(Color.BOLD_RED + "PRESS ENTER TO DOWNLOAD\n==> ")
+raw_input(Color.RED + "PRESS ENTER TO DOWNLOAD\n==> ")
 
 print Color.YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
 if instrument == "aia":
