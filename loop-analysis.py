@@ -3,6 +3,7 @@ warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 
 from astropy.coordinates import SkyCoord
 from colortext import Color
+from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
 from scipy import ndimage
 from skimage import feature
@@ -44,9 +45,6 @@ for i in range(len(MAPCUBE["AIA"])):
 	hp_maxima = MAPCUBE["AIA"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
 												 xy_maxima[:, 0] * u.pixel)
 
-	subtracted_data = (raw_data > 0) * raw_data
-	subtracted_map = smap.Map(subtracted_data, MAPCUBE["AIA"][i].meta)
-
 	# edge_data = edge_detected_map.data
 	# binary_data = feature.canny(edge_data, sigma = 3)
 	# plt.imshow(binary_data, cmap = "gray")
@@ -54,7 +52,6 @@ for i in range(len(MAPCUBE["AIA"])):
 
 	for j in range(len(hp_maxima)):
 		RECORDER.write_ID(LOOP_ID)
-		LOOP_ID += 1
 
 		when = MAPCUBE["AIA"][i].date
 		RECORDER.write_datetime(when)
@@ -65,46 +62,64 @@ for i in range(len(MAPCUBE["AIA"])):
 		where_hpc = hp_maxima[j]
 		RECORDER.write_hpcwhere(where_hpc)
 
-		# algorithm to determine bounds by successively zooming out
-		# record and utilize dimensions of bounding box
+		HALF_DIM_PXL = 1
+		MIN_AVERAGE = 500
 
-		HALF_DIM = 1
+		while np.average(raw_data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
+						 xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]) > MIN_AVERAGE:
+			HALF_DIM_PXL += 5
 
-		while np.average(raw_data[xy_maxima[j][0] - HALF_DIM : xy_maxima[j][0] + HALF_DIM,
-						 xy_maxima[j][1] - HALF_DIM: xy_maxima[j][1] + HALF_DIM]) > 540.0:
-			HALF_DIM += 5
+		RECORDER.write_xysize(HALF_DIM_PXL * 2)
 
-		RECORDER.write_xysize(HALF_DIM * 2)
+		HALF_DIM_HPC = MAPCUBE["AIA"][i].scale[0].value * HALF_DIM_PXL
 
-		bottom_left = SkyCoord(hp_maxima[j].Tx - HALF_DIM * u.arcsec,
-							   hp_maxima[j].Ty - HALF_DIM * u.arcsec,
+		bottom_left = SkyCoord(hp_maxima[j].Tx - HALF_DIM_HPC * u.arcsec,
+							   hp_maxima[j].Ty - HALF_DIM_HPC * u.arcsec,
 							   frame = MAPCUBE["AIA"][i].coordinate_frame)
 
-		top_right = SkyCoord(hp_maxima[j].Tx + HALF_DIM * u.arcsec,
-							 hp_maxima[j].Ty + HALF_DIM * u.arcsec,
+		top_right = SkyCoord(hp_maxima[j].Tx + HALF_DIM_HPC * u.arcsec,
+							 hp_maxima[j].Ty + HALF_DIM_HPC * u.arcsec,
 							 frame = MAPCUBE["AIA"][i].coordinate_frame)
 
 		RECORDER.write_hpcsize(bottom_left, top_right)
 
-		cut_disk = subtracted_map.submap(bottom_left, top_right)
+		cut_disk = MAPCUBE["AIA"][i].submap(bottom_left, top_right)
+		np.save("%s/resources/region-data/raw-images/%05d" % (MAIN_DIR, LOOP_ID), cut_disk.data)
 
-		edge_x = ndimage.sobel(cut_disk.data, 
-							   axis = 0,
-							   mode = "constant")
+		THRESHOLD = 800
 
-		edge_y = ndimage.sobel(cut_disk.data,
-							   axis = 1,
-							   mode = "constant")
+		threshold_data = cut_disk.data[np.where(cut_disk.data > THRESHOLD)]
 
-		loop_enhanced_data = np.hypot(edge_x, edge_y)
-		loop_enhanced_map = smap.Map(loop_enhanced_data, cut_disk.meta)
+		average_intensity = np.average(threshold_data)
+		median_intensity = np.median(threshold_data)
+		maximum_intensity = np.max(threshold_data)
 
-		
+		RECORDER.write_inten(average_intensity, median_intensity, maximum_intensity)
+
+		binary_image = np.logical_and(cut_disk.data > THRESHOLD, cut_disk.data < np.inf)
+		np.save("%s/resources/region-data/binary-images/%05d" % (MAIN_DIR, LOOP_ID), binary_image)
+
+		threshold_image = cut_disk.data * binary_image
+		np.save("%s/resources/region-data/threshold-images/%05d" % (MAIN_DIR, LOOP_ID), threshold_image)
+
+		# edge_x = ndimage.sobel(cut_disk.data, 
+		# 					   axis = 0,
+		# 					   mode = "constant")
+
+		# edge_y = ndimage.sobel(cut_disk.data,
+		# 					   axis = 1,
+		# 					   mode = "constant")
+
+		# loop_enhanced_data = np.hypot(edge_x, edge_y)
+		# loop_enhanced_map = smap.Map(loop_enhanced_data, cut_disk.meta)
+
+		# np.save("data", cut_disk.data)
 
 		# look at corresponding hmi data with this bounding box and
 		# record the total strength of the magnetic flux
 
 		RECORDER.new_line()
+		LOOP_ID += 1
 
 # extract the xy and hp coordinates of the loops and log them as arrays for later plotting
 
