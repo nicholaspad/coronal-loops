@@ -6,43 +6,75 @@ from colortext import Color
 from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
 from scipy import ndimage
+from scipy.spatial import distance
 from skimage import feature
 from skimage.feature import peak_local_max as plm
 from tqdm import tqdm
+import argparse
 import astropy.units as u
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import sunpy.map as smap
 import sys
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-getdata", action = "store_true")
+args = parser.parse_args()
+
 MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+os.system("rm resources/region-data/raw-images/*.npy")
+os.system("rm resources/region-data/binary-images/*.npy")
+os.system("rm resources/region-data/threshold-images/*.npy")
 
-print Color.YELLOW + "IMPORTING DATA..." + Color.RESET
+FIRST_DAY = "2010-05-15"
+LAST_DAY = "2018-05-15"
+DAY_CADENCE = 12
+LOOP_ID = 0
 
-MAPCUBE_AIA = smap.Map("%s/resources/aia-fits-files/*.fits" % MAIN_DIR)
+if args.getdata:
+	print Color.YELLOW + "Calling data-get.py"
+	os.system("python data-get.py -sday %s -stime 00:00:00 -eday %s -etime 00:00:00 -cadence %d" % (FIRST_DAY, LAST_DAY, DAY_CADENCE))
 
-MAPCUBE_HMI = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR)
+print Color.YELLOW + "Importing AIA94 data" + Color.RESET
+MAPCUBE_AIA_94 = smap.Map("%s/resources/aia-fits-files/*.94.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA131 data" + Color.RESET
+MAPCUBE_AIA_131 = smap.Map("%s/resources/aia-fits-files/*.131.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA171 data" + Color.RESET
+MAPCUBE_AIA_171 = smap.Map("%s/resources/aia-fits-files/*.171.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA193 data" + Color.RESET
+MAPCUBE_AIA_193 = smap.Map("%s/resources/aia-fits-files/*.193.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA211 data" + Color.RESET
+MAPCUBE_AIA_211 = smap.Map("%s/resources/aia-fits-files/*.211.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA304 data" + Color.RESET
+MAPCUBE_AIA_304 = smap.Map("%s/resources/aia-fits-files/*.304.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing AIA335 data" + Color.RESET
+MAPCUBE_AIA_335 = smap.Map("%s/resources/aia-fits-files/*.335.image_lev1.fits" % MAIN_DIR, cube = True)
+print Color.YELLOW + "Importing HMI magnetogram data" + Color.RESET
+MAPCUBE_HMI = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR, cube = True)
 
 MAPCUBE = {
-	"AIA" : MAPCUBE_AIA,
+	"AIA94" : MAPCUBE_AIA_94,
+	"AIA131" : MAPCUBE_AIA_131,
+	"AIA171" : MAPCUBE_AIA_171,
+	"AIA193" : MAPCUBE_AIA_193,
+	"AIA211" : MAPCUBE_AIA_211,
+	"AIA304" : MAPCUBE_AIA_304,
+	"AIA335" : MAPCUBE_AIA_335,
 	"HMI" : MAPCUBE_HMI
 }
 
-FIRST_DAY = "2010-05-13"
-DAY_INCREMENT = 1
-LOOP_ID = 0
-
 RECORDER = Recorder("database.csv")
 
-for i in range(len(MAPCUBE["AIA"])):
-	raw_data = MAPCUBE["AIA"][i].data
+for i in range(len(MAPCUBE["AIA193"])):
+	raw_data = MAPCUBE["AIA193"][i].data
 
 	xy_maxima = plm(raw_data,
-					min_distance = 100,
-					threshold_rel = 0.6)
+					min_distance = 120,
+					threshold_rel = 0.7)
 
-	hp_maxima = MAPCUBE["AIA"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
+	hp_maxima = MAPCUBE["AIA193"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
 												 xy_maxima[:, 0] * u.pixel)
 
 	# edge_data = edge_detected_map.data
@@ -52,12 +84,21 @@ for i in range(len(MAPCUBE["AIA"])):
 
 	for j in range(len(hp_maxima)):
 		RECORDER.write_ID(LOOP_ID)
+		RECORDER.write_gen_info("AIA193", mapcube["AIA193"][i].wavelength)
 
-		when = MAPCUBE["AIA"][i].date
+		when = MAPCUBE["AIA193"][i].date
 		RECORDER.write_datetime(when)
 
 		where_xy = xy_maxima[j]
 		RECORDER.write_xywhere(where_xy)
+
+		center =  np.array([MAPCUBE["AIA193"][i].reference_pixel[0].value,
+							MAPCUBE["AIA193"][i].reference_pixel[1].value])
+
+		if distance.euclidean(center, where_xy) > 1600.0:
+			RECORDER.error_line()
+			LOOP_ID += 1
+			continue
 
 		where_hpc = hp_maxima[j]
 		RECORDER.write_hpcwhere(where_hpc)
@@ -71,53 +112,73 @@ for i in range(len(MAPCUBE["AIA"])):
 
 		RECORDER.write_xysize(HALF_DIM_PXL * 2)
 
-		HALF_DIM_HPC = MAPCUBE["AIA"][i].scale[0].value * HALF_DIM_PXL
+		HALF_DIM_HPC = MAPCUBE["AIA193"][i].scale[0].value * HALF_DIM_PXL
 
 		bottom_left = SkyCoord(hp_maxima[j].Tx - HALF_DIM_HPC * u.arcsec,
 							   hp_maxima[j].Ty - HALF_DIM_HPC * u.arcsec,
-							   frame = MAPCUBE["AIA"][i].coordinate_frame)
+							   frame = MAPCUBE["AIA193"][i].coordinate_frame)
 
 		top_right = SkyCoord(hp_maxima[j].Tx + HALF_DIM_HPC * u.arcsec,
 							 hp_maxima[j].Ty + HALF_DIM_HPC * u.arcsec,
-							 frame = MAPCUBE["AIA"][i].coordinate_frame)
+							 frame = MAPCUBE["AIA193"][i].coordinate_frame)
 
 		RECORDER.write_hpcsize(bottom_left, top_right)
 
-		cut_disk = MAPCUBE["AIA"][i].submap(bottom_left, top_right)
-		np.save("%s/resources/region-data/raw-images/%05d" % (MAIN_DIR, LOOP_ID), cut_disk.data)
+		cut_disk = MAPCUBE["AIA193"][i].submap(bottom_left, top_right)
+		cd_data = cut_disk.data
 
-		THRESHOLD = 800
+		LOW_THRESHOLD = 800
+		HIGH_THRESHOLD = np.inf
 
-		threshold_data = cut_disk.data[np.where(cut_disk.data > THRESHOLD)]
+		threshold_data = cd_data[np.where(cd_data > LOW_THRESHOLD)]
 
 		average_intensity = np.average(threshold_data)
 		median_intensity = np.median(threshold_data)
 		maximum_intensity = np.max(threshold_data)
 
-		RECORDER.write_inten(average_intensity, median_intensity, maximum_intensity)
+		RECORDER.write_inten(LOW_THRESHOLD,
+							 HIGH_THRESHOLD,
+							 average_intensity,
+							 median_intensity,
+							 maximum_intensity)
 
-		binary_image = np.logical_and(cut_disk.data > THRESHOLD, cut_disk.data < np.inf)
-		np.save("%s/resources/region-data/binary-images/%05d" % (MAIN_DIR, LOOP_ID), binary_image)
+		binary_image_data = np.logical_and(cd_data > LOW_THRESHOLD,
+										   cd_data < HIGH_THRESHOLD)
 
-		threshold_image = cut_disk.data * binary_image
-		np.save("%s/resources/region-data/threshold-images/%05d" % (MAIN_DIR, LOOP_ID), threshold_image)
+		threshold_image_data = cd_data * binary_image_data
 
-		# edge_x = ndimage.sobel(cut_disk.data, 
+		# edge_x = ndimage.sobel(cd_data, 
 		# 					   axis = 0,
 		# 					   mode = "constant")
 
-		# edge_y = ndimage.sobel(cut_disk.data,
+		# edge_y = ndimage.sobel(cd_data,
 		# 					   axis = 1,
 		# 					   mode = "constant")
 
 		# loop_enhanced_data = np.hypot(edge_x, edge_y)
 		# loop_enhanced_map = smap.Map(loop_enhanced_data, cut_disk.meta)
 
-		# np.save("data", cut_disk.data)
+		# np.save("data", cd_data)
 
 		# look at corresponding hmi data with this bounding box and
 		# record the total strength of the magnetic flux
 
+		RECORDER.write_image(0,
+							 LOOP_ID,
+							 cd_data,
+							 mapcube["AIA193"].instrument,
+							 mapcube["AIA193"][i].wavelength)
+		RECORDER.write_image(1,
+							 LOOP_ID,
+							 binary_image_data,
+							 mapcube["AIA193"].instrument,
+							 mapcube["AIA193"][i].wavelength)
+		RECORDER.write_image(2,
+							 LOOP_ID,
+							 threshold_image_data,
+							 mapcube["AIA193"].instrument,
+							 mapcube["AIA193"][i].wavelength)
+		
 		RECORDER.new_line()
 		LOOP_ID += 1
 

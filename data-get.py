@@ -4,15 +4,65 @@ warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 from colortext import Color
 from datetime import datetime
 from sunpy.net import Fido, attrs as a
+import argparse
 import astropy.units as u
 import getpass
 import os
 import pprint
+import sys
 
 main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 pp = pprint.PrettyPrinter()
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-sday")
+parser.add_argument("-stime")
+parser.add_argument("-eday")
+parser.add_argument("-etime")
+parser.add_argument("-cadence")
+args = parser.parse_args()
+
 ###
+
+if args.sday != None:
+	print Color.YELLOW + "Searching for AIA data" + Color.RESET
+	results_aia = Fido.search(a.jsoc.Time("%sT%s" % (args.sday, args.stime),
+									  "%sT%s" % (args.eday, args.etime)),
+						  a.jsoc.Notify("padman@lmsal.com"),
+						  a.jsoc.Series("aia.lev1_euv_12s"),
+						  a.jsoc.Wavelength(94 * u.angstrom) | a.jsoc.Wavelength(131 * u.angstrom) | a.jsoc.Wavelength(171 * u.angstrom) | a.jsoc.Wavelength(193 * u.angstrom) | a.jsoc.Wavelength(211 * u.angstrom) | a.jsoc.Wavelength(304 * u.angstrom) | a.jsoc.Wavelength(335 * u.angstrom),
+						  a.Sample(float(args.cadence) * u.day))
+
+	print Color.YELLOW + "Searching for HMI data" + Color.RESET
+	results_hmi = Fido.search(a.jsoc.Time("%sT%s" % (args.sday, args.stime),
+									  "%sT%s" % (args.eday, args.etime)),
+						  a.jsoc.Notify("padman@lmsal.com"),
+						  a.jsoc.Series("hmi.M_720s"),
+						  a.jsoc.Segment("magnetogram"),
+						  a.Sample(float(args.cadence) * u.day))
+
+	print Color.YELLOW + "Search complete\n" + Color.RESET
+
+	raw_input(Color.RED + "Press [enter] to view AIA data\n==> " + Color.RESET)
+	print results_aia
+
+	raw_input(Color.RED + "Press [enter] to view HMI data\n==> " + Color.RESET)
+	print results_hmi
+
+	raw_input(Color.RED + "Press [enter] to download\n==> ")
+	print ""
+
+	os.system("mv %s/resources/aia-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
+	print Color.YELLOW + "\nDownloading AIA files to resources/aia-fits-files...\n"
+	Fido.fetch(results_aia, path = "%s/resources/aia-fits-files" % main_dir, progress = False)
+	os.system("rm %s/resources/aia-fits-files/*.spikes.fits" % main_dir)
+
+	os.system("mv %s/resources/hmi-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
+	print Color.YELLOW + "\nDownloading HMI files to resources/hmi-fits-files...\n"
+	Fido.fetch(results_hmi, path = "%s/resources/hmi-fits-files" % main_dir, progress = False)
+
+	print "\nDone. Continuing...\n" + Color.RESET
+	sys.exit()
 
 possible_instruments = ["AIA", "HMI"]
 
