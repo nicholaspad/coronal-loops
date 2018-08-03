@@ -8,6 +8,7 @@ from scipy.spatial import distance
 from skimage.feature import peak_local_max as plm
 import astropy.units as u
 import getpass
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sunpy.map as smap
@@ -47,7 +48,7 @@ MAPCUBE_AIA_304 = smap.Map("%s/resources/aia-fits-files/*.304.image_lev1.fits" %
 RECORDER.info_text("Importing AIA335 data")
 MAPCUBE_AIA_335 = smap.Map("%s/resources/aia-fits-files/*.335.image_lev1.fits" % MAIN_DIR, cube = True)
 
-RECORDER.info_text("Importing HMI magnetogram data")
+RECORDER.info_text("Importing HMI magnetogram data\n")
 MAPCUBE_HMI = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR, cube = True)
 
 MAPCUBE = {
@@ -144,7 +145,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 							   xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]
 
 			########################
-			LOW_THRESHOLD_193 = 3000
+			LOW_THRESHOLD_193 = 3200
 			########################
 
 			cd_data_193 = MAPCUBE["AIA193"][i].data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
@@ -180,6 +181,8 @@ for i in range(len(MAPCUBE["AIA193"])):
 											   cd_data < HIGH_THRESHOLD)
 
 			threshold_image_data = cd_data * binary_image_data
+
+			debug()
 
 			# edge_x = ndimage.sobel(cd_data, 
 			# 					   axis = 0,
@@ -264,5 +267,6 @@ for i in range(len(MAPCUBE["AIA193"])):
 			LOOP_ID += 1
 			NUM_LOOPS += 1
 
-RECORDER.info_text("Done:\t%s loops analyzed\n\t%s loops off-disk\n\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
+RECORDER.info_text("Done:\t%s loops analyzed\n\t\t%s loops off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
 RECORDER.new_line()
+RECORDER.display_end_time("loop-analysis")

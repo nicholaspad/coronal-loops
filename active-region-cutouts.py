@@ -325,3 +325,4 @@ for i in tqdm(
 
 PRINTER.info_text("Done")
 PRINTER.line()
+RECORDER.display_end_time("active-region-cutouts")

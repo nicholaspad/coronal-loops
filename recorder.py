@@ -160,7 +160,7 @@ class Recorder(object):
 		self.new_line()
 
 	def rest(self):
-		time.sleep(0.05)
+		time.sleep(0.15)
 
 	def info_text(self, text):
 		print "\n" + self.INFO + text
@@ -173,4 +173,8 @@ class Recorder(object):
 
 	def display_start_time(self, name):
 		print "\n" + self.SYS + "Process %s started at %s" % (name, datetime.now().replace(microsecond = 0))
+		print self.NEW_LINE
+
+	def display_end_time(self, name):
+		print "\n" + self.SYS + "Process %s ended at %s" % (name, datetime.now().replace(microsecond = 0))
 		print self.NEW_LINE

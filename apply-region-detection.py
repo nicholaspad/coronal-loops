@@ -157,3 +157,4 @@ with GRAPH.as_default():
 
 PRINTER.info_text("Done")
 PRINTER.line()
+RECORDER.display_end_time("apply-region-detection")

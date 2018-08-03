@@ -172,3 +172,4 @@ elif INSTRUMENT == "hmi":
 
 PRINTER.info_text("Done: %d files downloaded" % len(results[0]))
 PRINTER.line()
+RECORDER.display_end_time("data-get")
