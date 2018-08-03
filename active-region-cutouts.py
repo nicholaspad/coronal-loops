@@ -33,8 +33,6 @@ ask_to_change_default_settings = False
 default_cutout_width = 600 * u.arcsec
 default_cutout_height = 600 * u.arcsec
 # ----------------------------------------------- #
-default_low_scale = -120
-default_high_scale = 120
 default_quality = 600 #dpi
 # ----------------------------------------------- #
 only_fulldisk_images = True
@@ -236,7 +234,7 @@ for i in tqdm(
 
 	if only_fulldisk_images:
 		if args.instr == "hmi":
-			mapcube[i].plot(vmin = default_low_scale, vmax = default_high_scale)
+			mapcube[i].plot(vmin = -120, vmax = 120)
 		elif args.instr == "aia":
 			mapcube[i].plot()
 			plt.clim(0, 40000)
