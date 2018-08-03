@@ -1,25 +1,26 @@
 import warnings
-warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
-import argparse
 from astropy.coordinates import SkyCoord
 from colortext import Color
-import cv2
 from matplotlib.widgets import RectangleSelector
+from recorder import Recorder
 from regions import PixCoord, CirclePixelRegion
 from scipy import ndimage
 from sunpy.coordinates import frames
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.physics.differential_rotation import solar_rotate_coordinate
 from tqdm import tqdm
+import argparse
 import astropy.units as u
+import cv2
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import sys
 import sunpy.cm as cm
 import sunpy.map as smap
+import sys
 
 
 
@@ -30,8 +31,8 @@ import sunpy.map as smap
 ask_to_change_default_settings = False
 # ----------------------------------------------- #
 # applicable if only_fulldisk_images is False
-default_cutout_width = 600 * u.arcsec
-default_cutout_height = 600 * u.arcsec
+WIDTH = 600 * u.arcsec
+HEIGHT = 600 * u.arcsec
 # ----------------------------------------------- #
 default_quality = 600 #dpi
 # ----------------------------------------------- #
@@ -45,239 +46,282 @@ crop_cut_to_only_sun = True
 
 
 
+MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+PRINTER = Recorder()
+PRINTER.display_start_time("active-region-cutouts")
 parser = argparse.ArgumentParser()
 parser.add_argument("--instr")
 args = parser.parse_args()
 
+#########################
+
 if args.instr == None:
-	print Color.YELLOW + "SPECIFY INSTRUMENT WITH --instr <name>" + Color.RESET
+	PRINTER.info_text("Specify instrument with '--instr <name>'")
+	PRINTER.line()
 	sys.exit()
 
-args.instr = args.instr.lower()
+INSTRUMENT = args.instr.lower()
 
-def line_select_callback(eclick, erelease):
+#########################
+
+def box_selection(eclick, erelease):
 	global x1, x2, y1, y2, plt
 	x1, y1 = eclick.xdata * u.pixel, eclick.ydata * u.pixel
 	x2, y2 = erelease.xdata * u.pixel, erelease.ydata * u.pixel
 	plt.close()
 
-def cutout_selection(mapcube):
-	print Color.YELLOW + "\nOPENING PLOT..."
+def cutout_selection(MAPCUBE):
+	PRINTER.info_text("Opening plot")
 
-	ax = plt.subplot(111, projection = smap.Map(mapcube[0]))
-	mapcube[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(mapcube[0].measurement.value)))
-	mapcube[0].plot()
+	ax = plt.subplot(111, projection = smap.Map(MAPCUBE[0]))
+	MAPCUBE[0].plot_settings["cmap"] = cm.get_cmap(name = "sdoaia%s" % str(int(MAPCUBE[0].measurement.value)))
+	MAPCUBE[0].plot()
 	ax.grid(False)
 
-	plt.title("DRAG A SELECTION CENTERED SOMEWHERE ON THE SUN")
+	plt.title("Drag a selection")
 	plt.xlabel("Longitude [arcsec]")
 	plt.ylabel("Latitude [arcsec]")
 
-	selector = RectangleSelector(
-								ax,
-								line_select_callback,
-								drawtype = 'box',
-								useblit = True,
-								button = [1, 3],
-								minspanx = 5,
-								minspany = 5,
-								spancoords = 'pixels',
-								interactive = True)
+	selector = RectangleSelector(ax,
+								 box_selection,
+								 drawtype = "box",
+								 useblit = True,
+								 button = [1, 3],
+								 minspanx = 5,
+								 minspany = 5,
+								 spancoords = "pixels",
+								 interactive = True)
 
-	plt.connect('key_press_event', selector)
+	plt.connect("key_press_event", selector)
 	plt.clim(0, 40000)
-	plt.style.use('dark_background')
+	plt.style.use("dark_background")
 	plt.show()
+
 	os.system("open -a Terminal")
 
-	return mapcube[0].pixel_to_world(
-									(x2 + x1)/2.0,
-									(y2 + y1)/2.0)
+	return MAPCUBE[0].pixel_to_world((x2 + x1)/2.0,
+									 (y2 + y1)/2.0)
 
-def calc_ci(mapcube, xdim, ydim, locs, id):
-	c1 = SkyCoord(
-				locs[id].Tx - xdim/2.0,
-				locs[id].Ty - ydim/2.0,
-				frame = mapcube[id].coordinate_frame)
+def calc_ci(MAPCUBE, xdim, ydim, LOCS, id):
+	c1 = SkyCoord(LOCS[id].Tx - xdim/2.0,
+				  LOCS[id].Ty - ydim/2.0,
+				  frame = MAPCUBE[id].coordinate_frame)
 
-	c2 = SkyCoord(
-				locs[id].Tx + xdim/2.0,
-				locs[id].Ty + ydim/2.0,
-				frame = mapcube[id].coordinate_frame)
+	c2 = SkyCoord(LOCS[id].Tx + xdim/2.0,
+				  LOCS[id].Ty + ydim/2.0,
+				  frame = MAPCUBE[id].coordinate_frame)
 
-	cutout = mapcube[id].submap(c1, c2)
-	data = cutout.data
-	threshold = np.amax(data) - 500
+	CUTOUT = MAPCUBE[id].submap(c1, c2)
+	DATA = CUTOUT.data
+	THRESHOLD = np.amax(DATA) - 500
 
-	for i in range(len(data)):
-		for j in range(len(data[0])):
-			if data[i][j] < threshold:
-				data[i][j] = 0
+	for i in range(len(DATA)):
 
-	ci = list(ndimage.measurements.center_of_mass(data))
+		for j in range(len(DATA[0])):
+
+			if DATA[i][j] < THRESHOLD:
+				DATA[i][j] = 0
+
+	ci = list(ndimage.measurements.center_of_mass(DATA))
 	ci = [int(ci[1] + 0.5) * u.pixel, int(ci[0] + 0.5) * u.pixel]
 
- 	coord = cutout.pixel_to_world(ci[0], ci[1])
+ 	COORD = CUTOUT.pixel_to_world(ci[0], ci[1])
 
- 	return SkyCoord(coord.Tx,
- 					coord.Ty,
- 					obstime = str(mapcube[id].date),
- 					observer = get_earth(mapcube[id].date),
+ 	return SkyCoord(COORD.Tx,
+ 					COORD.Ty,
+ 					obstime = str(MAPCUBE[id].date),
+ 					observer = get_earth(MAPCUBE[id].date),
  					frame = frames.Helioprojective)
 
-###################################################################################################
+#########################
 
-os.system("clear")
-main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+PRINTER.info_text("Moved files in download directory to 'resources/discarded-files'")
+if INSTRUMENT == "hmi":
+	os.system("mv %s/resources/hmi-images/*.jpg %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
 
-if args.instr == "hmi":
-	print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-	os.system("mv %s/resources/hmi-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
+	PRINTER.info_text("Importing data")
+	MAPCUBE = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR, cube = True)
 
-	print Color.YELLOW + "\nIMPORTING DATA..." + Color.RESET
-	mapcube = smap.Map("%s/resources/hmi-fits-files/*.fits" % main_dir, cube = True)
+elif INSTRUMENT == "aia":
+	os.system("mv %s/resources/aia-images/*.jpg %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
 
-elif args.instr == "aia":
-	print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-	os.system("mv %s/resources/aia-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
+	PRINTER.info_text("Importing data")
+	MAPCUBE = smap.Map("%s/resources/aia-fits-files/*.fits" % MAIN_DIR, cube = True)
 
-	print Color.YELLOW + "\nIMPORTING DATA..." + Color.RESET
-	mapcube = smap.Map("%s/resources/aia-fits-files/*.fits" % main_dir, cube = True)
+#########################
 
-if len(mapcube) == 0:
-	print Color.RED + "\nNO DATA. EXITING..." + Color.RESET
+if len(MAPCUBE) == 0:
+	PRINTER.info_text("No data; exiting")
 	sys.exit()
 
+#########################
+
 if not only_fulldisk_images:
-	if(raw_input(Color.RED + "\nAUTOMATICALLY FIND MOST INTENSE REGION? [y/n]\n==> ") == "y"):
-		print Color.YELLOW + "\nIDENTIFYING..." + Color.RESET
-		px = np.argwhere(mapcube[0].data == mapcube[0].data.max()) * u.pixel
+
+	if(PRINTER.input_text("Automatically find most-intense region? [y/n]") == "y"):
+		PRINTER.info_text("Identifying region")
+		px = np.argwhere(MAPCUBE[0].data == MAPCUBE[0].data.max()) * u.pixel
 
 		if len(px) > 1:
 			temp = ndimage.measurements.center_of_mass(np.array(px))
 			px = [px[int(temp[0] + 0.5)]]
 
-		center = PixCoord(x = 2043, y = 2025)
-		radius = 1610
+		#########################
+
+		center = PixCoord(x = 2048, y = 2048)
+		radius = 1600
 		region = CirclePixelRegion(center, radius)
 		point = PixCoord(px[0][1], px[0][0])
 
 		if not region.contains(point):
-			print Color.YELLOW + "\nMOST INTENSE REGION IS OUTSIDE SOLAR LIMB.\nDEFAULTING TO USER SELECTION..."
-			init_coord = cutout_selection(mapcube)
+			PRINTER.info_text("Identified region is outside the solar disk")
+			PRINTER.info_text("Defaulting to user selection...")
+			INIT_COORD = cutout_selection(MAPCUBE)
 		else:
-			init_coord = mapcube[0].pixel_to_world(px[0][1], px[0][0])
+			INIT_COORD = MAPCUBE[0].pixel_to_world(px[0][1], px[0][0])
 
 		auto_sel = True
-		plt.style.use("dark_background")
+	
 	else:
-		init_coord = cutout_selection(mapcube)
+		INIT_COORD = cutout_selection(MAPCUBE)
 		auto_sel = False
-		plt.style.use("dark_background")
 
-	init_time = str(mapcube[0].date)
-	print Color.UNDERLINE_YELLOW + "\nINITIAL TIME" + Color.RESET + Color.YELLOW + "\n%s" % str(init_time)
+	#########################
 
-	init_loc = SkyCoord(init_coord.Tx,
-						init_coord.Ty,
-						obstime = init_time,
-						observer = get_earth(init_time),
+	PRINTER.line()
+	INIT_TIME = str(MAPCUBE[0].date)
+	PRINTER.display_item("Initial time", INIT_TIME)
+
+	#########################
+
+	INIT_LOC = SkyCoord(INIT_COORD.Tx,
+						INIT_COORD.Ty,
+						obstime = INIT_TIME,
+						observer = get_earth(INIT_TIME),
 						frame = frames.Helioprojective)
 
-	print Color.UNDERLINE_YELLOW + "\nINITIAL LOCATION" + Color.RESET
-	print Color.YELLOW + "x: %s arcsec\ny: %s arcsec" % (init_loc.Tx, init_loc.Ty) + Color.RESET
+	PRINTER.display_item("Initial location", "(%s arcsec, %s arcsec)" % (INIT_LOC.Tx, INIT_LOC.Ty))
 
-	print Color.YELLOW + "\nCALCULATING FUTURE ROTATIONAL COORDINATES..." + Color.RESET
-	locs = [solar_rotate_coordinate(init_loc, mapcube[i].date) for i in range(len(mapcube))]
+	#########################
+
+	PRINTER.info_text("Calculating future coordinates")
+	LOCS = [solar_rotate_coordinate(INIT_LOC, MAPCUBE[i].date) for i in range(len(MAPCUBE))]
+
+#########################
 
 if ask_to_change_default_settings:
-	if(raw_input(Color.RED + "\nUSE DEFAULT SETTINGS (LOW SCALE 0, HIGH SCALE 40000)? [y/n]\n==> ") == "n"):
-		default_low_scale = int(raw_input("\nENTER LOW SCALE VALUE:\n==> "))
-		default_high_scale = int(raw_input("\nENTER HIGH SCALE VALUE:\n==> "))
+
+	if(PRINTER.input_text("Use default settings (low scale 0, high scale 40000)? [y/n]") == "n"):
+		default_low_scale = int(PRINTER.input_text("Enter low scale"))
+		default_high_scale = int(PRINTER.input_text("Enter high scale"))
+
+#########################
 
 if not only_fulldisk_images:
+
 	if not auto_sel:
-		coord1 = mapcube[0].pixel_to_world(x1, y1)
-		coord2 = mapcube[0].pixel_to_world(x2, y2)
-		default_cutout_width = coord2.Tx - coord1.Tx
-		default_cutout_height = coord2.Ty - coord1.Ty
+		coord1 = MAPCUBE[0].pixel_to_world(x1, y1)
+		coord2 = MAPCUBE[0].pixel_to_world(x2, y2)
+		WIDTH = coord2.Tx - coord1.Tx
+		HEIGHT = coord2.Ty - coord1.Ty
+
+#########################
 
 if not only_fulldisk_images:
-	print Color.YELLOW + "\nCALCULATING INITIAL CENTER OF INTENSITY..."
-	init_ci = calc_ci(
-					mapcube,
-					default_cutout_width,
-					default_cutout_height,
-					locs, 0)
+	PRINTER.info_text("Calculating initial center of intensity")
+	init_ci = calc_ci(MAPCUBE,
+					  WIDTH,
+					  HEIGHT,
+					  LOCS,
+					  0)
 
-print ""
-id = 0
+#########################
+
+PRINTER.line()
+
+if only_fulldisk_images:
+	PRINTER.info_text("Generating full-disk images\n")
+else:
+	print ""
+
+ID = 0
+
 for i in tqdm(
-			range(len(mapcube)),
-			desc = Color.YELLOW + "GENERATING CUTOUTS",
-			bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, ' '{rate_fmt}]'):
+			range(len(MAPCUBE)),
+			desc = Color.YELLOW + "Generating",
+			bar_format = "{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, " "{rate_fmt}]"):
 	
 	if not only_fulldisk_images:
 		c1 = SkyCoord(
-					locs[i].Tx - default_cutout_width/2.0,
-					locs[i].Ty - default_cutout_height/2.0,
-					frame = mapcube[i].coordinate_frame)
+					LOCS[i].Tx - WIDTH / 2.0,
+					LOCS[i].Ty - HEIGHT / 2.0,
+					frame = MAPCUBE[i].coordinate_frame)
 		
 		c2 = SkyCoord(
-					locs[i].Tx + default_cutout_width/2.0,
-					locs[i].Ty + default_cutout_height/2.0,
-					frame = mapcube[i].coordinate_frame)
+					LOCS[i].Tx + WIDTH / 2.0,
+					LOCS[i].Ty + HEIGHT / 2.0,
+					frame = MAPCUBE[i].coordinate_frame)
 
-	ax = plt.subplot(111, projection = mapcube[i])
-	mapcube[i].plot()
-	ax.grid(False)
+	#########################
+
+	ax = plt.subplot(111, projection = MAPCUBE[i])
+
+	#########################
 
 	if only_fulldisk_images:
-		if args.instr == "hmi":
-			mapcube[i].plot(vmin = -120, vmax = 120)
-		elif args.instr == "aia":
-			mapcube[i].plot()
+
+		if INSTRUMENT == "hmi":
+			MAPCUBE[i].plot(vmin = -120, vmax = 120)
+		elif INSTRUMENT == "aia":
+			MAPCUBE[i].plot()
 			plt.clim(0, 40000)
 			
 	else:
-		cutout = mapcube[i].submap(c1, c2)
+		cutout = MAPCUBE[i].submap(c1, c2)
 		ax = plt.subplot(111, projection = cutout)
 		cutout.plot()
 
+	#########################
+
 	if plot_center_of_intensity and not only_fulldisk_images:
-		loc = solar_rotate_coordinate(init_ci, mapcube[i].date)
+		loc = solar_rotate_coordinate(init_ci, MAPCUBE[i].date)
 		ax.plot_coord(loc, "w3")
+
+	#########################
 
 	ax.grid(False)
 	plt.style.use("dark_background")
 	plt.xlabel("Longitude [arcsec]")
 	plt.ylabel("Latitude [arcsec]")
 
-	if args.instr == "hmi":
-		plt.savefig("%s/resources/hmi-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+	#########################
+
+	if INSTRUMENT == "hmi":
+		plt.savefig("%s/resources/hmi-images/cut-%03d.jpg" % (MAIN_DIR, ID), dpi = default_quality)
 
 		if crop_cut_to_only_sun:
-			cut = cv2.imread("%s/resources/hmi-images/cut-%03d.jpg" % (main_dir, id))
-			scale = default_quality/300.0
-			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-			crop_data = np.flip(crop_data, 0)
-			crop_data = np.flip(crop_data, 1)
-			# crop_data[np.where((crop_data == [255, 255, 255]).all(axis = 2))] = [0, 0, 0]
-			# cv2.putText(crop_data, mapcube[i].date.strftime("%Y-%m-%d %H:%M:%S"), (10, 40), 0, 1.2, (255, 255, 255), 2, cv2.LINE_AA)
-			cv2.imwrite("%s/resources/hmi-images/cut-%03d.jpg" % (main_dir, id), crop_data)
+			CUT = cv2.imread("%s/resources/hmi-images/cut-%03d.jpg" % (MAIN_DIR, ID))
+			SCALE = default_quality/300.0
+			CROP_DATA = CUT[int(176 * SCALE) : int(1278 * SCALE), int(432 * SCALE) : int(1534 * SCALE)]
+			CROP_DATA = np.flip(CROP_DATA, 0)
+			CROP_DATA = np.flip(CROP_DATA, 1)
+			cv2.imwrite("%s/resources/hmi-images/cut-%03d.jpg" % (MAIN_DIR, ID), CROP_DATA)
 	
-	elif args.instr == "aia":
-		plt.savefig("%s/resources/aia-images/cut-%03d.jpg" % (main_dir, id), dpi = default_quality)
+	elif INSTRUMENT == "aia":
+		plt.savefig("%s/resources/aia-images/cut-%03d.jpg" % (MAIN_DIR, ID), dpi = default_quality)
 
 		if crop_cut_to_only_sun:
-			cut = cv2.imread("%s/resources/aia-images/cut-%03d.jpg" % (main_dir, id))
-			scale = default_quality/300.0
-			crop_data = cut[int(176 * scale) : int(1278 * scale), int(432 * scale) : int(1534 * scale)]
-			# cv2.putText(crop_data, mapcube[i].date.strftime("%Y-%m-%d %H:%M:%S"), (10,40), 0, 1.2, (255,255,255), 2, cv2.LINE_AA)
-			cv2.imwrite("%s/resources/aia-images/cut-%03d.jpg" % (main_dir, id), crop_data)
+			CUT = cv2.imread("%s/resources/aia-images/cut-%03d.jpg" % (MAIN_DIR, ID))
+			SCALE = default_quality/300.0
+			CROP_DATA = CUT[int(176 * SCALE) : int(1278 * SCALE), int(432 * SCALE) : int(1534 * SCALE)]
+			cv2.imwrite("%s/resources/aia-images/cut-%03d.jpg" % (MAIN_DIR, ID), CROP_DATA)
 
-	id += 1
-	
+	#########################
+
+	ID += 1
 	plt.close()
 
-print "\nDONE\n" + Color.RESET
+#########################
+
+PRINTER.info_text("Done")
+PRINTER.line()

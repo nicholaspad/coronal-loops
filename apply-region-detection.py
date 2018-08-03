@@ -1,11 +1,12 @@
 import warnings
-warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
-import argparse
 from colortext import Color
-import cv2
 from matplotlib import pyplot as plt
+from recorder import Recorder
 from tqdm import tqdm
+import argparse
+import cv2
 import getpass
 import numpy as np
 import os
@@ -33,76 +34,99 @@ generate_detection_video = False
 
 
 
+
+MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+PRINTER = Recorder()
+PRINTER.display_start_time("apply-region-detection")
 parser = argparse.ArgumentParser()
 parser.add_argument("--model")
 parser.add_argument("--instr")
 args = parser.parse_args()
 
+#########################
+
 if args.model == None or args.instr == None:
-	print Color.YELLOW + "SPECIFY DETECTION MODEL AND INSTRUMENT WITH --model <filename> --instr <name>" + Color.RESET
+	PRINTER.info_text("Specify model and instrument with '--model <filename> --instr <name>'")
+	PRINTER.line()
 	sys.exit()
 
-os.system("clear")
-main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+INSTRUMENT = args.instr.lower()
+MODEL = args.model.lower()
 
-print Color.YELLOW + "MOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-if args.instr == "aia":
-	os.system("mv %s/resources/aia-detected-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
-elif args.instr == "hmi":
-	os.system("mv %s/resources/hmi-detected-images/*.jpg %s/resources/discarded-files" % (main_dir, main_dir))
+#########################
 
-print Color.YELLOW + "\nSETTING PATHS..." + Color.RESET
-graph_path = "%s/models/%s" % (main_dir, args.model)
-label_path = "%s/model-generator/old-training/object_detection/training/object-detection.pbtxt" % main_dir
+PRINTER.info_text("Moved files in download directory to 'resources/discarded-files'")
+if INSTRUMENT == "aia":
+	os.system("mv %s/resources/aia-detected-images/*.jpg %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
+elif INSTRUMENT == "hmi":
+	os.system("mv %s/resources/hmi-detected-images/*.jpg %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
 
-print Color.YELLOW + "\nIMPORTING DETECTION GRAPH..." + Color.RESET
-n_classes = 1
-detection_graph = tf.Graph()
-with detection_graph.as_default():
+#########################
+
+PRINTER.info_text("Setting paths")
+GRAPH_PATH = "%s/models/%s" % (MAIN_DIR, MODEL)
+LABEL_PATH = "%s/model-generator/old-training/object_detection/training/object-detection.pbtxt" % MAIN_DIR
+
+#########################
+
+PRINTER.info_text("Importing graph")
+NUM_CLASSES = 1
+GRAPH = tf.Graph()
+
+#########################
+
+with GRAPH.as_default():
 	od_graph_def = tf.GraphDef()
-	with tf.gfile.GFile(graph_path, "rb") as fid:
+	with tf.gfile.GFile(GRAPH_PATH, "rb") as fid:
 		serialized_graph = fid.read()
 		od_graph_def.ParseFromString(serialized_graph)
 		tf.import_graph_def(od_graph_def, name = "")
 
-print Color.YELLOW + "\nINDEXING DETECTION CATEGORIES..." + Color.RESET
-label_map = label_map_util.load_labelmap(label_path)
-categories = label_map_util.convert_label_map_to_categories(label_map,
-															max_num_classes = n_classes,
+#########################
+
+PRINTER.info_text("Indexing detection categories")
+LABEL_MAP = label_map_util.load_labelmap(LABEL_PATH)
+CATEGORIES = label_map_util.convert_label_map_to_categories(LABEL_MAP,
+															max_num_classes = NUM_CLASSES,
 															use_display_name = True)
-category_index = label_map_util.create_category_index(categories)
+CATEGORY_INDEX = label_map_util.create_category_index(CATEGORIES)
 
-print Color.YELLOW + "\nIMPORTING IMAGES..." + Color.RESET
-if args.instr == "aia":
-	number_of_images = len(next(os.walk("%s/resources/aia-images" % main_dir))[2]) - 2
-	names = os.listdir("%s/resources/aia-images" % main_dir)
-	names.sort()
-	cutout_path = [os.path.join("%s/resources/aia-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
-elif args.instr == "hmi":
-	number_of_images = len(next(os.walk("%s/resources/hmi-images" % main_dir))[2]) - 2
-	names = os.listdir("%s/resources/hmi-images" % main_dir)
-	names.sort()
-	cutout_path = [os.path.join("%s/resources/hmi-images" % main_dir, "{}".format(name)) for name in names if name.endswith(".jpg")]
+#########################
 
-image_size = (12, 9)
+PRINTER.info_text("Importing images")
+if INSTRUMENT == "aia":
+	number_of_images = len(next(os.walk("%s/resources/aia-images" % MAIN_DIR))[2]) - 2
+	names = os.listdir("%s/resources/aia-images" % MAIN_DIR)
+	names.sort()
+	cutout_path = [os.path.join("%s/resources/aia-images" % MAIN_DIR, "{}".format(name)) for name in names if name.endswith(".jpg")]
+elif INSTRUMENT == "hmi":
+	number_of_images = len(next(os.walk("%s/resources/hmi-images" % MAIN_DIR))[2]) - 2
+	names = os.listdir("%s/resources/hmi-images" % MAIN_DIR)
+	names.sort()
+	cutout_path = [os.path.join("%s/resources/hmi-images" % MAIN_DIR, "{}".format(name)) for name in names if name.endswith(".jpg")]
+
+#########################
+
+PRINTER.line()
 
 print ""
-i = 0
-with detection_graph.as_default():
-	with tf.Session(graph = detection_graph) as sess:
+ID = 0
+
+with GRAPH.as_default():
+	with tf.Session(graph = GRAPH) as sess:
 		for image_path in tqdm(
 							cutout_path,
-							desc = Color.YELLOW + "DETECTING ACTIVE REGIONS",
-							bar_format = '{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, ' '{rate_fmt}]'):
+							desc = Color.YELLOW + "Detecting",
+							bar_format = "{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [eta {remaining}, " "{rate_fmt}]"):
 		
 			image_np = skimage.io.imread(image_path)
 			image_np_expanded = np.expand_dims(image_np, axis = 0)
-			image_tensor = detection_graph.get_tensor_by_name("image_tensor:0")
+			image_tensor = GRAPH.get_tensor_by_name("image_tensor:0")
 
-			boxes = detection_graph.get_tensor_by_name("detection_boxes:0")
-			scores = detection_graph.get_tensor_by_name("detection_scores:0")
-			classes = detection_graph.get_tensor_by_name("detection_classes:0")
-			num_detections = detection_graph.get_tensor_by_name("num_detections:0")
+			boxes = GRAPH.get_tensor_by_name("detection_boxes:0")
+			scores = GRAPH.get_tensor_by_name("detection_scores:0")
+			classes = GRAPH.get_tensor_by_name("detection_classes:0")
+			num_detections = GRAPH.get_tensor_by_name("num_detections:0")
 
 			(boxes, scores, classes, num_detections) = sess.run(
 					[boxes, scores, classes, num_detections],
@@ -113,20 +137,23 @@ with detection_graph.as_default():
 					np.squeeze(boxes),
 					np.squeeze(classes).astype(np.int32),
 					np.squeeze(scores),
-					category_index,
+					CATEGORY_INDEX,
 					use_normalized_coordinates = True,
 					line_thickness = box_border_thickness)
 
 			plt.figure()
 
-			image_np = image_np[:,:,::-1]
+			image_np = image_np[:, :, ::-1]
 
-			if args.instr == "aia":
-				cv2.imwrite("%s/resources/aia-detected-images/detected-%03d.jpg" % (main_dir, i), image_np)
-			elif args.instr == "hmi":
-				cv2.imwrite("%s/resources/hmi-detected-images/detected-%03d.jpg" % (main_dir, i), image_np)
+			if INSTRUMENT == "aia":
+				cv2.imwrite("%s/resources/aia-detected-images/detected-%03d.jpg" % (MAIN_DIR, ID), image_np)
+			elif INSTRUMENT == "hmi":
+				cv2.imwrite("%s/resources/hmi-detected-images/detected-%03d.jpg" % (MAIN_DIR, ID), image_np)
 
 			plt.close()
-			i += 1
+			ID += 1
 
-print Color.YELLOW + "\nDONE\n" + Color.RESET
+#########################
+
+PRINTER.info_text("Done")
+PRINTER.line()

@@ -9,17 +9,19 @@ MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 
 class Recorder(object):
 
-	def __init__(self, database_name):
+	def __init__(self, database_name = ""):
 		self.DATABASE_NAME = "/Users/%s/Desktop/lmsal/resources/region-data/%s" % (getpass.getuser(), database_name)
-		self.INFO = Color.RED + "[INFO]\t" + Color.YELLOW
-		self.INFO_TAB = Color.RED + "[INFO]\t==> " + Color.YELLOW
-		self.WRITE = Color.GREEN + "[WRITE]\t" + Color.YELLOW
-		self.NEW_LINE = Color.WHITE + "\n" + "-" * 75
+		self.INFO = Color.RESET + Color.PINK + Color.BOLD + "[INFO]\t" + Color.RESET + Color.YELLOW
+		self.INPUT = Color.RESET + Color.RED + Color.BOLD + "[INPUT]\t" + Color.RESET + Color.YELLOW
+		self.INFO_TAB = Color.RESET + Color.PINK + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW
+		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW
+		self.PARAM = Color.RESET + Color.GREEN + "[PARAM]\t" + Color.RESET + Color.YELLOW
+		self.SYS = Color.RESET + Color.RED + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE + Color.BOLD
+		self.NEW_LINE = Color.RESET + Color.WHITE + "\n" + "-" * 75
 
-		with open(self.DATABASE_NAME, "w") as db:
-			db.write("ID,INSTR,WAVLEN,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,INTEN_LOW_THRESH,INTEN_HIGH_THRESH,AVG_INTEN,MED_INTEN,MAX_INTEN,UNSIG_FLX,AVG_FLUX,\n")
-
-		print self.NEW_LINE
+		if database_name != "":
+			with open(self.DATABASE_NAME, "w") as db:
+				db.write("ID,INSTR,WAVLEN,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,INTEN_LOW_THRESH,INTEN_HIGH_THRESH,AVG_INTEN,MED_INTEN,MAX_INTEN,UNSIG_FLX,AVG_FLUX,\n")
 
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
@@ -129,7 +131,7 @@ class Recorder(object):
 			name = "magnetogram image"
 			dir = "resources/region-data/magnetogram-images"
 		
-		print self.WRITE + "Saving %s to %s" % (name, dir)
+		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
 		print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
 		np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)
 		self.rest()
@@ -142,11 +144,33 @@ class Recorder(object):
 			db.write("\n")
 		self.rest()
 
-	def error_line(self):
+	def line(self):
+		print self.NEW_LINE
+
+	def off_disk(self):
 		with open(self.DATABASE_NAME, "a") as db:
 			print self.INFO + "Off-disk loop identified; skipping"
 			db.write("OFF_DISK," * 13)
 		self.new_line()
 
+	def too_small(self):
+		with open(self.DATABASE_NAME, "a") as db:
+			print self.INFO + "Region smaller than 200 px x 200 px; skipping"
+			db.write("TOO_SMALL," * 13)
+		self.new_line()
+
 	def rest(self):
-		time.sleep(0.075)
+		time.sleep(0.05)
+
+	def info_text(self, text):
+		print "\n" + self.INFO + text
+
+	def input_text(self, text):
+		return raw_input("\n" + self.INPUT + "%s:\n\t==> " % text + Color.YELLOW)
+
+	def display_item(self, desc, item):
+		print "\n" + self.PARAM + "%s\n%s" % (desc, item)
+
+	def display_start_time(self, name):
+		print "\n" + self.SYS + "Process %s started at %s" % (name, datetime.now().replace(microsecond = 0))
+		print self.NEW_LINE

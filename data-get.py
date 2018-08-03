@@ -1,236 +1,174 @@
 import warnings
-warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
-from colortext import Color
 from datetime import datetime
+from recorder import Recorder
 from sunpy.net import Fido, attrs as a
-import argparse
 import astropy.units as u
 import getpass
 import os
 import pprint
-import sys
 
-main_dir = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+#########################
+
+MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
+EMAIL = "padman@lmsal.com"
+PRINTER = Recorder()
+PRINTER.display_start_time("data-get")
 pp = pprint.PrettyPrinter()
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-sday")
-parser.add_argument("-stime")
-parser.add_argument("-eday")
-parser.add_argument("-etime")
-parser.add_argument("-cadence")
-args = parser.parse_args()
+#########################
 
-###
+WAVELENGTHS = {
+				"aia" : [94, 131, 171, 193, 211,
+							304, 335, 1600, 1700],
+				"hmi" : {
+						"1" : "hmi.M_720s - LoS MAGNETOGRAM",
+						"2" : "hmi.B_720s - VECTOR MAGNETOGRAM",
+						"3" : "hmi.sharp_720s - SHARP",
+						"4" : "hmi.Ic_noLimbDark_720s - CONTINUUM"
+						}
+			  }
 
-if args.sday != None:
-	print Color.YELLOW + "Searching for AIA data" + Color.RESET
-	results_aia = Fido.search(a.jsoc.Time("%sT%s" % (args.sday, args.stime),
-									  "%sT%s" % (args.eday, args.etime)),
-						  a.jsoc.Notify("padman@lmsal.com"),
-						  a.jsoc.Series("aia.lev1_euv_12s"),
-						  a.jsoc.Wavelength(94 * u.angstrom) | a.jsoc.Wavelength(131 * u.angstrom) | a.jsoc.Wavelength(171 * u.angstrom) | a.jsoc.Wavelength(193 * u.angstrom) | a.jsoc.Wavelength(211 * u.angstrom) | a.jsoc.Wavelength(304 * u.angstrom) | a.jsoc.Wavelength(335 * u.angstrom),
-						  a.Sample(float(args.cadence) * u.day))
+SEGMENTS = {
+			"hmi.M_720s" : {"1" : "magnetogram"},
 
-	print Color.YELLOW + "Searching for HMI data" + Color.RESET
-	results_hmi = Fido.search(a.jsoc.Time("%sT%s" % (args.sday, args.stime),
-									  "%sT%s" % (args.eday, args.etime)),
-						  a.jsoc.Notify("padman@lmsal.com"),
-						  a.jsoc.Series("hmi.M_720s"),
-						  a.jsoc.Segment("magnetogram"),
-						  a.Sample(float(args.cadence) * u.day))
+			"hmi.B_720s" : {"1" : "inclination",
+							"2" : "azimuth",
+							"3" : "disambig",
+							"4" : "field",
+							"5" : "vlos_mag",
+							"6" : "dop_width",
+							"7" : "eta_0",
+							"8" : "damping",
+							"9" : "src_continuum",
+							"10" : "src_grad",
+							"11" : "alpha_mag"},
 
-	print Color.YELLOW + "Search complete\n" + Color.RESET
-
-	raw_input(Color.RED + "Press [enter] to view AIA data\n==> " + Color.RESET)
-	print results_aia
-
-	raw_input(Color.RED + "Press [enter] to view HMI data\n==> " + Color.RESET)
-	print results_hmi
-
-	raw_input(Color.RED + "Press [enter] to download\n==> ")
-	print ""
-
-	os.system("mv %s/resources/aia-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
-	print Color.YELLOW + "\nDownloading AIA files to resources/aia-fits-files...\n"
-	Fido.fetch(results_aia, path = "%s/resources/aia-fits-files" % main_dir, progress = False)
-	os.system("rm %s/resources/aia-fits-files/*.spikes.fits" % main_dir)
-
-	os.system("mv %s/resources/hmi-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
-	print Color.YELLOW + "\nDownloading HMI files to resources/hmi-fits-files...\n"
-	Fido.fetch(results_hmi, path = "%s/resources/hmi-fits-files" % main_dir, progress = False)
-
-	print "\nDone. Continuing...\n" + Color.RESET
-	sys.exit()
-
-possible_instruments = ["AIA", "HMI"]
-
-wavelengths = {
-	"aia" : [94, 131, 171, 193, 211,
-				304, 335, 1600, 1700],
-	"hmi" : {
-			"1" : "hmi.M_720s - LoS MAGNETOGRAM",
-			"2" : "hmi.B_720s - VECTOR MAGNETOGRAM",
-			"3" : "hmi.sharp_720s - SHARP",
-			"4" : "hmi.Ic_noLimbDark_720s - CONTINUUM"
+			"hmi.sharp_720s" : {"1" : "magnetogram",
+								"2" : "bitmap",
+								"3" : "Dopplergram",
+								"4" : "contunuum",
+								"5" : "inclination",
+								"6" : "azimuth",
+								"7" : "field",
+								"8" : "vlos_mag",
+								"9" : "dop_width",
+								"10" : "eta_0",
+								"11" : "damping",
+								"12" : "src_continuum",
+								"13" : "src_grad",
+								"14" : "alpha_mag"}
 			}
-	}
 
-segments = {
-	"hmi.M_720s" : {"1" : "magnetogram"},
+#########################
 
-	"hmi.B_720s" : {"1" : "inclination",
-					"2" : "azimuth",
-					"3" : "disambig",
-					"4" : "field",
-					"5" : "vlos_mag",
-					"6" : "dop_width",
-					"7" : "eta_0",
-					"8" : "damping",
-					"9" : "src_continuum",
-					"10" : "src_grad",
-					"11" : "alpha_mag"},
+PRINTER.info_text("Instruments: AIA, HMI")
+INSTRUMENT = PRINTER.input_text("Enter instrument").lower()
 
-	"hmi.sharp_720s" : {"1" : "magnetogram",
-						"2" : "bitmap",
-						"3" : "Dopplergram",
-						"4" : "contunuum",
-						"5" : "inclination",
-						"6" : "azimuth",
-						"7" : "field",
-						"8" : "vlos_mag",
-						"9" : "dop_width",
-						"10" : "eta_0",
-						"11" : "damping",
-						"12" : "src_continuum",
-						"13" : "src_grad",
-						"14" : "alpha_mag"}
-}
+#########################
 
-###
-
-os.system("clear")
-
-print Color.YELLOW + "INSTRUMENTS:"
-pp.pprint(possible_instruments)
-
-instrument = raw_input(Color.RED + "\nINSTRUMENT:\n==> ").lower()
-
-###
-
-temp_date = raw_input(Color.RED + "\nSTART DATE: (FORMAT YYYY/MM/DD)\n==> ")
-temp_time = raw_input(Color.RED + "\nSTART TIME: (FORMAT HH:MM:SS)\n==> ")
-
+temp_date = PRINTER.input_text("Enter start date (yyyy-mm-dd)")
+temp_time = PRINTER.input_text("Enter start time (hh:mm:ss)")
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
 second = int(temp_time[6:])
 day = int(temp_date[8:])
 month = int(temp_date[5:7])
 year = int(temp_date[0:4])
+START_TIME = datetime(year, month, day, hour, minute, second)
 
-start_time = datetime(year, month, day, hour, minute, second)
+#########################
 
-###
-
-temp_date = raw_input(Color.RED + "\nEND DATE: (FORMAT YYYY/MM/DD)\n==> ")
-temp_time = raw_input(Color.RED + "\nEND TIME: (FORMAT HH:MM:SS)\n==> ")
-
+temp_date = PRINTER.input_text("Enter end date (yyyy-mm-dd)")
+temp_time = PRINTER.input_text("Enter end time (hh:mm:ss)")
 hour = int(temp_time[0:2])
 minute = int(temp_time[3:5])
 second = int(temp_time[6:])
 day = int(temp_date[8:])
 month = int(temp_date[5:7])
 year = int(temp_date[0:4])
+END_TIME = datetime(year, month, day, hour, minute, second)
 
-end_time = datetime(year, month, day, hour, minute, second)
+#########################
 
-###
+CADENCE = int(PRINTER.input_text("Enter cadence (seconds)"))
 
-cadence = int(raw_input(Color.RED + "\nCADENCE (SECONDS):\n==> "))
+#########################
 
-###
+if INSTRUMENT == "aia":
+	PRINTER.info_text("Wavelengths: %s" % WAVELENGTHS["aia"])
+	WAVELENGTH = int(PRINTER.input_text("Enter wavelength (angstroms)"))
+	SERIES = "aia.lev1_euv_12s"
 
-if instrument == "aia":
-	print Color.YELLOW + "\nAIA WAVELENGTHS (ANGSTROMS):"
-	pp.pprint(wavelengths["aia"])
-	wavelength = int(raw_input(Color.RED + "\nWAVELENGTH:\n==> "))
+elif INSTRUMENT == "hmi":
+	PRINTER.info_text("Data series:")
+	pp.pprint(WAVELENGTHS["hmi"])
+	seriesID = PRINTER.input_text("Enter series ID")
+	SERIES = WAVELENGTHS["hmi"][seriesID].split(" ")[0]
 
-elif instrument == "hmi":
-	print Color.YELLOW + "\nDATA SERIES:"
-	pp.pprint(wavelengths["hmi"])
-	seriesId = raw_input(Color.RED + "\nSERIES ID: (ENTER NUMBER)\n==> ")
-	series = wavelengths["hmi"][seriesId].split(" ")[0]
+	if SERIES == "hmi.M_720s":
+		SEGMENT = "magnetogram"
+		PRINTER.info_text("Data segment set to 'magnetogram'")
 
-	if series == "hmi.M_720s":
-		print Color.YELLOW + "\nDATA SEGMENT SET TO MAGNETOGRAM"
-		segment = "magnetogram"
+	elif SERIES == "hmi.B_720s":
+		PRINTER.info_text("hmi.B_720s data segments:")
+		pp.pprint(SEGMENTS["hmi.B_720s"])
+		segmentID = PRINTER.input_text("Enter segment ID")
+		SEGMENT = SEGMENTS["hmi.B_720s"][segmentID]
 
-	elif series == "hmi.B_720s":
-		print Color.YELLOW + "\nHMI.B_720s DATA SEGMENTS:"
-		pp.pprint(segments["hmi.B_720s"])
-		segmentId = raw_input(Color.RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
-		segment = segments["hmi.B_720s"][segmentId]
+	elif SERIES == "hmi.sharp_720s":
+		PRINTER.info_text("hmi.sharp_720s data segments:")
+		pp.pprint(SEGMENTS["hmi.sharp_720s"])
+		segmentID = PRINTER.input_text("Enter segment ID")
+		SEGMENT = SEGMENTS["hmi.sharp_720s"][segmentID]
 
-	elif series == "hmi.sharp_720s":
-		print Color.YELLOW + "\nHMI.SHARP_720s DATA SEGMENTS:"
-		pp.pprint(segments["hmi.sharp_720s"])
-		segmentId = raw_input(Color.RED + "\nSEGMENT ID: (ENTER NUMBER)\n==> ")
-		segment = segments["hmi.sharp_720s"][segmentId]
+	elif SERIES == "hmi.Ic_noLimbDark_720s":
+		SEGMENT = "continuum"
+		PRINTER.info_text("Data segment set to 'continuum'")
 
-	elif series == "hmi.Ic_noLimbDark_720s":
-		print Color.YELLOW + "\nDATA SEGMENT SET TO CONTINUUM"
-		segment = "continuum"
+#########################
 
-###
+PRINTER.line()
+PRINTER.info_text("Searching JSOC database")
 
-print Color.YELLOW + "\nSEARCHING..." + Color.RESET
+if INSTRUMENT == "aia":
+	results = Fido.search(a.jsoc.Time("%s" % START_TIME.replace(microsecond = 0).isoformat(),
+									  "%s" % END_TIME.replace(microsecond = 0).isoformat()),
+						  a.jsoc.Notify(EMAIL),
+						  a.jsoc.Series(SERIES),
+						  a.jsoc.Wavelength(WAVELENGTH * u.angstrom),
+						  a.Sample(CADENCE * u.second))
 
-if instrument == "aia":
-	if wavelength != 1600 and wavelength != 1700:
-		results = Fido.search(
-			a.jsoc.Time("%s" % start_time.replace(microsecond = 0).isoformat(),
-					"%s" % end_time.replace(microsecond = 0).isoformat()),
-			a.jsoc.Notify("padman@lmsal.com"),
-			a.jsoc.Series("aia.lev1_euv_12s"),
-			a.jsoc.Wavelength(wavelength * u.angstrom),
-			a.Sample(cadence * u.second))
+elif INSTRUMENT == "hmi":
+	results = Fido.search(a.jsoc.Time("%s" % START_TIME.replace(microsecond = 0).isoformat(),
+									  "%s" % END_TIME.replace(microsecond = 0).isoformat()),
+						  a.jsoc.Notify(EMAIL),
+						  a.jsoc.Series(SERIES),
+						  a.jsoc.Segment(SEGMENT),
+						  a.Sample(CADENCE * u.second))
 
-	else:
-		results = Fido.search(
-			a.jsoc.Time("%s" % start_time.replace(microsecond = 0).isoformat(),
-					"%s" % end_time.replace(microsecond = 0).isoformat()),
-			a.jsoc.Notify("padman@lmsal.com"),
-			a.jsoc.Series("aia.lev1_uv_24s"),
-			a.jsoc.Wavelength(wavelength * u.angstrom),
-			a.Sample(cadence * u.second))
+PRINTER.info_text("Search complete. Displaying:")
+print "\n" + results
 
-elif instrument == "hmi":
-	results = Fido.search(
-			a.jsoc.Time("%s" % start_time.replace(microsecond = 0).isoformat(),
-					"%s" % end_time.replace(microsecond = 0).isoformat()),
-			a.jsoc.Notify("padman@lmsal.com"),
-			a.jsoc.Series(series),
-			a.jsoc.Segment(segment),
-			a.Sample(cadence * u.second))
+#########################
 
-print Color.YELLOW + "\nSEARCH COMPLETE. DISPLAYING...\n" + Color.RESET
-print results
+PRINTER.line()
+PRINTER.input_text("Press 'enter' to download")
 
-###
+PRINTER.info_text("Moved files in download directory to 'resources/discarded-files'")
+if INSTRUMENT == "aia":
+	os.system("mv %s/resources/aia-fits-files/*.fits %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
+	PRINTER.info_text("Downloading to 'resources/aia-fits-files'\n")
+	Fido.fetch(results, path = "%s/resources/aia-fits-files" % MAIN_DIR, progress = False)
+	os.system("rm %s/resources/aia-fits-files/*.spikes.fits" % MAIN_DIR)
 
-raw_input(Color.RED + "PRESS ENTER TO DOWNLOAD\n==> ")
+elif INSTRUMENT == "hmi":
+	os.system("mv %s/resources/hmi-fits-files/*.fits %s/resources/discarded-files" % (MAIN_DIR, MAIN_DIR))
+	PRINTER.info_text("Downloading to 'resources/hmi-fits-files'\n")
+	Fido.fetch(results, path = "%s/resources/hmi-fits-files" % MAIN_DIR, progress = False)
 
-print Color.YELLOW + "\nMOVING FILES IN DOWNLOAD DIRECTORY TO resources/discarded-files..." + Color.RESET
-if instrument == "aia":
-	os.system("mv %s/resources/aia-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
-	print Color.YELLOW + "\nDOWNLOADING TO resources/aia-fits-files...\n"
-	Fido.fetch(results, path = "%s/resources/aia-fits-files" % main_dir, progress = False)
-	os.system("rm %s/resources/aia-fits-files/*.spikes.fits" % main_dir)
+#########################
 
-elif instrument == "hmi":
-	os.system("mv %s/resources/hmi-fits-files/*.fits %s/resources/discarded-files" % (main_dir, main_dir))
-	print Color.YELLOW + "\nDOWNLOADING TO resources/hmi-fits-files...\n"
-	Fido.fetch(results, path = "%s/resources/hmi-fits-files" % main_dir, progress = False)
-	
-print "\nDONE" + Color.RESET
+PRINTER.info_text("Done: %d files downloaded" % len(results[0]))
+PRINTER.line()
