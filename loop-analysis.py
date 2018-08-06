@@ -76,7 +76,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 		#####################################
 		xy_maxima = plm(raw_data,
 						min_distance = 125,
-						threshold_rel = 0.55)
+						threshold_rel = 0.7)
 		#####################################
 
 		if xy_maxima.shape[0] == 0:
@@ -112,7 +112,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 			HALF_DIM_PXL = 1
 
 			####################
-			MIN_AVERAGE = 1800.0
+			MIN_AVERAGE = 1500.0
 			####################
 
 			while np.average(raw_data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
@@ -120,7 +120,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 				HALF_DIM_PXL += 1
 
 			########################
-			if HALF_DIM_PXL < 75.0:
+			if HALF_DIM_PXL < 50.0:
 			########################
 				RECORDER.too_small()
 				LOOP_ID += 1
@@ -145,7 +145,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 							   xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]
 
 			########################
-			LOW_THRESHOLD_193 = 3200
+			LOW_THRESHOLD_193 = 2500
 			########################
 
 			cd_data_193 = MAPCUBE["AIA193"][i].data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
@@ -181,8 +181,6 @@ for i in range(len(MAPCUBE["AIA193"])):
 											   cd_data < HIGH_THRESHOLD)
 
 			threshold_image_data = cd_data * binary_image_data
-
-			debug()
 
 			# edge_x = ndimage.sobel(cd_data, 
 			# 					   axis = 0,
@@ -268,5 +266,7 @@ for i in range(len(MAPCUBE["AIA193"])):
 			NUM_LOOPS += 1
 
 RECORDER.info_text("Done:\t%s loops analyzed\n\t\t%s loops off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
+RECORDER.info_text("Compressing files")
+os.system("zip -r -X data_%s.zip resources/region-data" % str(datetime.now().strftime("%Y-%m-%d %H.%M.%S")))
 RECORDER.new_line()
 RECORDER.display_end_time("loop-analysis")
