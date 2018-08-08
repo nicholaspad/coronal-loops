@@ -2,8 +2,10 @@ import warnings
 warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
 from astropy.coordinates import SkyCoord
+from datetime import datetime
 from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
+from scipy.ndimage import zoom as interpolate
 from scipy.spatial import distance
 from skimage.feature import peak_local_max as plm
 import astropy.units as u
@@ -17,10 +19,10 @@ MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 RECORDER = Recorder("database.csv")
 RECORDER.display_start_time("loop-analysis")
 
-os.system("rm resources/region-data/raw-images/*.npy")
-os.system("rm resources/region-data/binary-images/*.npy")
-os.system("rm resources/region-data/threshold-images/*.npy")
-os.system("rm resources/region-data/magnetogram-images/*.npy")
+os.system("rm -rf resources/region-data/raw-images && mkdir resources/region-data/raw-images")
+os.system("rm -rf resources/region-data/binary-images && mkdir resources/region-data/binary-images")
+os.system("rm -rf resources/region-data/threshold-images && mkdir resources/region-data/threshold-images")
+os.system("rm -rf resources/region-data/magnetogram-images && mkdir resources/region-data/magnetogram-images")
 
 LOOP_ID = 0
 NUM_LOOPS = 0
@@ -67,28 +69,29 @@ MEASUREMENTS = ["AIA94", "AIA131",
 				"AIA211", "AIA304",
 				"AIA335"]
 
-for i in range(len(MAPCUBE["AIA193"])):
+for i in range(len(MAPCUBE["AIA171"])):
 
-	for MEAS in MEASUREMENTS:
+	raw_data = MAPCUBE["AIA171"][i].data
 
-		raw_data = MAPCUBE["AIA193"][i].data
+	#####################################
+	xy_maxima = plm(raw_data,
+					min_distance = 130,
+					threshold_rel = 0.75)
+	#####################################
 
-		#####################################
-		xy_maxima = plm(raw_data,
-						min_distance = 125,
-						threshold_rel = 0.7)
-		#####################################
+	if xy_maxima.shape[0] == 0:
+		hp_maxima = []
 
-		if xy_maxima.shape[0] == 0:
-			hp_maxima = []
+	else:
+		hp_maxima = MAPCUBE["AIA171"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
+														xy_maxima[:, 0] * u.pixel)
 
-		else:
-			hp_maxima = MAPCUBE["AIA193"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
-															xy_maxima[:, 0] * u.pixel)
+	for j in range(len(hp_maxima)):
 
-		for j in range(len(hp_maxima)):
+		for MEAS in MEASUREMENTS:
+
 			RECORDER.write_ID(LOOP_ID)
-			RECORDER.write_gen_info(MEAS, MAPCUBE[MEAS][i].wavelength)
+			RECORDER.write_gen_info(MAPCUBE[MEAS][i].detector, MAPCUBE[MEAS][i].wavelength)
 
 			when = MAPCUBE[MEAS][i].date
 			RECORDER.write_datetime(when)
@@ -96,11 +99,14 @@ for i in range(len(MAPCUBE["AIA193"])):
 			where_xy = xy_maxima[j]
 			RECORDER.write_xywhere(where_xy)
 
-			center = np.array([2048.0, 2048.0])
+			center = np.array([int(MAPCUBE[MEAS][i].reference_pixel[0].value),
+							   int(MAPCUBE[MEAS][i].reference_pixel[1].value)])
 
-			#################################################
-			if distance.euclidean(center, where_xy) > 1500.0:
-			#################################################
+			radius = (MAPCUBE[MEAS][i].rsun_obs / MAPCUBE[MEAS][i].scale[0]).value
+
+			#######################################################
+			if distance.euclidean(center, where_xy) > radius - 100:
+			#######################################################
 				RECORDER.off_disk()
 				LOOP_ID += 1
 				NUM_OFF_DISK += 1
@@ -145,15 +151,15 @@ for i in range(len(MAPCUBE["AIA193"])):
 							   xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]
 
 			########################
-			LOW_THRESHOLD_193 = 2500
+			LOW_THRESHOLD_171 = 1700
 			########################
 
-			cd_data_193 = MAPCUBE["AIA193"][i].data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
+			cd_data_171 = MAPCUBE["AIA171"][i].data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
 													xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]
 			LOW_THRESHOLD = 0
 			previous_low = 0
 			new_low = 0
-			target = len(cd_data_193[np.where(cd_data_193 > LOW_THRESHOLD_193)])
+			target = len(cd_data_171[np.where(cd_data_171 > LOW_THRESHOLD_171)])
 
 			while len(cd_data[np.where(cd_data > LOW_THRESHOLD)]) > target:
 				previous_low = len(cd_data[np.where(cd_data > LOW_THRESHOLD)])
@@ -172,7 +178,6 @@ for i in range(len(MAPCUBE["AIA193"])):
 			maximum_intensity = np.max(threshold_data)
 
 			RECORDER.write_inten(LOW_THRESHOLD,
-								 HIGH_THRESHOLD,
 								 average_intensity,
 								 median_intensity,
 								 maximum_intensity)
@@ -181,17 +186,6 @@ for i in range(len(MAPCUBE["AIA193"])):
 											   cd_data < HIGH_THRESHOLD)
 
 			threshold_image_data = cd_data * binary_image_data
-
-			# edge_x = ndimage.sobel(cd_data, 
-			# 					   axis = 0,
-			# 					   mode = "constant")
-
-			# edge_y = ndimage.sobel(cd_data,
-			# 					   axis = 1,
-			# 					   mode = "constant")
-
-			# loop_enhanced_data = np.hypot(edge_x, edge_y)
-			# loop_enhanced_map = smap.Map(loop_enhanced_data, cut_disk.meta)
 
 			RECORDER.write_image(0,
 								 LOOP_ID,
@@ -205,13 +199,25 @@ for i in range(len(MAPCUBE["AIA193"])):
 								 MAPCUBE[MEAS][i].wavelength)
 			RECORDER.write_image(2,
 								 LOOP_ID,
-								 np.flip(threshold_image_data),
+								 np.flip(threshold_image_data, 0),
 								 MAPCUBE[MEAS][i].detector,
 								 MAPCUBE[MEAS][i].wavelength)
 			
 			hmi_raw_data = MAPCUBE["HMI"][i].data
 
-			dim, rad, center_x, center_y = 4096.0, 1878.0, 2048.0, 2048.0
+			SCALE = 1
+
+			# SCALE = float("%.3f" % (MAPCUBE["HMI"][i].scale[0].value / MAPCUBE[MEAS][i].scale[0].value))
+
+			# hmi_raw_data = interpolate(hmi_raw_data,
+			#  						   1,
+			#  						   order = 1)
+
+			dim = hmi_raw_data.shape[0]
+			rad = MAPCUBE["HMI"][i].rsun_obs.value / MAPCUBE["HMI"][i].scale[0].value * SCALE
+			center_x = MAPCUBE["HMI"][i].reference_pixel[0].value * SCALE
+			center_y = MAPCUBE["HMI"][i].reference_pixel[1].value * SCALE
+
 			y, x = np.ogrid[-center_x : dim - center_x, -center_y : dim - center_y]
 			mask = x * x + y * y >= rad * rad
 			hmi_raw_data[mask] = np.inf
@@ -241,13 +247,14 @@ for i in range(len(MAPCUBE["AIA193"])):
 			hmi_cd_data = hmi_raw_data[x1 : x2,
 									   y1 : y2]
 
-			##########################
-			LOW_THRESHOLD_HMI = -500.0
-			HIGH_THRESHOLD_HMI = 500.0
-			##########################
+			###########################
+			LOW_THRESHOLD_HMI = -1500.0
+			HIGH_THRESHOLD_HMI = 1500.0
+			###########################
 
 			hmi_threshold_image_data = hmi_cd_data[np.where(np.logical_and(hmi_cd_data > LOW_THRESHOLD_HMI,
 																		   hmi_cd_data < HIGH_THRESHOLD_HMI))]
+
 			unsig_flux = np.sum(np.abs(hmi_threshold_image_data))
 			avg_flux = np.average(hmi_threshold_image_data)
 
@@ -259,14 +266,13 @@ for i in range(len(MAPCUBE["AIA193"])):
 								 MAPCUBE["HMI"][i].detector,
 								 MAPCUBE["HMI"][i].wavelength)
 
-			# extract the xy coordinates of loops from binary images; record into 2D arrays
-
 			RECORDER.new_line()
-			LOOP_ID += 1
 			NUM_LOOPS += 1
+
+		LOOP_ID += 1
 
 RECORDER.info_text("Done:\t%s loops analyzed\n\t\t%s loops off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
 RECORDER.info_text("Compressing files")
-os.system("zip -r -X data_%s.zip resources/region-data" % str(datetime.now().strftime("%Y-%m-%d %H.%M.%S")))
-RECORDER.new_line()
+os.system("zip -r -X data_%s.zip resources/region-data" % str(datetime.now().strftime("%Y-%m-%d_%H.%M.%S")))
+RECORDER.line()
 RECORDER.display_end_time("loop-analysis")

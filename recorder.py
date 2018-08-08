@@ -17,11 +17,12 @@ class Recorder(object):
 		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW
 		self.PARAM = Color.RESET + Color.GREEN + "[PARAM]\t" + Color.RESET + Color.YELLOW
 		self.SYS = Color.RESET + Color.RED + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE + Color.BOLD
+		self.WARN = Color.RESET + Color.RED + "[WARN]\t" + Color.RESET + Color.YELLOW
 		self.NEW_LINE = Color.RESET + Color.WHITE + "\n" + "-" * 75
 
 		if database_name != "":
 			with open(self.DATABASE_NAME, "w") as db:
-				db.write("ID,INSTR,WAVLEN,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,INTEN_LOW_THRESH,INTEN_HIGH_THRESH,AVG_INTEN,MED_INTEN,MAX_INTEN,UNSIG_FLX,AVG_FLUX,\n")
+				db.write("ID,INSTR,WAVLEN,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,INTEN_LOW_THRESH,AVG_INTEN,MED_INTEN,MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,\n")
 
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
@@ -88,14 +89,11 @@ class Recorder(object):
 		print self.INFO + "Attemping to find optimal low threshold"
 		self.rest()
 
-	def write_inten(self, low_thresh, high_thresh, avg, med, max):
+	def write_inten(self, low_thresh, avg, med, max):
 		with open(self.DATABASE_NAME, "a") as db:
 			print self.WRITE + "Recording intensity low threshold"
 			print self.INFO_TAB + "%.1f" % low_thresh
 			db.write("%.1f," % low_thresh)
-			print self.WRITE + "Recording intensity high threshold"
-			print self.INFO_TAB + "%.1f" % high_thresh
-			db.write("%.1f," % high_thresh)
 			print self.WRITE + "Recording average intensity"
 			print self.INFO_TAB + "%.1f" % avg
 			db.write("%.1f," % avg)
@@ -109,10 +107,10 @@ class Recorder(object):
 
 	def write_flux(self, unsig, avg):
 		with open(self.DATABASE_NAME, "a") as db:
-			print self.WRITE + "Recording total unsigned flux"
+			print self.WRITE + "Recording total unsigned gauss"
 			print self.INFO_TAB + "%.1f" % unsig
 			db.write("%.3f," % unsig)
-			print self.WRITE + "Recording average signed flux"
+			print self.WRITE + "Recording average signed gauss"
 			print self.INFO_TAB + "%.3f" % avg
 			db.write("%.3f," % avg)
 		self.rest()
@@ -148,15 +146,21 @@ class Recorder(object):
 		print self.NEW_LINE
 
 	def off_disk(self):
-		with open(self.DATABASE_NAME, "a") as db:
-			print self.INFO + "Off-disk loop identified; skipping"
-			db.write("OFF_DISK," * 13)
+		print self.WARN + "Off-disk region identified; skipping"
+		with open(self.DATABASE_NAME, "r") as db:
+			lines = db.readlines()
+		with open(self.DATABASE_NAME, "w") as db:
+			for i in range(len(lines) - 1):
+				db.write(lines[i])
 		self.new_line()
 
 	def too_small(self):
-		with open(self.DATABASE_NAME, "a") as db:
-			print self.INFO + "Region smaller than 200 px x 200 px; skipping"
-			db.write("TOO_SMALL," * 13)
+		print self.WARN + "Region smaller than 100 px x 100 px; skipping"
+		with open(self.DATABASE_NAME, "r") as db:
+			lines = db.readlines()
+		with open(self.DATABASE_NAME, "w") as db:
+			for i in range(len(lines) - 1):
+				db.write(lines[i])
 		self.new_line()
 
 	def rest(self):
