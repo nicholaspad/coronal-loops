@@ -42,106 +42,132 @@ plt.gcf().text(0.01, 0.91, "HPC (%.1f, %.1f)" % (HPC_X, HPC_Y), fontsize = 12)
 plt.subplot(3, 8, 1)
 plt.title("AIA94")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA94.npy" % ID), cmap = "sdoaia94")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA94.npy" % ID),
+		   cmap = "sdoaia94")
 
 plt.subplot(3, 8, 2)
 plt.title("AIA131")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA131.npy" % ID), cmap = "sdoaia131")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA131.npy" % ID),
+		   cmap = "sdoaia131")
 
 plt.subplot(3, 8, 3)
 plt.title("AIA171")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA171.npy" % ID), cmap = "sdoaia171")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA171.npy" % ID),
+		   cmap = "sdoaia171")
 
 plt.subplot(3, 8, 4)
 plt.title("AIA193")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA193.npy" % ID), cmap = "sdoaia193")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA193.npy" % ID),
+		   cmap = "sdoaia193")
 
 plt.subplot(3, 8, 5)
 plt.title("AIA211")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA211.npy" % ID), cmap = "sdoaia211")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA211.npy" % ID),
+		   cmap = "sdoaia211")
 
 plt.subplot(3, 8, 6)
 plt.title("AIA304")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA304.npy" % ID), cmap = "sdoaia304")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA304.npy" % ID),
+		   cmap = "sdoaia304")
 
 plt.subplot(3, 8, 7)
 plt.title("AIA335")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/raw-images/%05dAIA335.npy" % ID), cmap = "sdoaia335")
+plt.imshow(np.load("resources/region-data/raw-images/%05dAIA335.npy" % ID),
+		   cmap = "sdoaia335")
 
 plt.subplot(3, 8, 8)
 plt.title("HMI")
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID), cmap = "gray")
+plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID),
+		   cmap = "gray",
+		   vmin = -120,
+		   vmax = 120)
 
 plt.subplot(3, 8, 9)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA94.npy" % ID), cmap = "sdoaia94")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA94.npy" % ID),
+		   cmap = "sdoaia94")
 
 plt.subplot(3, 8, 10)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA131.npy" % ID), cmap = "sdoaia131")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA131.npy" % ID),
+		   cmap = "sdoaia131")
 
 plt.subplot(3, 8, 11)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA171.npy" % ID), cmap = "sdoaia171")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA171.npy" % ID),
+		   cmap = "sdoaia171")
 
 plt.subplot(3, 8, 12)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA193.npy" % ID), cmap = "sdoaia193")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA193.npy" % ID),
+		   cmap = "sdoaia193")
 
 plt.subplot(3, 8, 13)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA211.npy" % ID), cmap = "sdoaia211")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA211.npy" % ID),
+		   cmap = "sdoaia211")
 
 plt.subplot(3, 8, 14)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA304.npy" % ID), cmap = "sdoaia304")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA304.npy" % ID),
+		   cmap = "sdoaia304")
 
 plt.subplot(3, 8, 15)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/binary-images/%05dAIA335.npy" % ID), cmap = "sdoaia335")
+plt.imshow(np.load("resources/region-data/binary-images/%05dAIA335.npy" % ID),
+		   cmap = "sdoaia335")
 
 # plt.subplot(3, 8, 16)
 # plt.axis("off")
-# plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID), cmap = "gray")
+# plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID),
+#	 		 cmap = "gray")
 
 plt.subplot(3, 8, 17)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA94.npy" % ID), cmap = "sdoaia94")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA94.npy" % ID),
+		   cmap = "sdoaia94")
 
 plt.subplot(3, 8, 18)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA131.npy" % ID), cmap = "sdoaia131")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA131.npy" % ID),
+		   cmap = "sdoaia131")
 
 plt.subplot(3, 8, 19)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA171.npy" % ID), cmap = "sdoaia171")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA171.npy" % ID),
+		   cmap = "sdoaia171")
 
 plt.subplot(3, 8, 20)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA193.npy" % ID), cmap = "sdoaia193")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA193.npy" % ID),
+		   cmap = "sdoaia193")
 
 plt.subplot(3, 8, 21)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA211.npy" % ID), cmap = "sdoaia211")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA211.npy" % ID),
+		   cmap = "sdoaia211")
 
 plt.subplot(3, 8, 22)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA304.npy" % ID), cmap = "sdoaia304")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA304.npy" % ID),
+		   cmap = "sdoaia304")
 
 plt.subplot(3, 8, 23)
 plt.axis("off")
-plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA335.npy" % ID), cmap = "sdoaia335")
+plt.imshow(np.load("resources/region-data/threshold-images/%05dAIA335.npy" % ID),
+		   cmap = "sdoaia335")
 
 # plt.subplot(3, 8, 24)
 # plt.axis("off")
-# plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID), cmap = "gray")
+# plt.imshow(np.load("resources/region-data/magnetogram-images/%05dHMI6173.npy" % ID),
+#	 		 cmap = "gray")
 
 plt.subplots_adjust(wspace = 0.02, hspace = 0)
 plt.show()

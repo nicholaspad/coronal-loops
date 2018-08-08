@@ -7,3 +7,4 @@ class Color:
 	UNDERLINE_YELLOW = "\033[4m\033[93m"
 	WHITE = "\033[37m"
 	YELLOW = "\033[93m"
+	BLUE = "\033[34m"

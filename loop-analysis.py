@@ -7,17 +7,28 @@ from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
 from scipy.ndimage import zoom as interpolate
 from scipy.spatial import distance
-from skimage.feature import peak_local_max as plm
 import astropy.units as u
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import scipy
+import scipy
+import scipy.ndimage as ndimage
+import scipy.ndimage.filters as filters
 import sunpy.map as smap
 
 MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 RECORDER = Recorder("database.csv")
 RECORDER.display_start_time("loop-analysis")
+
+def zero_padder(vector, pad_width, iaxis, kwargs):
+	pad_value = kwargs.get('padder', 10)
+	vector[:pad_width[0]] = pad_value
+	vector[-pad_width[1]:] = pad_value
+	return vector
+
+# np.pad(a, DIM, zero_padder, padder=100)
 
 os.system("rm -rf resources/region-data/raw-images && mkdir resources/region-data/raw-images")
 os.system("rm -rf resources/region-data/binary-images && mkdir resources/region-data/binary-images")
@@ -73,14 +84,23 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 	raw_data = MAPCUBE["AIA171"][i].data
 
-	#####################################
-	xy_maxima = plm(raw_data,
-					min_distance = 130,
-					threshold_rel = 0.75)
-	#####################################
+	#################################
+	min_distance = 1000
+	threshold = 0.6 * raw_data.max()
+	#################################
+
+	data_max = filters.maximum_filter(raw_data, min_distance)
+	maxima = (raw_data == data_max)
+	data_min = filters.minimum_filter(raw_data, min_distance)
+	diff = ((data_max - data_min) > threshold)
+	maxima[diff == 0] = 0
+
+	labeled, num_objects = ndimage.label(maxima)
+	xy_maxima = np.array(ndimage.center_of_mass(raw_data, labeled, range(1, num_objects + 1)))
+	xy_maxima = xy_maxima.astype(int)
 
 	if xy_maxima.shape[0] == 0:
-		hp_maxima = []
+		hp_maxima = np.array([])
 
 	else:
 		hp_maxima = MAPCUBE["AIA171"][i].pixel_to_world(xy_maxima[:, 1] * u.pixel,
@@ -118,7 +138,7 @@ for i in range(len(MAPCUBE["AIA171"])):
 			HALF_DIM_PXL = 1
 
 			####################
-			MIN_AVERAGE = 1500.0
+			MIN_AVERAGE = 1475.0
 			####################
 
 			while np.average(raw_data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
@@ -205,46 +225,50 @@ for i in range(len(MAPCUBE["AIA171"])):
 			
 			hmi_raw_data = MAPCUBE["HMI"][i].data
 
-			SCALE = 1
+			SCALE = float("%.3f" % (MAPCUBE["HMI"][i].scale[0].value / MAPCUBE[MEAS][i].scale[0].value))
 
-			# SCALE = float("%.3f" % (MAPCUBE["HMI"][i].scale[0].value / MAPCUBE[MEAS][i].scale[0].value))
+			hmi_mod_data = interpolate(hmi_raw_data,
+			 						   SCALE,
+			 						   order = 1)
+			
+			PAD = (MAPCUBE[MEAS][i].shape[0] - hmi_mod_data.shape[0]) / 2
 
-			# hmi_raw_data = interpolate(hmi_raw_data,
-			#  						   1,
-			#  						   order = 1)
+			hmi_mod_data = np.pad(hmi_mod_data,PAD , zero_padder, padder = np.nan)
 
-			dim = hmi_raw_data.shape[0]
-			rad = MAPCUBE["HMI"][i].rsun_obs.value / MAPCUBE["HMI"][i].scale[0].value * SCALE
-			center_x = MAPCUBE["HMI"][i].reference_pixel[0].value * SCALE
-			center_y = MAPCUBE["HMI"][i].reference_pixel[1].value * SCALE
+			debug()
+
+			dim = hmi_mod_data.shape[0]
+			rad = MAPCUBE[MEAS][i].rsun_obs.value / MAPCUBE[MEAS][i].scale[0].value
+			center_x = MAPCUBE[MEAS][i].reference_pixel[0].value
+			center_y = MAPCUBE[MEAS][i].reference_pixel[1].value
 
 			y, x = np.ogrid[-center_x : dim - center_x, -center_y : dim - center_y]
 			mask = x * x + y * y >= rad * rad
-			hmi_raw_data[mask] = np.inf
+			hmi_mod_data[mask] = np.inf
 
-			hmi_loc = MAPCUBE["HMI"][i].world_to_pixel(where_hpc)
+			# hmi_loc = MAPCUBE["HMI"][i].world_to_pixel(where_hpc)
 
-			if int(hmi_loc[0].value - HALF_DIM_PXL) < 0:
+			if int(where_xy[0].value - HALF_DIM_PXL) < 0:
 				y1 = 0
 			else:
-				y1 = int(hmi_loc[0].value - HALF_DIM_PXL)
+				y1 = int(where_xy[0].value - HALF_DIM_PXL)
 
-			if int(hmi_loc[0].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[0]:
+			if int(where_xy[0].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[0]:
 				y2 = MAPCUBE["HMI"][i].data.shape[0]
 			else:
-				y2 = int(hmi_loc[0].value + HALF_DIM_PXL)
+				y2 = int(where_xy[0].value + HALF_DIM_PXL)
 
-			if int(hmi_loc[1].value - HALF_DIM_PXL) < 0:
+			if int(where_xy[1].value - HALF_DIM_PXL) < 0:
 				x1 = 0
 			else:
-				x1 = int(hmi_loc[1].value - HALF_DIM_PXL)
+				x1 = int(where_xy[1].value - HALF_DIM_PXL)
 
-			if int(hmi_loc[1].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[1]:
+			if int(where_xy[1].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[1]:
 				x2 = MAPCUBE["HMI"][i].data.shape[1]
 			else:
-				x2 = int(hmi_loc[1].value + HALF_DIM_PXL)
+				x2 = int(where_xy[1].value + HALF_DIM_PXL)
 
-			hmi_cd_data = hmi_raw_data[x1 : x2,
+			hmi_cd_data = hmi_mod_data[x1 : x2,
 									   y1 : y2]
 
 			###########################
@@ -271,8 +295,10 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 		LOOP_ID += 1
 
-RECORDER.info_text("Done:\t%s loops analyzed\n\t\t%s loops off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
-RECORDER.info_text("Compressing files")
-os.system("zip -r -X data_%s.zip resources/region-data" % str(datetime.now().strftime("%Y-%m-%d_%H.%M.%S")))
+RECORDER.info_text("Compressing database\n")
+os.chdir("resources/")
+os.system("zip -r -X data_%s.zip region-data" % str(datetime.now().strftime("%Y-%m-%d_%H.%M.%S")))
+os.chdir("../")
+RECORDER.info_text("Done:\t%s regions analyzed\n\t\t%s regions off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
 RECORDER.line()
 RECORDER.display_end_time("loop-analysis")

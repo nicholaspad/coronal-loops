@@ -11,9 +11,9 @@ class Recorder(object):
 
 	def __init__(self, database_name = ""):
 		self.DATABASE_NAME = "/Users/%s/Desktop/lmsal/resources/region-data/%s" % (getpass.getuser(), database_name)
-		self.INFO = Color.RESET + Color.PINK + Color.BOLD + "[INFO]\t" + Color.RESET + Color.YELLOW
+		self.INFO = Color.RESET + Color.BLUE + Color.BOLD + "[INFO]\t" + Color.RESET + Color.YELLOW
 		self.INPUT = Color.RESET + Color.RED + Color.BOLD + "[INPUT]\t" + Color.RESET + Color.YELLOW
-		self.INFO_TAB = Color.RESET + Color.PINK + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW
+		self.INFO_TAB = Color.RESET + Color.BLUE + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW
 		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW
 		self.PARAM = Color.RESET + Color.GREEN + "[PARAM]\t" + Color.RESET + Color.YELLOW
 		self.SYS = Color.RESET + Color.RED + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE + Color.BOLD
@@ -55,8 +55,8 @@ class Recorder(object):
 
 	def write_xywhere(self, where):
 		with open(self.DATABASE_NAME, "a") as db:
-			where_x = where[0]
-			where_y = where[1]
+			where_x = where[1]
+			where_y = where[0]
 			print self.WRITE + "Recording cartesian pixel location"
 			print self.INFO_TAB + "(%d px, %d px)" % (where_x, where_y)
 			db.write("%d,%d," % (where_x, where_y))
@@ -69,7 +69,7 @@ class Recorder(object):
 			print self.WRITE + "Recording helioprojective coordinate location"
 			print self.INFO_TAB + "(%.3f arcsec, %.3f arcsec)" % (where_x, where_y)
 			db.write("%.3f,%.3f," % (where_x, where_y))
-		print self.INFO + "Attempting to find optimal bounds"
+		print self.INFO + "Finding optimal bounds"
 		self.rest()
 
 	def write_xysize(self, size):
@@ -86,7 +86,7 @@ class Recorder(object):
 			print self.WRITE + "Recording helioprojective size"
 			print self.INFO_TAB + "%d arcsec x %d arcsec" % (size_x, size_y)
 			db.write("%d,%d," % (size_x, size_y))
-		print self.INFO + "Attemping to find optimal low threshold"
+		print self.INFO + "Finding optimal low threshold"
 		self.rest()
 
 	def write_inten(self, low_thresh, avg, med, max):
