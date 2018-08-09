@@ -16,8 +16,8 @@ class Recorder(object):
 		self.INFO_TAB = Color.RESET + Color.BLUE + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW
 		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW
 		self.PARAM = Color.RESET + Color.GREEN + "[PARAM]\t" + Color.RESET + Color.YELLOW
-		self.SYS = Color.RESET + Color.RED + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE + Color.BOLD
-		self.WARN = Color.RESET + Color.RED + "[WARN]\t" + Color.RESET + Color.YELLOW
+		self.SYS = Color.RESET + Color.RED + Color.BOLD + "[SYS]\t" + Color.RESET + Color.YELLOW + Color.BOLD
+		self.WARN = Color.RESET + Color.RED + Color.BOLD + "[WARN]\t" + Color.RESET + Color.YELLOW
 		self.NEW_LINE = Color.RESET + Color.WHITE + "\n" + "-" * 75
 
 		if database_name != "":
@@ -185,3 +185,4 @@ class Recorder(object):
 		print "\n" + self.SYS + "Process %s ended: %s" % (name, datetime.now().replace(microsecond = 0))
 		print self.SYS + "Execution time: %s" % str(self.delta).split(".")[0]
 		print self.NEW_LINE
+		print Color.RESET

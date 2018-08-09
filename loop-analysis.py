@@ -138,7 +138,7 @@ for i in range(len(MAPCUBE["AIA171"])):
 			HALF_DIM_PXL = 1
 
 			####################
-			MIN_AVERAGE = 1475.0
+			MIN_AVERAGE = 1200.0
 			####################
 
 			while np.average(raw_data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
@@ -209,17 +209,17 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 			RECORDER.write_image(0,
 								 LOOP_ID,
-								 np.flip(cd_data, 0),
+								 cd_data,
 								 MAPCUBE[MEAS][i].detector,
 								 MAPCUBE[MEAS][i].wavelength)
 			RECORDER.write_image(1,
 								 LOOP_ID,
-								 np.flip(binary_image_data, 0),
+								 binary_image_data,
 								 MAPCUBE[MEAS][i].detector,
 								 MAPCUBE[MEAS][i].wavelength)
 			RECORDER.write_image(2,
 								 LOOP_ID,
-								 np.flip(threshold_image_data, 0),
+								 threshold_image_data,
 								 MAPCUBE[MEAS][i].detector,
 								 MAPCUBE[MEAS][i].wavelength)
 			
@@ -231,11 +231,12 @@ for i in range(len(MAPCUBE["AIA171"])):
 			 						   SCALE,
 			 						   order = 1)
 			
-			PAD = (MAPCUBE[MEAS][i].shape[0] - hmi_mod_data.shape[0]) / 2
+			PAD = (MAPCUBE[MEAS][i].data.shape[0] - hmi_mod_data.shape[0]) / 2
 
 			hmi_mod_data = np.pad(hmi_mod_data,PAD , zero_padder, padder = np.nan)
+			hmi_mod_data = np.flip(hmi_mod_data, (0,1))
 
-			debug()
+			print PAD, hmi_mod_data.shape
 
 			dim = hmi_mod_data.shape[0]
 			rad = MAPCUBE[MEAS][i].rsun_obs.value / MAPCUBE[MEAS][i].scale[0].value
@@ -248,25 +249,25 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 			# hmi_loc = MAPCUBE["HMI"][i].world_to_pixel(where_hpc)
 
-			if int(where_xy[0].value - HALF_DIM_PXL) < 0:
-				y1 = 0
-			else:
-				y1 = int(where_xy[0].value - HALF_DIM_PXL)
-
-			if int(where_xy[0].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[0]:
-				y2 = MAPCUBE["HMI"][i].data.shape[0]
-			else:
-				y2 = int(where_xy[0].value + HALF_DIM_PXL)
-
-			if int(where_xy[1].value - HALF_DIM_PXL) < 0:
+			if int(where_xy[0] - HALF_DIM_PXL) < 0:
 				x1 = 0
 			else:
-				x1 = int(where_xy[1].value - HALF_DIM_PXL)
+				x1 = int(where_xy[0] - HALF_DIM_PXL)
 
-			if int(where_xy[1].value + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[1]:
-				x2 = MAPCUBE["HMI"][i].data.shape[1]
+			if int(where_xy[0] + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[0]:
+				x2 = MAPCUBE["HMI"][i].data.shape[0]
 			else:
-				x2 = int(where_xy[1].value + HALF_DIM_PXL)
+				x2 = int(where_xy[0] + HALF_DIM_PXL)
+
+			if int(where_xy[1] - HALF_DIM_PXL) < 0:
+				y1 = 0
+			else:
+				y1 = int(where_xy[1] - HALF_DIM_PXL)
+
+			if int(where_xy[1] + HALF_DIM_PXL) > MAPCUBE["HMI"][i].data.shape[1]:
+				y2 = MAPCUBE["HMI"][i].data.shape[1]
+			else:
+				y2 = int(where_xy[1] + HALF_DIM_PXL)
 
 			hmi_cd_data = hmi_mod_data[x1 : x2,
 									   y1 : y2]
@@ -286,7 +287,7 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 			RECORDER.write_image(3,
 								 LOOP_ID,
-								 np.flip(hmi_cd_data, 1),
+								 hmi_cd_data,
 								 MAPCUBE["HMI"][i].detector,
 								 MAPCUBE["HMI"][i].wavelength)
 
