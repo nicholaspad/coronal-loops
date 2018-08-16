@@ -2,6 +2,7 @@ import warnings
 warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
 from astropy.coordinates import SkyCoord
+from copy import copy
 from datetime import datetime
 from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
@@ -27,6 +28,53 @@ def zero_padder(vector, pad_width, iaxis, kwargs):
 	vector[:pad_width[0]] = pad_value
 	vector[-pad_width[1]:] = pad_value
 	return vector
+
+def grow_mask(binary_mask):
+	a = binary_mask
+	temp = copy(a)
+
+	for i in range(len(temp)):
+
+		for j in range(len(temp[0])):
+
+			if temp[i,j]:
+
+				if i == j == 0: # top left corner
+
+					a[i+1,j] = a[i,j+1] = True
+
+				elif i == len(a)-1 and j == 0: # top right corner
+
+					a[i-1,j] = a[i,j+1] = True
+
+				elif i == 0 and j == len(a[0])-1: # bottom left corner:
+
+					a[i+1,j] = a[i,j-1] = True
+
+				elif i == len(a)-1 and j == len(a[0])-1: # bottom right corner
+
+					a[i-1,j] = a[i,j-1] = True
+
+				elif i == 0: # first row, not a corner
+
+					a[i+1,j] = a[i,j-1] = a[i,j+1] = True
+
+				elif j == 0: # first column, not a corner
+
+					a[i+1,j] = a[i-1,j] = a[i,j+1] = True
+
+				elif i == len(a)-1: # last row, not a corner
+
+					a[i-1,j] = a[i,j-1] = a[i,j+1] = True
+
+				elif j == len(a[0])-1: # last column, not a corner
+
+					a[i-1,j] = a[i+1,j] = a[i,j-1] = True
+
+				else: # everywhere else
+
+					a[i-1,j] = a[i+1,j] = a[i,j+1] = a[i,j-1] = True
+	return a
 
 os.system("rm -rf resources/region-data/raw-images && mkdir resources/region-data/raw-images")
 os.system("rm -rf resources/region-data/binary-images && mkdir resources/region-data/binary-images")
@@ -200,6 +248,13 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 			binary_image_data = np.logical_and(cd_data > LOW_THRESHOLD,
 											   cd_data < HIGH_THRESHOLD)
+
+			"""
+			Insert here:
+				- Grow binary mask either a set number of times, or until the average/median unmasked pixel brightness reaches a certain value
+				- use grow_mask() method above
+				- adjust LOW_THRESHOLD_304 to finetune the initial mask (ungrown); should probably make the initial mask very sparse/thin
+			"""
 
 			threshold_image_data = cd_data * binary_image_data
 
