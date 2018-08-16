@@ -22,7 +22,7 @@ class Recorder(object):
 
 		if database_name != "":
 			with open(self.DATABASE_NAME, "w") as db:
-				db.write("ID,INSTR,WAVLEN,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,INTEN_LOW_THRESH,AVG_INTEN,MED_INTEN,MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,\n")
+				db.write("ID,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,304_LOW_THRESH_INTEN,304_AVG_INTEN,304_MED_INTEN,304_MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,\n")
 
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
@@ -32,15 +32,8 @@ class Recorder(object):
 			db.write("%05d," % ID)
 		self.rest()
 
-	def write_gen_info(self, instr, wavelen):
-		with open(self.DATABASE_NAME, "a") as db:
-			print self.WRITE + "Recording instrument"
-			print self.INFO_TAB + "%s" % instr
-			db.write("%s," % instr)
-			print self.WRITE + "Recording wavelength"
-			print self.INFO_TAB + "%.1f angstrom" % wavelen.value
-			db.write("%.1f," % wavelen.value)
-		self.rest()
+	def show_instr(self, instr):
+		print self.INFO + instr
 
 	def write_datetime(self, datetime):
 		with open(self.DATABASE_NAME, "a") as db:
@@ -105,7 +98,7 @@ class Recorder(object):
 			db.write("%.0f," % max)
 		self.rest()
 
-	def write_flux(self, unsig, avg):
+	def write_gauss(self, unsig, avg):
 		with open(self.DATABASE_NAME, "a") as db:
 			print self.WRITE + "Recording total unsigned gauss"
 			print self.INFO_TAB + "%.1f" % unsig
@@ -128,6 +121,9 @@ class Recorder(object):
 		elif type == 3:
 			name = "magnetogram image"
 			dir = "resources/region-data/magnetogram-images"
+		elif type == 4:
+			name = "masked magnetogram image"
+			dir = "resources/region-data/masked-magnetogram-images"
 		
 		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
 		print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
@@ -153,6 +149,15 @@ class Recorder(object):
 			for i in range(len(lines) - 1):
 				db.write(lines[i])
 		self.new_line()
+
+	# def unipolar(self):
+	# 	print self.WARN + "Unipolar region identified (> 4.0 or < -4.0 average gauss); skipping"
+	# 	with open(self.DATABASE_NAME, "r") as db:
+	# 		lines = db.readlines()
+	# 	with open(self.DATABASE_NAME, "w") as db:
+	# 		for i in range(len(lines) - 1):
+	# 			db.write(lines[i])
+	# 	self.new_line()
 
 	def too_small(self):
 		print self.WARN + "Region smaller than 100 px x 100 px; skipping"
@@ -186,3 +191,19 @@ class Recorder(object):
 		print self.SYS + "Execution time: %s" % str(self.delta).split(".")[0]
 		print self.NEW_LINE
 		print Color.RESET
+
+	def remove_duplicates(self):
+		print self.WARN + "Removing duplicates"
+		with open(self.DATABASE_NAME, "r") as db:
+			lines = db.readlines()
+
+		for i in range(len(lines)):
+			lines[i] = lines[i].split(",")
+
+		with open(self.DATABASE_NAME, "w") as db:
+			db.write(",".join(lines[0]))
+			for i in range(2, len(lines)):
+				if (np.abs(int(lines[i][3]) - int(lines[i - 1][3])) > 20) and (np.abs(int(lines[i][4]) - int(lines[i - 1][4])) > 20):
+					db.write(",".join(lines[i - 1]))
+			db.write(",".join(lines[len(lines) - 1]))
+		self.new_line()
