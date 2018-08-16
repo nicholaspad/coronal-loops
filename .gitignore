@@ -117,3 +117,4 @@ venv.bak/
 
 # directories
 model-generator/
+mnist/
