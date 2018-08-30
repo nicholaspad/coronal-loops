@@ -2,12 +2,12 @@ import warnings
 warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
 from astropy.coordinates import SkyCoord
-from copy import copy
 from datetime import datetime
 from IPython.core import debugger ; debug = debugger.Pdb().set_trace
 from recorder import Recorder
 from skimage.transform import resize
 from scipy.ndimage import zoom as interpolate
+from scipy.ndimage.morphology import binary_dilation as grow_mask
 from scipy.spatial import distance
 import astropy.units as u
 import getpass
@@ -22,59 +22,6 @@ import sunpy.map as smap
 MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 RECORDER = Recorder("database.csv")
 RECORDER.display_start_time("loop-analysis")
-
-def zero_padder(vector, pad_width, iaxis, kwargs):
-	pad_value = kwargs.get('padder', 10)
-	vector[:pad_width[0]] = pad_value
-	vector[-pad_width[1]:] = pad_value
-	return vector
-
-def grow_mask(binary_mask):
-	a = binary_mask
-	temp = copy(a)
-
-	for i in range(len(temp)):
-
-		for j in range(len(temp[0])):
-
-			if temp[i,j]:
-
-				if i == j == 0: # top left corner
-
-					a[i+1,j] = a[i,j+1] = True
-
-				elif i == len(a)-1 and j == 0: # top right corner
-
-					a[i-1,j] = a[i,j+1] = True
-
-				elif i == 0 and j == len(a[0])-1: # bottom left corner:
-
-					a[i+1,j] = a[i,j-1] = True
-
-				elif i == len(a)-1 and j == len(a[0])-1: # bottom right corner
-
-					a[i-1,j] = a[i,j-1] = True
-
-				elif i == 0: # first row, not a corner
-
-					a[i+1,j] = a[i,j-1] = a[i,j+1] = True
-
-				elif j == 0: # first column, not a corner
-
-					a[i+1,j] = a[i-1,j] = a[i,j+1] = True
-
-				elif i == len(a)-1: # last row, not a corner
-
-					a[i-1,j] = a[i,j-1] = a[i,j+1] = True
-
-				elif j == len(a[0])-1: # last column, not a corner
-
-					a[i-1,j] = a[i+1,j] = a[i,j-1] = True
-
-				else: # everywhere else
-
-					a[i-1,j] = a[i+1,j] = a[i,j+1] = a[i,j-1] = True
-	return a
 
 os.system("rm -rf resources/region-data/raw-images && mkdir resources/region-data/raw-images")
 os.system("rm -rf resources/region-data/binary-images && mkdir resources/region-data/binary-images")
@@ -276,37 +223,23 @@ for i in range(len(MAPCUBE["AIA171"])):
 			
 			hmi_raw_data = MAPCUBE["HMI"][i].data
 
-			SCALE = float("%.3f" % (MAPCUBE["HMI"][i].scale[0].value / MAPCUBE[MEAS][i].scale[0].value))
+			casted_hmi_data = np.zeros((4096, 4096))
+			casted_hmi_data[casted_hmi_data == 0] = 99999
+			scale = (MAPCUBE["HMI"][i].scale[0]/MAPCUBE[MEAS][i].scale[0]).value
+			scale = float("%.3f" % scale)
 
-			hmi_mod_data = interpolate(hmi_raw_data,
-			 						   0.851,
-			 						   order = 1)
-			
-			PAD = (MAPCUBE[MEAS][i].data.shape[0] - hmi_mod_data.shape[0]) / 2
-			DISK_NOISE_SIZE = 19
+			interpolated_hmi_data = interpolate(hmi_raw_data, scale, order = 1)
+			interpolated_hmi_data = np.flip(interpolated_hmi_data, (0,1))
 
-			hmi_mod_data = np.pad(hmi_mod_data,PAD , zero_padder, padder = np.nan)
-			hmi_mod_data = np.flip(hmi_mod_data, (0,1))
+			x_size = interpolated_hmi_data.shape[0]
+			y_size = interpolated_hmi_data.shape[1]
+			x_center = int(aia.reference_pixel.x.value + 0.5) - 12
+			y_center = int(aia.reference_pixel.y.value + 0.5) + 4
 
-			dim = hmi_mod_data.shape[0]
-			rad = MAPCUBE[MEAS][i].rsun_obs.value / MAPCUBE[MEAS][i].scale[0].value + DISK_NOISE_SIZE
-			center_x = 2058
-			center_y = 2045
+			casted_hmi_data[(y_center - 1 - y_size/2) : (y_center + y_size/2), (x_center - 1 - x_size/2) : (x_center + x_size/2)] = interpolated_hmi_data
 
-			y, x = np.ogrid[-center_y : dim - center_y, -center_x : dim - center_x]
-			mask = x**2 + y**2 >= rad**2
-			hmi_mod_data[mask] = np.inf
-
-			RESCALE_AMOUNT = 26
-			hmi_mod_data = resize(hmi_mod_data, (hmi_mod_data.shape[0], hmi_mod_data.shape[1] - RESCALE_AMOUNT))
-
-			x1 = int(where_xy[0] - HALF_DIM_PXL)
-			x2 = int(where_xy[0] + HALF_DIM_PXL)
-			y1 = int(where_xy[1] - HALF_DIM_PXL)
-			y2 = int(where_xy[1] + HALF_DIM_PXL)
-
-			hmi_cd_data = hmi_mod_data[x1 : x2,
-									   y1 : y2]
+			hmi_cd_data = casted_hmi_data[x1 : x2,
+										  y1 : y2]
 
 			RECORDER.write_image(3,
 								 LOOP_ID,
@@ -314,8 +247,8 @@ for i in range(len(MAPCUBE["AIA171"])):
 								 MAPCUBE["HMI"][i].detector,
 								 MAPCUBE["HMI"][i].wavelength)
 
-			LOW_THRESHOLD_HMI = -100000.0
-			HIGH_THRESHOLD_HMI = 100000.0
+			LOW_THRESHOLD_HMI = -10000
+			HIGH_THRESHOLD_HMI = 10000
 
 			hmi_threshold_image_data = hmi_cd_data[np.where(np.logical_and(hmi_cd_data > LOW_THRESHOLD_HMI,
 																		   hmi_cd_data < HIGH_THRESHOLD_HMI))]

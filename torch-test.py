@@ -39,7 +39,7 @@ fc = torch.nn.Linear(W_target.size(0), 1)
 
 for batch_idx in count(1):
     # Get data
-    batch_x, batch_y = get_batch(1200)
+    batch_x, batch_y = get_batch(512)
 
     # Reset gradients
     fc.zero_grad()
