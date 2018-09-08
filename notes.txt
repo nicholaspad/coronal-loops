@@ -1,3 +1,0 @@
-NOTES
-- edge detection algorithm applied to loop locations
-- generate large graph and best fit trend
