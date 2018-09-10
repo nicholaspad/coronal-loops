@@ -12,6 +12,8 @@ aia = smap.Map("resources/aia-fits-files/aia.lev1_euv_12s.2017-06-08T000007Z.304
 hmi_data = hmi.data
 aia_data = aia.data
 
+######
+
 casted_hmi_data = np.zeros((4096, 4096))
 casted_hmi_data[casted_hmi_data == 0] = 10000
 scale = (hmi.scale[0]/aia.scale[0]).value
@@ -27,46 +29,50 @@ y_center = int(aia.reference_pixel.y.value + 0.5) + 4
 
 casted_hmi_data[(y_center - 1 - y_size/2) : (y_center + y_size/2), (x_center - 1 - x_size/2) : (x_center + x_size/2)] = interpolated_hmi_data
 
+#####
+
 cd_data = aia_data[1872:2544, 2008:2680]
 binary_data = np.logical_and(cd_data < np.inf, cd_data > 40)
 binary_data = grow_mask(binary_data, iterations = 1)
 binary_data = binary_data.astype(int)
+
+#####
 
 center = com(binary_data)
 x_center = int(center[0] + 0.5)
 y_center = int(center[1] + 0.5)
 binary_data[x_center, y_center] = 2
 dim = cd_data.shape[0]
-threshold_percent = 0.98
+threshold_percent_1 = 0.98
+threshold_percent_2 = 0.95
+threshold_percent_3 = 0.92
+
 total = float(len(np.where(binary_data == 1)[0]))
 rad = 2.0
 y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
 mask_in = None
+mask_out = None
 
 while True:
 	temp_in = x**2 + y**2 <= rad**2
-	if len(np.where(binary_data * temp_in == 1)[0]) / total >= threshold_percent:
+	if len(np.where(binary_data * temp_in == 1)[0]) / total >= threshold_percent_1:
 		mask_in = temp_in
 		break
 	rad += 1.0
 
 a = b = rad
-threshold_percent = 0.95
 
 while True:
 	temp_in = x**2/a**2 + y**2/b**2 <= 1
-	if len(np.where(binary_data * temp_in == 1)[0]) / total < threshold_percent:
+	if len(np.where(binary_data * temp_in == 1)[0]) / total < threshold_percent_2:
 		mask_in = temp_in
 		break
 	a -= 1.0
 
-threshold_percent = 0.92
-mask_out = None
-
 while True:
 	temp_in = x**2/a**2 + y**2/b**2 <= 1
 	temp_out = x**2/a**2 + y**2/b**2 > 1
-	if len(np.where(binary_data * temp_in == 1)[0]) / total < threshold_percent:
+	if len(np.where(binary_data * temp_in == 1)[0]) / total < threshold_percent_3:
 		mask_in = temp_in
 		mask_out = temp_out
 		break
@@ -85,6 +91,8 @@ combined_hmi = masked_hmi_cd_data * masked_binary_data
 combined_hmi[mask_out] = -1
 
 masked_binary_data[mask_out] = -1
+
+#####
 
 plt.subplot(2,4,1)
 plt.imshow(cd_data, cmap = "sdoaia304", origin = "lower")

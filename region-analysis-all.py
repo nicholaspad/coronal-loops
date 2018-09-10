@@ -168,10 +168,6 @@ for i in range(len(MAPCUBE["AIA171"])):
 			cd_data_304 = MAPCUBE["AIA304"][i].data[xy_maxima[j][0] - HALF_DIM_PXL : xy_maxima[j][0] + HALF_DIM_PXL,
 													xy_maxima[j][1] - HALF_DIM_PXL: xy_maxima[j][1] + HALF_DIM_PXL]
 			
-			### HERE
-			### NOTE: GET RID OF AUTO THRESHOLD FINDER BELOW
-			### SIMPLY USE A STATIC THRESHOLD AS DEFINED IN COALIGN/ELLIPSE FILE
-
 			HIGH_THRESHOLD = np.inf
 			LOW_THRESHOLD = 0
 			previous_low = 0
@@ -199,13 +195,6 @@ for i in range(len(MAPCUBE["AIA171"])):
 
 			binary_image_data = np.logical_and(cd_data > LOW_THRESHOLD,
 											   cd_data < HIGH_THRESHOLD)
-
-			"""
-			Insert here:
-				- Grow binary mask either a set number of times, or until the average/median unmasked pixel brightness reaches a certain value
-				- use grow_mask() method above
-				- adjust LOW_THRESHOLD_304 to finetune the initial mask (ungrown); should probably make the initial mask very sparse/thin
-			"""
 
 			threshold_image_data = cd_data * binary_image_data
 

@@ -105,10 +105,6 @@ for i in range(N):
 
 	for j in range(M):
 
-		OFF_DISK_THRESHOLD = 50.0
-		AVERAGE_BRIGHTNESS_THRESHOLD = 240.0
-		LOW_BRIGHTNESS_THRESHOLD = 530.0
-
 		RECORDER.show_instr(PRODUCT)
 		RECORDER.write_ID(LOOP_ID)
 
@@ -122,6 +118,10 @@ for i in range(N):
 						   int(DATA[PRODUCT][i].reference_pixel[1].value)])
 		radius = (DATA[PRODUCT][i].rsun_obs / DATA[PRODUCT][i].scale[0]).value
 
+		##### algorithm to eliminate regions far from solar center
+
+		OFF_DISK_THRESHOLD = 50.0
+
 		if distance.euclidean(center, xy) >= (radius - OFF_DISK_THRESHOLD):
 			RECORDER.off_disk()
 			ADD_OFFDISK = True
@@ -130,6 +130,9 @@ for i in range(N):
 		hpc = REGIONS_HPC[i, j]
 		RECORDER.write_hpcwhere(hpc)
 
+		##### algorithm to determine bounds of region
+
+		AVERAGE_BRIGHTNESS_THRESHOLD = 240.0
 		HALF_DIM_PXL = 1
 		while np.average(RAW_AIA[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
 								 xy[1] - HALF_DIM_PXL: xy[1] + HALF_DIM_PXL]) > AVERAGE_BRIGHTNESS_THRESHOLD:
@@ -157,4 +160,153 @@ for i in range(N):
 		cut_aia = RAW_AIA[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
 						  xy[1] - HALF_DIM_PXL: xy[1] + HALF_DIM_PXL]
 
-		### SEE NOTES
+		# SAVE IMAGE
+		cut_aia
+
+		##### sets a threshold, takes a few statistics
+
+		LOW_BRIGHTNESS_THRESHOLD = 40
+
+		temp_threshold_data = cut_aia[np.where(cut_aia > LOW_BRIGHTNESS_THRESHOLD)]
+		average_intensity = np.average(temp_threshold_data)
+		median_intensity = np.median(temp_threshold_data)
+		maximum_intensity = np.max(temp_threshold_data)
+
+		RECORDER.write_inten(LOW_BRIGHTNESS_THRESHOLD,
+							 average_intensity,
+							 median_intensity,
+							 maximum_intensity)
+
+		##### creates and grows a binary mask based on the threshold
+
+		binary_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
+									 cut_aia < np.inf)
+		binary_mask = grow_mask(binary_mask,
+								iterations = 1,
+								structure = np.ones((3,3)).astype(bool)).astype(int)
+
+		masked_aia_data = cut_aia * binary_mask
+
+		# SAVE IMAGE
+		masked_aia_data
+
+		##### fits an ellipse to a proportion of the positive mask values
+
+		center = com(binary_mask)
+		x_center = int(center[0] + 0.5)
+		y_center = int(center[1] + 0.5)
+		binary_mask[x_center, y_center] = 2
+		dim = cd_data.shape[0]
+		threshold_percent_1 = 0.98
+		threshold_percent_2 = 0.95
+		threshold_percent_3 = 0.92
+
+		total = float(len(np.where(binary_mask == 1)[0]))
+		rad = 2.0
+		y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
+		mask_in = None
+		mask_out = None
+
+		while True:
+			temp_in = x**2 + y**2 <= rad**2
+			if len(np.where(binary_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
+				mask_in = temp_in
+				break
+			rad += 1.0
+
+		a = b = rad
+
+		while True:
+			temp_in = x**2/a**2 + y**2/b**2 <= 1
+			if len(np.where(binary_mask * temp_in == 1)[0]) / total < threshold_percent_2:
+				mask_in = temp_in
+				break
+			a -= 1.0
+
+		while True:
+			temp_in = x**2/a**2 + y**2/b**2 <= 1
+			temp_out = x**2/a**2 + y**2/b**2 > 1
+			if len(np.where(binary_mask * temp_in == 1)[0]) / total < threshold_percent_3:
+				mask_in = temp_in
+				mask_out = temp_out
+				break
+			b -= 1.0
+
+		e_binary_mask = binary_mask * mask_in
+
+		# SAVE IMAGE
+		e_binary_mask
+
+		e_masked_aia_data = cut_aia * e_binary_mask
+		e_masked_aia_data[mask_out] = np.nan
+
+		# SAVE IMAGE
+		e_masked_aia_data
+
+		# TODO: further processing on e_masked_aia_data
+
+		casted_hmi_data = np.zeros((4096, 4096))
+		casted_hmi_data[casted_hmi_data == 0] = 10000
+		scale = (hmi.scale[0] / aia.scale[0]).value
+		scale = float("%.3f" % scale)
+
+		interpolated_hmi_data = interpolate(RAW_HMI,
+											scale,
+											order = 1)
+		interpolated_hmi_data = np.flip(interpolated_hmi_data,
+										(0,1))
+
+		x_size = interpolated_hmi_data.shape[0]
+		y_size = interpolated_hmi_data.shape[1]
+		x_center = int(aia.reference_pixel.x.value + 0.5) - 9
+		y_center = int(aia.reference_pixel.y.value + 0.5) + 4
+
+		ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
+						(x_center - 1 - x_size / 2) : (x_center + x_size / 2)] = interpolated_hmi_data
+
+		cut_hmi = ALIGNED_RAW_HMI[x1 : x2,
+								  y1 : y2]
+
+		# SAVE IMAGE
+		cut_hmi
+
+		masked_hmi_data = cut_hmi * binary_mask
+
+		# SAVE IMAGE
+		masked_hmi_data
+
+		e_masked_hmi_data = cut_hmi * e_binary_mask
+		e_masked_hmi_data[mask_out] = np.nan
+
+		# SAVE IMAGE
+		e_masked_hmi_data
+
+		# TODO: temp_threshold_data for HMI
+		# run calculations on the above (in the original program)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
