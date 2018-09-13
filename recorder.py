@@ -22,7 +22,7 @@ class Recorder(object):
 
 		if database_name != "":
 			with open(self.DATABASE_NAME, "w") as db:
-				db.write("ID,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,304_LOW_THRESH_INTEN,304_AVG_INTEN,304_MED_INTEN,304_MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,\n")
+				db.write("ID,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,304_LOW_THRESH_INTEN,304_AVG_INTEN,304_MED_INTEN,304_MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,MED_GAUSS\n")
 
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
@@ -98,7 +98,7 @@ class Recorder(object):
 			db.write("%.0f," % max)
 		self.rest()
 
-	def write_gauss(self, unsig, avg):
+	def write_gauss(self, unsig, avg, median):
 		with open(self.DATABASE_NAME, "a") as db:
 			print self.WRITE + "Recording total unsigned gauss"
 			print self.INFO_TAB + "%.1f" % unsig
@@ -106,6 +106,9 @@ class Recorder(object):
 			print self.WRITE + "Recording average signed gauss"
 			print self.INFO_TAB + "%.3f" % avg
 			db.write("%.3f," % avg)
+			print self.WRITE + "Recording median signed gauss"
+			print self.INFO_TAB + "%.3f" % median
+			db.write("%.3f," % median)
 		self.rest()
 
 	def write_image(self, type, id, data, instr, wav):
@@ -113,17 +116,17 @@ class Recorder(object):
 			name = "raw image"
 			dir = "resources/region-data/raw-images"
 		elif type == 1:
-			name = "binary image"
-			dir = "resources/region-data/binary-images"
+			name = "raw binary mask"
+			dir = "resources/region-data/raw-masks"
 		elif type == 2:
-			name = "threshold image"
-			dir = "resources/region-data/threshold-images"
+			name = "masked image"
+			dir = "resources/region-data/masked-images"
 		elif type == 3:
-			name = "magnetogram image"
-			dir = "resources/region-data/magnetogram-images"
+			name = "elliptical binary mask"
+			dir = "resources/region-data/e-masks"
 		elif type == 4:
-			name = "masked magnetogram image"
-			dir = "resources/region-data/masked-magnetogram-images"
+			name = "elliptically-masked image"
+			dir = "resources/region-data/e-masked-images"
 		
 		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
 		print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
@@ -149,15 +152,6 @@ class Recorder(object):
 			for i in range(len(lines) - 1):
 				db.write(lines[i])
 		self.new_line()
-
-	# def unipolar(self):
-	# 	print self.WARN + "Unipolar region identified (> 4.0 or < -4.0 average gauss); skipping"
-	# 	with open(self.DATABASE_NAME, "r") as db:
-	# 		lines = db.readlines()
-	# 	with open(self.DATABASE_NAME, "w") as db:
-	# 		for i in range(len(lines) - 1):
-	# 			db.write(lines[i])
-	# 	self.new_line()
 
 	def too_small(self):
 		print self.WARN + "Region smaller than 100 px x 100 px; skipping"
