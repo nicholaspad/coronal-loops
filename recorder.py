@@ -62,7 +62,6 @@ class Recorder(object):
 			print self.WRITE + "Recording helioprojective coordinate location"
 			print self.INFO_TAB + "(%.3f arcsec, %.3f arcsec)" % (where_x, where_y)
 			db.write("%.3f,%.3f," % (where_x, where_y))
-		print self.INFO + "Finding optimal bounds"
 		self.rest()
 
 	def write_xysize(self, size):
@@ -79,7 +78,6 @@ class Recorder(object):
 			print self.WRITE + "Recording helioprojective size"
 			print self.INFO_TAB + "%d arcsec x %d arcsec" % (size_x, size_y)
 			db.write("%d,%d," % (size_x, size_y))
-		print self.INFO + "Finding optimal low threshold"
 		self.rest()
 
 	def write_inten(self, low_thresh, avg, med, max):
@@ -129,8 +127,13 @@ class Recorder(object):
 			dir = "resources/region-data/e-masked-images"
 		
 		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
-		print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
-		np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)
+		
+		if type == 1 or type == 3 :
+			print self.INFO_TAB + "%05d.npy" % (id)
+			np.save("%s/%s/%05d" % (MAIN_DIR, dir, id, data))
+		else:
+			print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
+			np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)
 		self.rest()
 
 	def new_line(self):
@@ -154,7 +157,7 @@ class Recorder(object):
 		self.new_line()
 
 	def too_small(self):
-		print self.WARN + "Region smaller than 100 px x 100 px; skipping"
+		print self.WARN + "Region to small; skipping"
 		with open(self.DATABASE_NAME, "r") as db:
 			lines = db.readlines()
 		with open(self.DATABASE_NAME, "w") as db:
@@ -163,7 +166,7 @@ class Recorder(object):
 		self.new_line()
 
 	def rest(self):
-		time.sleep(0.03)
+		time.sleep(0.075)
 
 	def info_text(self, text):
 		print "\n" + self.INFO + text
@@ -200,4 +203,3 @@ class Recorder(object):
 				if (np.abs(int(lines[i][3]) - int(lines[i - 1][3])) > 20) and (np.abs(int(lines[i][4]) - int(lines[i - 1][4])) > 20):
 					db.write(",".join(lines[i - 1]))
 			db.write(",".join(lines[len(lines) - 1]))
-		self.new_line()

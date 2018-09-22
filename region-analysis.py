@@ -7,15 +7,14 @@ from helper import clear_filesystem
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
 from recorder import Recorder
 from scipy.ndimage import zoom as interpolate
+from scipy.ndimage.measurements import center_of_mass as com
 from scipy.ndimage.morphology import binary_dilation as grow_mask
 from scipy.spatial import distance
-from skimage.transform import resize
 import astropy.units as u
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import scipy
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 import sunpy.map as smap
@@ -97,7 +96,6 @@ for i in range(N):
 REGIONS = REGIONS[0]
 REGIONS_HPC = REGIONS_HPC[0]
 M = len(REGIONS)
-debug()
 
 for i in range(N):
 
@@ -130,12 +128,14 @@ for i in range(N):
 		if distance.euclidean(center, xy) >= (radius - OFF_DISK_THRESHOLD):
 			RECORDER.off_disk()
 			NUM_OFF_DISK += 1
-			break
+			debug()
+			continue
 
 		hpc = REGIONS_HPC[j]
 		RECORDER.write_hpcwhere(hpc)
 
 		##### algorithm to determine bounds of region
+		RECORDER.info_text("Finding optimal region bounds...")
 
 		AVERAGE_BRIGHTNESS_THRESHOLD = 240.0
 		HALF_DIM_PXL = 1
@@ -147,7 +147,7 @@ for i in range(N):
 		if HALF_DIM_PXL < 50.0:
 			RECORDER.too_small()
 			NUM_SMALL += 1
-			break
+			continue
 
 		RECORDER.write_xysize(HALF_DIM_PXL * 2.0)
 
@@ -175,6 +175,7 @@ for i in range(N):
 							 DATA[PRODUCT][i].wavelength)
 
 		##### grows a binary mask based on the threshold
+		RECORDER.info_text("Growing binary mask...")
 
 		LOW_BRIGHTNESS_THRESHOLD = 40
 
@@ -191,6 +192,7 @@ for i in range(N):
 							 DATA[PRODUCT][i].wavelength)
 
 		##### applies binary mask to AIA304 data
+		RECORDER.info_text("Applying binary mask to AIA304 data...")
 
 		masked_aia_data = cut_aia * binary_mask
 
@@ -201,11 +203,12 @@ for i in range(N):
 							 DATA[PRODUCT][i].wavelength)
 
 		##### initial setup for elliptical mask fit
+		RECORDER.info_text("Preparing for elliptical mask fit...")
 
 		center = com(binary_mask)
 		x_center = int(center[0] + 0.5)
 		y_center = int(center[1] + 0.5)
-		dim = cd_data.shape[0]
+		dim = cut_aia.shape[0]
 		threshold_percent_1 = 1.0
 		threshold_percent_2 = 0.96
 		threshold_percent_3 = 0.92
@@ -217,6 +220,7 @@ for i in range(N):
 		mask_out = None
 
 		##### fits circle to 100% of the data
+		RECORDER.info_text("Fitting ellpitcal mask to binary AIA304 data...")
 
 		while True:
 			temp_in = x**2 + y**2 <= rad**2
@@ -226,6 +230,7 @@ for i in range(N):
 			rad += 1.0
 
 		##### adjusts horizontal axis of ellipse to fit 96% of the data
+		RECORDER.info_text("Adjusting horizontal axis...")
 
 		a = b = rad
 
@@ -237,6 +242,7 @@ for i in range(N):
 			a -= 1.0
 
 		##### adjusts vertical axis of ellipse to fit 92% of the data
+		RECORDER.info_text("Adjusting vertical axis...")
 
 		while True:
 			temp_in = x**2/a**2 + y**2/b**2 <= 1
@@ -248,6 +254,7 @@ for i in range(N):
 			b -= 1.0
 
 		##### creates elliptical binary mask
+		RECORDER.info_text("Finalizing elliptical mask...")
 
 		e_binary_mask = binary_mask * mask_in
 
@@ -258,8 +265,9 @@ for i in range(N):
 							 DATA[PRODUCT][i].wavelength)
 
 		##### applies elliptical binary mask to data
+		RECORDER.info_text("Applying elliptical mask to AIA304 data...")
 
-		e_masked_aia_data = cut_aia * e_binary_mask
+		e_masked_aia_data = (cut_aia * e_binary_mask).astype(float)
 		e_masked_aia_data[mask_out] = np.nan
 
 		RECORDER.write_image(4,
@@ -269,6 +277,7 @@ for i in range(N):
 							 DATA[PRODUCT][i].wavelength)
 
 		##### takes a few statistics for masked AIA304 data
+		RECORDER.info_text("Recording statistics for masked AIA304 data...")
 
 		temp_threshold_data = e_masked_aia_data[np.where(e_masked_aia_data > LOW_BRIGHTNESS_THRESHOLD)]
 		average_intensity = np.average(temp_threshold_data)
@@ -283,14 +292,16 @@ for i in range(N):
 		# TODO: further processing on e_masked_aia_data
 
 		##### aligns HMI data to AIA304 data with interpolation and casting
+		RECORDER.info_text("Aligning HMI data to AIA304 data...")
 
 		PRODUCT = "HMI"
 
-		casted_hmi_data = np.zeros((4096, 4096))
-		casted_hmi_data[casted_hmi_data == 0] = np.nan
-		scale = (hmi.scale[0] / aia.scale[0]).value
+		ALIGNED_RAW_HMI = np.zeros((4096, 4096)).astype(float)
+		ALIGNED_RAW_HMI[ALIGNED_RAW_HMI == 0] = np.nan
+		scale = (DATA[PRODUCT][i].scale[0] / DATA["AIA304"][i].scale[0]).value
 		scale = float("%.3f" % scale)
 
+		RECORDER.info_text("Interpolating HMI data with %.6f scale factor..." % scale)
 		interpolated_hmi_data = interpolate(RAW_HMI,
 											scale,
 											order = 1)
@@ -299,32 +310,35 @@ for i in range(N):
 
 		x_size = interpolated_hmi_data.shape[1]
 		y_size = interpolated_hmi_data.shape[0]
-		x_center = int(aia.reference_pixel.x.value + 0.5) - 9
-		y_center = int(aia.reference_pixel.y.value + 0.5) + 4
+		x_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5) - 9
+		y_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5) + 4
 
+		RECORDER.info_text("Casting interpolated HMI data to 4k by 4k blank image...")
 		ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
 						(x_center - 1 - x_size / 2) : (x_center + x_size / 2)] = interpolated_hmi_data
 
-		cut_hmi = ALIGNED_RAW_HMI[x1 : x2,
-								  y1 : y2]
+		cut_hmi = ALIGNED_RAW_HMI[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
+								  xy[1] - HALF_DIM_PXL: xy[1] + HALF_DIM_PXL]
 
 		RECORDER.write_image(0,
 							 LOOP_ID,
 							 cut_hmi,
-							 DATA[PRODUCT].detector,
-							 DATA[PRODUCT].wavelength)
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
 
 		##### applies binary mask to HMI data
+		RECORDER.info_text("Applying binary mask to HMI data...")
 
 		masked_hmi_data = cut_hmi * binary_mask
 
 		RECORDER.write_image(2,
 							 LOOP_ID,
 							 masked_hmi_data,
-							 DATA[PRODUCT].detector,
-							 DATA[PRODUCT].wavelength)
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
 
 		##### applies elliptical binary mask to the data
+		RECORDER.info_text("Applying elliptical mask to HMI data...")
 
 		e_masked_hmi_data = cut_hmi * e_binary_mask
 		e_masked_hmi_data[mask_out] = np.nan
@@ -332,10 +346,11 @@ for i in range(N):
 		RECORDER.write_image(4,
 							 LOOP_ID,
 							 e_masked_hmi_data,
-							 DATA[PRODUCT].detector,
-							 DATA[PRODUCT].wavelength)
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
 
 		##### takes a few statistics for masked HMI data
+		RECORDER.info_text("Recording statistics for masked HMI data...")
 
 		temp_threshold_data = np.ma.array(e_masked_hmi_data,
 										  mask = np.isnan(e_masked_hmi_data))
@@ -348,45 +363,17 @@ for i in range(N):
 							 average_gauss,
 							 median_gauss)
 
-	NUM_LOOPS += 1
-	LOOP_ID += 1
+		RECORDER.new_line()
 
+		NUM_LOOPS += 1
+		LOOP_ID += 1
 
+RECORDER.remove_duplicates()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+RECORDER.info_text("Compressing database\n")
+os.chdir("resources/")
+os.system("zip -r -X data_%s.zip region-data" % str(datetime.now().strftime("%Y-%m-%d_%H.%M.%S")))
+os.chdir("../")
+RECORDER.info_text("Done:\t%s regions analyzed\n\t\t%s regions off-disk\n\t\t%s regions too small" % (NUM_LOOPS, NUM_OFF_DISK, NUM_SMALL))
+RECORDER.line()
+RECORDER.display_end_time("loop-analysis")
