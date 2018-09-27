@@ -130,7 +130,7 @@ class Recorder(object):
 		
 		if type == 1 or type == 3 :
 			print self.INFO_TAB + "%05d.npy" % (id)
-			np.save("%s/%s/%05d" % (MAIN_DIR, dir, id, data))
+			np.save("%s/%s/%05d" % (MAIN_DIR, dir, id), data)
 		else:
 			print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
 			np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)

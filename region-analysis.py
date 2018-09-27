@@ -93,14 +93,13 @@ for i in range(N):
 
 ##### analyze bright region
 
-REGIONS = REGIONS[0]
-REGIONS_HPC = REGIONS_HPC[0]
-M = len(REGIONS)
-
 for i in range(N):
 
 	RAW_AIA = DATA["AIA304"][i].data
+	RAW_AIA_171 = DATA["AIA171"][i].data
 	RAW_HMI = DATA["HMI"][i].data
+
+	M = len(REGIONS[i])
 
 	for j in range(M):
 
@@ -114,7 +113,7 @@ for i in range(N):
 		when = DATA[PRODUCT][i].date
 		RECORDER.write_datetime(when)
 
-		xy = REGIONS[j]
+		xy = REGIONS[i][j]
 		RECORDER.write_xywhere(xy)
 
 		center = np.array([int(DATA[PRODUCT][i].reference_pixel[0].value),
@@ -128,10 +127,9 @@ for i in range(N):
 		if distance.euclidean(center, xy) >= (radius - OFF_DISK_THRESHOLD):
 			RECORDER.off_disk()
 			NUM_OFF_DISK += 1
-			debug()
 			continue
 
-		hpc = REGIONS_HPC[j]
+		hpc = REGIONS_HPC[i][j]
 		RECORDER.write_hpcwhere(hpc)
 
 		##### algorithm to determine bounds of region
@@ -168,16 +166,25 @@ for i in range(N):
 		cut_aia = RAW_AIA[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
 						  xy[1] - HALF_DIM_PXL: xy[1] + HALF_DIM_PXL]
 
+		cut_aia_171 = RAW_AIA_171[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
+								  xy[1] - HALF_DIM_PXL: xy[1] + HALF_DIM_PXL]
+
 		RECORDER.write_image(0,
 							 LOOP_ID,
 							 cut_aia,
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
+		RECORDER.write_image(0,
+							 LOOP_ID,
+							 cut_aia_171,
+							 DATA["AIA171"][i].detector,
+							 DATA["AIA171"][i].wavelength)
+
 		##### grows a binary mask based on the threshold
 		RECORDER.info_text("Growing binary mask...")
 
-		LOW_BRIGHTNESS_THRESHOLD = 40
+		LOW_BRIGHTNESS_THRESHOLD = 450
 
 		binary_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
 									 cut_aia < np.inf)
@@ -210,8 +217,8 @@ for i in range(N):
 		y_center = int(center[1] + 0.5)
 		dim = cut_aia.shape[0]
 		threshold_percent_1 = 1.0
-		threshold_percent_2 = 0.96
-		threshold_percent_3 = 0.92
+		threshold_percent_2 = 0.95
+		threshold_percent_3 = 0.90
 
 		total = float(len(np.where(binary_mask == 1)[0]))
 		rad = 2.0
@@ -229,7 +236,7 @@ for i in range(N):
 				break
 			rad += 1.0
 
-		##### adjusts horizontal axis of ellipse to fit 96% of the data
+		##### adjusts horizontal axis of ellipse to fit 95% of the data
 		RECORDER.info_text("Adjusting horizontal axis...")
 
 		a = b = rad
@@ -241,7 +248,7 @@ for i in range(N):
 				break
 			a -= 1.0
 
-		##### adjusts vertical axis of ellipse to fit 92% of the data
+		##### adjusts vertical axis of ellipse to fit 90% of the data
 		RECORDER.info_text("Adjusting vertical axis...")
 
 		while True:
@@ -310,8 +317,8 @@ for i in range(N):
 
 		x_size = interpolated_hmi_data.shape[1]
 		y_size = interpolated_hmi_data.shape[0]
-		x_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5) - 9
-		y_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5) + 4
+		x_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5)
+		y_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5)
 
 		RECORDER.info_text("Casting interpolated HMI data to 4k by 4k blank image...")
 		ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
