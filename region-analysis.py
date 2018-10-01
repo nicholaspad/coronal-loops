@@ -217,8 +217,8 @@ for i in range(N):
 		y_center = int(center[1] + 0.5)
 		dim = cut_aia.shape[0]
 		threshold_percent_1 = 1.0
-		threshold_percent_2 = 0.95
-		threshold_percent_3 = 0.90
+		threshold_percent_2 = 0.96
+		threshold_percent_3 = 0.92
 
 		total = float(len(np.where(binary_mask == 1)[0]))
 		rad = 2.0
