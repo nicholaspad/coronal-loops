@@ -60,6 +60,7 @@ plt.axis("off")
 plt.imshow(np.load("resources/region-data/raw-images/%05dAIA171.npy" % ID),
 		   cmap = "sdoaia171",
 		   origin = "lower")
+plt.clim(0,3000)
 
 plt.subplot(3,4,2)
 plt.title("Raw AIA304", fontname = font)
@@ -67,6 +68,7 @@ plt.axis("off")
 plt.imshow(np.load("resources/region-data/raw-images/%05dAIA304.npy" % ID),
 		   cmap = "sdoaia304",
 		   origin = "lower")
+plt.clim(0,400)
 
 plt.subplot(3,4,3)
 plt.title("Raw HMI", fontname = font)
@@ -91,13 +93,16 @@ plt.axis("off")
 plt.imshow(np.load("resources/region-data/masked-images/%05dAIA304.npy" % ID),
 		   cmap = "sdoaia304",
 		   origin = "lower")
+plt.clim(0,400)
 
 plt.subplot(3,4,6)
 plt.title("E-masked AIA304", fontname = font)
 plt.axis("off")
+plt.clim(0,300)
 plt.imshow(np.load("resources/region-data/e-masked-images/%05dAIA304.npy" % ID),
 		   cmap = "sdoaia304",
 		   origin = "lower")
+plt.clim(0,400)
 
 plt.subplot(3,4,7)
 plt.title("Masked HMI", fontname = font)
@@ -131,6 +136,7 @@ plt.axis("off")
 plt.imshow(np.load("resources/region-data/raw-images/%05dAIA304.npy" % ID),
 		   cmap = "sdoaia304",
 		   origin = "lower")
+plt.clim(0,400)
 plt.imshow(np.load("resources/region-data/raw-images/%05dHMI6173.npy" % ID),
 		   cmap = "gray",
 		   vmin = -120,
@@ -141,6 +147,7 @@ plt.imshow(np.load("resources/region-data/raw-images/%05dHMI6173.npy" % ID),
 plt.subplot(3,4,11)
 plt.title("E-mask overlay", fontname = font)
 plt.axis("off")
+plt.clim(0,400)
 plt.imshow(np.load("resources/region-data/raw-masks/%05d.npy" % ID),
 		   cmap = "gray",
 		   origin = "lower")
@@ -158,6 +165,7 @@ def update(val):
 	plt.imshow(np.load("resources/region-data/raw-images/%05dAIA304.npy" % ID),
 			   cmap = "sdoaia304",
 			   origin = "lower")
+	plt.clim(0,400)
 	plt.imshow(np.load("resources/region-data/raw-images/%05dHMI6173.npy" % ID),
 			   cmap = "gray",
 			   vmin = -120,

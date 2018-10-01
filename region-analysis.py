@@ -135,7 +135,7 @@ for i in range(N):
 		##### algorithm to determine bounds of region
 		RECORDER.info_text("Finding optimal region bounds...")
 
-		AVERAGE_BRIGHTNESS_THRESHOLD = 240.0
+		AVERAGE_BRIGHTNESS_THRESHOLD = 200.0
 		HALF_DIM_PXL = 1
 
 		while np.average(RAW_AIA[xy[0] - HALF_DIM_PXL : xy[0] + HALF_DIM_PXL,
@@ -317,8 +317,8 @@ for i in range(N):
 
 		x_size = interpolated_hmi_data.shape[1]
 		y_size = interpolated_hmi_data.shape[0]
-		x_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5)
-		y_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5)
+		x_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5)
+		y_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5)
 
 		RECORDER.info_text("Casting interpolated HMI data to 4k by 4k blank image...")
 		ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
