@@ -115,16 +115,22 @@ class Recorder(object):
 			dir = "resources/region-data/raw-images"
 		elif type == 1:
 			name = "raw binary mask"
-			dir = "resources/region-data/raw-masks"
+			dir = "resources/region-data/r-masks"
 		elif type == 2:
 			name = "masked image"
-			dir = "resources/region-data/masked-images"
+			dir = "resources/region-data/r-masked-images"
 		elif type == 3:
 			name = "elliptical binary mask"
 			dir = "resources/region-data/e-masks"
 		elif type == 4:
 			name = "elliptically-masked image"
 			dir = "resources/region-data/e-masked-images"
+		elif type == 5:
+			name = "contour binary mask"
+			dir = "resources/region-data/c-masks"
+		elif type == 6:
+			name = "contour-masked image"
+			dir = "resources/region-data/c-masked-images"
 		
 		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
 		

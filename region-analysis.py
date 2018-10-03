@@ -5,11 +5,13 @@ from astropy.coordinates import SkyCoord
 from datetime import datetime
 from helper import clear_filesystem
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
+from matplotlib.path import Path
 from recorder import Recorder
 from scipy.ndimage import zoom as interpolate
 from scipy.ndimage.measurements import center_of_mass as com
 from scipy.ndimage.morphology import binary_dilation as grow_mask
 from scipy.spatial import distance
+from skimage import measure
 import astropy.units as u
 import getpass
 import matplotlib.pyplot as plt
@@ -186,22 +188,22 @@ for i in range(N):
 
 		LOW_BRIGHTNESS_THRESHOLD = 450
 
-		binary_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
+		r_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
 									 cut_aia < np.inf)
-		binary_mask = grow_mask(binary_mask,
+		r_mask = grow_mask(r_mask,
 								iterations = 1,
 								structure = np.ones((3,3)).astype(bool)).astype(int)
 
 		RECORDER.write_image(1,
 							 LOOP_ID,
-							 binary_mask,
+							 r_mask,
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
 		##### applies binary mask to AIA304 data
 		RECORDER.info_text("Applying binary mask to AIA304 data...")
 
-		masked_aia_data = cut_aia * binary_mask
+		masked_aia_data = cut_aia * r_mask
 
 		RECORDER.write_image(2,
 							 LOOP_ID,
@@ -212,15 +214,15 @@ for i in range(N):
 		##### initial setup for elliptical mask fit
 		RECORDER.info_text("Preparing for elliptical mask fit...")
 
-		center = com(binary_mask)
+		center = com(r_mask)
 		x_center = int(center[0] + 0.5)
 		y_center = int(center[1] + 0.5)
 		dim = cut_aia.shape[0]
 		threshold_percent_1 = 1.0
-		threshold_percent_2 = 0.96
-		threshold_percent_3 = 0.92
+		threshold_percent_2 = 0.97
+		threshold_percent_3 = 0.94
 
-		total = float(len(np.where(binary_mask == 1)[0]))
+		total = float(len(np.where(r_mask == 1)[0]))
 		rad = 2.0
 		y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
 		mask_in = None
@@ -231,7 +233,7 @@ for i in range(N):
 
 		while True:
 			temp_in = x**2 + y**2 <= rad**2
-			if len(np.where(binary_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
+			if len(np.where(r_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
 				mask_in = temp_in
 				break
 			rad += 1.0
@@ -243,7 +245,7 @@ for i in range(N):
 
 		while True:
 			temp_in = x**2/a**2 + y**2/b**2 <= 1
-			if len(np.where(binary_mask * temp_in == 1)[0]) / total < threshold_percent_2:
+			if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
 				mask_in = temp_in
 				break
 			a -= 1.0
@@ -254,7 +256,7 @@ for i in range(N):
 		while True:
 			temp_in = x**2/a**2 + y**2/b**2 <= 1
 			temp_out = x**2/a**2 + y**2/b**2 > 1
-			if len(np.where(binary_mask * temp_in == 1)[0]) / total < threshold_percent_3:
+			if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
 				mask_in = temp_in
 				mask_out = temp_out
 				break
@@ -263,18 +265,18 @@ for i in range(N):
 		##### creates elliptical binary mask
 		RECORDER.info_text("Finalizing elliptical mask...")
 
-		e_binary_mask = binary_mask * mask_in
+		e_mask = r_mask * mask_in
 
 		RECORDER.write_image(3,
 							 LOOP_ID,
-							 e_binary_mask,
+							 e_mask,
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
 		##### applies elliptical binary mask to data
 		RECORDER.info_text("Applying elliptical mask to AIA304 data...")
 
-		e_masked_aia_data = (cut_aia * e_binary_mask).astype(float)
+		e_masked_aia_data = (cut_aia * e_mask).astype(float)
 		e_masked_aia_data[mask_out] = np.nan
 
 		RECORDER.write_image(4,
@@ -283,10 +285,69 @@ for i in range(N):
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
-		##### takes a few statistics for masked AIA304 data
-		RECORDER.info_text("Recording statistics for masked AIA304 data...")
+		##### calculates contour-fit binary mask from elliptical mask
+		RECORDER.info_text("Fitting contour mask to elliptical mask...")
 
-		temp_threshold_data = e_masked_aia_data[np.where(e_masked_aia_data > LOW_BRIGHTNESS_THRESHOLD)]
+		contours = np.array(measure.find_contours(e_masked_aia_data, 0.5))
+
+		L = len(contours)
+		max_area = 0.0
+		max_index = 0.0
+
+		for i in range(L):
+			n = len(contours[i])
+			area = 0.0
+			for j in range(n):
+				k = (j + 1) % n
+				area += contours[i][j][0] * contours[i][k][1]
+				area -= contours[i][k][0] * contours[i][j][1]
+			area = abs(area) / 2.0
+			if area > max_area:
+				max_area = area
+				max_index = i
+
+		contour = np.array([contours[max_index]])
+
+		contour = np.array([contours[max_index]])
+
+		x_dim = e_masked_aia_data.shape[0]
+		y_dim = e_masked_aia_data.shape[1]
+
+		x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+		x, y = x.flatten(), y.flatten()
+
+		points = np.vstack((x,y)).T
+
+		vertices = contour[0]
+		path = Path(vertices)
+		c_mask = path.contains_points(points)
+		c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
+
+		RECORDER.write_image(5,
+							 LOOP_ID,
+							 c_mask,
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
+
+		##### show mask outline
+		# for n, c in enumerate(contour):
+		# 	plt.plot(c[:, 1], c[:, 0], linewidth = 1, color = "white")
+
+		##### applies contour mask to data
+		RECORDER.info_text("Applying contour mask to AIA304 data...")
+
+		c_masked_aia_data = (e_masked_aia_data * c_mask).astype(float)
+
+		RECORDER.write_image(6,
+							 LOOP_ID,
+							 c_masked_aia_data,
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
+
+		##### takes statistics for c-masked AIA304 data
+		RECORDER.info_text("Recording statistics for contour-masked AIA304 data...")
+
+		temp_threshold_data = c_masked_aia_data[np.where(c_masked_aia_data > LOW_BRIGHTNESS_THRESHOLD)]
 		average_intensity = np.average(temp_threshold_data)
 		median_intensity = np.median(temp_threshold_data)
 		maximum_intensity = np.max(temp_threshold_data)
@@ -296,7 +357,13 @@ for i in range(N):
 							 median_intensity,
 							 maximum_intensity)
 
-		# TODO: further processing on e_masked_aia_data
+
+		""""""
+
+		# TODO: processing on c_masked_aia_data
+
+		""""""
+
 
 		##### aligns HMI data to AIA304 data with interpolation and casting
 		RECORDER.info_text("Aligning HMI data to AIA304 data...")
@@ -336,7 +403,7 @@ for i in range(N):
 		##### applies binary mask to HMI data
 		RECORDER.info_text("Applying binary mask to HMI data...")
 
-		masked_hmi_data = cut_hmi * binary_mask
+		masked_hmi_data = cut_hmi * r_mask
 
 		RECORDER.write_image(2,
 							 LOOP_ID,
@@ -347,7 +414,7 @@ for i in range(N):
 		##### applies elliptical binary mask to the data
 		RECORDER.info_text("Applying elliptical mask to HMI data...")
 
-		e_masked_hmi_data = cut_hmi * e_binary_mask
+		e_masked_hmi_data = cut_hmi * e_mask
 		e_masked_hmi_data[mask_out] = np.nan
 
 		RECORDER.write_image(4,

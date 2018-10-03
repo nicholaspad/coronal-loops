@@ -1,7 +1,6 @@
 from IPython.core import debugger ; debug = debugger.Pdb().set_trace
+from matplotlib.path import Path
 from skimage import measure
-import cv2
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,17 +36,19 @@ y_dim = img.shape[1]
 x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
 x, y = x.flatten(), y.flatten()
 
-points = np.vstack((x, y)).T
+points = np.vstack((x,y)).T
 
-grid = matplotlib.path.Path.contains_point(points, contour[0])
-grid = grid.reshape((y_dim, x_dim))
+vertices = contour[0]
+path = Path(vertices)
+mask = path.contains_points(points)
+mask = np.rot90(np.flip(mask.reshape((y_dim,x_dim)), 1))
 
-debug()
+##### show mask outline
+# for n, c in enumerate(contour):
+# 	plt.plot(c[:, 1], c[:, 0], linewidth = 1, color = "white")
 
-for n, c in enumerate(contour):
-	plt.plot(c[:, 1], c[:, 0], linewidth = 1)
-
-plt.imshow(img, cmap = "sdoaia304", origin = "lower")
+plt.imshow(img * mask, cmap = "sdoaia304", origin = "lower")
+plt.clim(0,1500)
 
 plt.title("Contour Test")
 plt.show()
