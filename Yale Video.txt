@@ -1,0 +1,22 @@
+IDEA FOR YALE VIDEO
+OCTOBER 3, 2018
+DO WITH ONE PYTHON SCRIPT
+
+- Use 2011-02-15 active region (SW on solar disk)
+- Data downloaded at three-minute cadence
+- Write short python script to align and delete extraneous data files
+- Locate data files containing large flare
+- First frame - first data file
+- Full-disk animation until large flare (AIA171)
+- Pause at large flare and zoom into flare smoothly
+- Introduce AIA304 and HMI-M images beside AIA171
+- MAYBE: apply Sobel algorithm to AIA171
+- Adjust titles of graphs accordingly to the animations performed below
+- Animate raw mask generation iteration-by-iteration (AIA304 and HMI-M)
+- Animate elliptical mask generation iteration-by-iteration (AIA304 and HMI-M)
+- Animate contour mask algorithm - trace points of main contour iteration-by-iteration (AIA304 and HMI-M)
+- Introduce plots of intensity vs. time and flux vs. time
+- Pause for two seconds
+- Continue to show flare (new mask generated for each frame)
+- Show ~two seconds of aftermath
+- Zoom back out to full-disk and animate until the last data file (AIA171)

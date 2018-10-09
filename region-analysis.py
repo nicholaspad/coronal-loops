@@ -229,7 +229,7 @@ for i in range(N):
 		mask_out = None
 
 		##### fits circle to 100% of the data
-		RECORDER.info_text("Fitting ellpitcal mask to binary AIA304 data...")
+		RECORDER.info_text("Fitting elliptical mask to binary AIA304 data...")
 
 		while True:
 			temp_in = x**2 + y**2 <= rad**2
@@ -387,7 +387,7 @@ for i in range(N):
 		x_center = int(DATA["AIA304"][i].reference_pixel.y.value + 0.5)
 		y_center = int(DATA["AIA304"][i].reference_pixel.x.value + 0.5)
 
-		RECORDER.info_text("Casting interpolated HMI data to 4k by 4k blank image...")
+		RECORDER.info_text("Casting interpolated HMI data to 4k by 4k empty image...")
 		ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
 						(x_center - 1 - x_size / 2) : (x_center + x_size / 2)] = interpolated_hmi_data
 

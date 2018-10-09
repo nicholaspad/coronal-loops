@@ -172,7 +172,7 @@ class Recorder(object):
 		self.new_line()
 
 	def rest(self):
-		time.sleep(0.075)
+		time.sleep(0.05)
 
 	def info_text(self, text):
 		print "\n" + self.INFO + text
