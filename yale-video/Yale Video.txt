@@ -33,7 +33,3 @@ X-class flare
 - Peaks at 2011-02-15 02:01:29
 - Starts at 2011-02-15 01:48:05
 - Ends at 2011-02-15 04:08:05
-
-1. Align HMI and AIA304 images to AIA171
-
-USE HMI FOR MASK

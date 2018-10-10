@@ -308,8 +308,6 @@ for i in range(N):
 
 		contour = np.array([contours[max_index]])
 
-		contour = np.array([contours[max_index]])
-
 		x_dim = e_masked_aia_data.shape[0]
 		y_dim = e_masked_aia_data.shape[1]
 
