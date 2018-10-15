@@ -17,9 +17,8 @@ RECORDER.display_start_time("go")
 
 RECORDER.sys_text("Importing data...")
 
-# DATA_SAVEPATH = "/Volumes/Nicholas Data/data/"
-DATA_SAVEPATH = "/Users/padman/Desktop/data/"
-IMAGE_SAVEPATH = "/Volumes/Nicholas Data/images/"
+# IMAGE_SAVEPATH = "/Volumes/Nicholas Data/images/"
+IMAGE_SAVEPATH = "/Users/lockheedmartin/Desktop/images/"
 PATH171 = "/Volumes/Nicholas Data/AIA171/"
 PATH304 = "/Volumes/Nicholas Data/AIA304/"
 PATHHMI = "/Volumes/Nicholas Data/HMI/"
@@ -31,22 +30,24 @@ HMI_DIR = [f for f in listdir(PATHHMI) if isfile(join(PATHHMI, f))]
 ID = 0
 PREFLARE_COUNT = 1920
 
-RECORDER.info_text("Producing pre-flare full-disk images...")
+RECORDER.info_text("Generating pre-flare full-disk images...")
 
 for i in range(PREFLARE_COUNT):
 	AIA171 = smap.Map(PATH171 + AIA171_DIR[i])
 	AIA304 = smap.Map(PATH304 + AIA304_DIR[i])
 	HMI = smap.Map(PATHHMI + HMI_DIR[i])
 
-# 	In [130]: f = np.log(d)
+	RECORDER.sys_text("Writing full-disk AIA171 image (sqrt-adj) #%05d..." % ID)
+	img = AIA171.data
+	img[img < 1] = 1
+	img = np.sqrt(img)
+	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % ID, img, cmap = "sdoaia171", origin = "lower")
 
-# In [131]: plt.imsave("test", f, cmap = "sdoaia304", origin = "lower")
-
-	# RECORDER.sys_text("Writing full-disk AIA171 image #%05d..." % ID)
-	# plt.imsave(DATA_SAVEPATH + "aia171-images/%05d" % ID, AIA171.data, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 3500)
-
-	# RECORDER.sys_text("Writing full-disk AIA304 image #%05d..." % ID)
-	# plt.imsave(DATA_SAVEPATH + "aia304-images/%05d" % ID, AIA304.data, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 1500)
+	RECORDER.sys_text("Writing full-disk AIA304 image (log-adj) #%05d..." % ID)
+	img = AIA304.data
+	img[img < 1] = 1
+	img = np.log(img)
+	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % ID, img, cmap = "sdoaia304", origin = "lower")
 
 	RECORDER.info_text("Aligning HMI full-disk image #%05d" % ID)
 
@@ -56,11 +57,8 @@ for i in range(PREFLARE_COUNT):
 	scale = float("%.3f" % scale)
 
 	RECORDER.info_text("Interpolating HMI data with %.6f scale factor..." % scale)
-	interpolated_hmi_data = interpolate(HMI.data,
-										scale,
-										order = 1)
-	interpolated_hmi_data = np.flip(interpolated_hmi_data,
-									(0,1))
+	interpolated_hmi_data = interpolate(HMI.data, scale, order = 1)
+	interpolated_hmi_data = np.flip(interpolated_hmi_data, (0,1))
 
 	x_size = interpolated_hmi_data.shape[1]
 	y_size = interpolated_hmi_data.shape[0]
@@ -74,7 +72,6 @@ for i in range(PREFLARE_COUNT):
 	ALIGNED_RAW_HMI[np.isnan(ALIGNED_RAW_HMI)] = -10000000
 
 	RECORDER.sys_text("Writing full-disk HMI image #%05d..." % ID)
-	debug()
-	plt.imsave(DATA_SAVEPATH + "hmi-images/%05d" % ID, ALIGNED_RAW_HMI, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % ID, ALIGNED_RAW_HMI, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	ID += 1

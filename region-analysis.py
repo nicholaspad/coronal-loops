@@ -189,10 +189,10 @@ for i in range(N):
 		LOW_BRIGHTNESS_THRESHOLD = 450
 
 		r_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
-									 cut_aia < np.inf)
+								cut_aia < np.inf)
 		r_mask = grow_mask(r_mask,
-								iterations = 1,
-								structure = np.ones((3,3)).astype(bool)).astype(int)
+						   iterations = 1,
+						   structure = np.ones((3,3)).astype(bool)).astype(int)
 
 		RECORDER.write_image(1,
 							 LOOP_ID,
