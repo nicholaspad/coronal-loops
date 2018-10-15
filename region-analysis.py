@@ -9,7 +9,6 @@ from matplotlib.path import Path
 from recorder import Recorder
 from scipy.ndimage import zoom as interpolate
 from scipy.ndimage.measurements import center_of_mass as com
-from scipy.ndimage.morphology import binary_dilation as grow_mask
 from scipy.spatial import distance
 from skimage import measure
 import astropy.units as u
@@ -190,9 +189,9 @@ for i in range(N):
 
 		r_mask = np.logical_and(cut_aia > LOW_BRIGHTNESS_THRESHOLD,
 								cut_aia < np.inf)
-		r_mask = grow_mask(r_mask,
-						   iterations = 1,
-						   structure = np.ones((3,3)).astype(bool)).astype(int)
+		r_mask = cv.dilate(r_mask,
+						   np.ones((3,3)).astype(bool).astype(int),
+						   iterations = 1)
 
 		RECORDER.write_image(1,
 							 LOOP_ID,
@@ -320,6 +319,8 @@ for i in range(N):
 		path = Path(vertices)
 		c_mask = path.contains_points(points)
 		c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
+
+		c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
 
 		RECORDER.write_image(5,
 							 LOOP_ID,
