@@ -12,6 +12,7 @@ from scipy.ndimage.measurements import center_of_mass as com
 from scipy.spatial import distance
 from skimage import measure
 import astropy.units as u
+import cv2 as cv
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np

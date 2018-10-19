@@ -72,6 +72,8 @@ e_mask = r_mask * mask_in
 masked = crop * e_mask
 masked[mask_out] = -10000000
 
+##### contour mask
+
 contours = np.array(measure.find_contours(e_mask, 0.5))
 
 L = len(contours)
