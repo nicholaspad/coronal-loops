@@ -31,11 +31,14 @@ clear_filesystem()
 ##### import data
 
 RECORDER.info_text("Importing AIA171 data")
-MAPCUBE_AIA_171 = smap.Map("%s/resources/aia-fits-files/*.171.image_lev1.fits" % MAIN_DIR, sequence = True)
+MAPCUBE_AIA_171 = smap.Map("/Volumes/Nicholas Data/AIA171/*.fits", sequence = True)
+# MAPCUBE_AIA_171 = smap.Map("%s/resources/aia-fits-files/*.171.image_lev1.fits" % MAIN_DIR, sequence = True)
 RECORDER.info_text("Importing AIA304 data")
-MAPCUBE_AIA_304 = smap.Map("%s/resources/aia-fits-files/*.304.image_lev1.fits" % MAIN_DIR, sequence = True)
+MAPCUBE_AIA_304 = smap.Map("/Volumes/Nicholas Data/AIA304/*.fits", sequence = True)
+# MAPCUBE_AIA_304 = smap.Map("%s/resources/aia-fits-files/*.304.image_lev1.fits" % MAIN_DIR, sequence = True)
 RECORDER.info_text("Importing HMI magnetogram data\n")
-MAPCUBE_HMI = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR, sequence = True)
+MAPCUBE_HMI = smap.Map("/Volumes/Nicholas Data/HMI/*.fits", sequence = True)
+# MAPCUBE_HMI = smap.Map("%s/resources/hmi-fits-files/*.fits" % MAIN_DIR, sequence = True)
 
 ##### prepare mapcube
 
@@ -194,18 +197,12 @@ for i in range(N):
 						   np.ones((3,3)).astype(bool).astype(int),
 						   iterations = 1)
 
-		RECORDER.write_image(1,
-							 LOOP_ID,
-							 r_mask,
-							 DATA[PRODUCT][i].detector,
-							 DATA[PRODUCT][i].wavelength)
-
 		##### applies binary mask to AIA304 data
 		RECORDER.info_text("Applying binary mask to AIA304 data...")
 
 		masked_aia_data = cut_aia * r_mask
 
-		RECORDER.write_image(2,
+		RECORDER.write_image(1,
 							 LOOP_ID,
 							 masked_aia_data,
 							 DATA[PRODUCT][i].detector,
@@ -262,24 +259,13 @@ for i in range(N):
 				break
 			b -= 1.0
 
-		##### creates elliptical binary mask
-		RECORDER.info_text("Finalizing elliptical mask...")
-
-		e_mask = r_mask * mask_in
-
-		RECORDER.write_image(3,
-							 LOOP_ID,
-							 e_mask,
-							 DATA[PRODUCT][i].detector,
-							 DATA[PRODUCT][i].wavelength)
-
 		##### applies elliptical binary mask to data
 		RECORDER.info_text("Applying elliptical mask to AIA304 data...")
 
 		e_masked_aia_data = (cut_aia * e_mask).astype(float)
 		e_masked_aia_data[mask_out] = np.nan
 
-		RECORDER.write_image(4,
+		RECORDER.write_image(2,
 							 LOOP_ID,
 							 e_masked_aia_data,
 							 DATA[PRODUCT][i].detector,
@@ -323,22 +309,12 @@ for i in range(N):
 
 		c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
 
-		RECORDER.write_image(5,
-							 LOOP_ID,
-							 c_mask,
-							 DATA[PRODUCT][i].detector,
-							 DATA[PRODUCT][i].wavelength)
-
-		##### show mask outline
-		# for n, c in enumerate(contour):
-		# 	plt.plot(c[:, 1], c[:, 0], linewidth = 1, color = "white")
-
 		##### applies contour mask to data
 		RECORDER.info_text("Applying contour mask to AIA304 data...")
 
 		c_masked_aia_data = (e_masked_aia_data * c_mask).astype(float)
 
-		RECORDER.write_image(6,
+		RECORDER.write_image(3,
 							 LOOP_ID,
 							 c_masked_aia_data,
 							 DATA[PRODUCT][i].detector,
@@ -400,34 +376,171 @@ for i in range(N):
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
-		##### applies binary mask to HMI data
+		##### grows a binary mask for HMI data
+		RECORDER.info_text("Growing binary mask...")
+
+		POS_GAUSS_THRESHOLD = 125
+		NEG_GAUSS_THRESHOLD = POS_GAUSS_THRESHOLD * -1
+
+		r_mask_1 = np.logical_and(cut_hmi < NEG_GAUSS_THRESHOLD, cut_hmi > -10000000)
+		r_mask_2 = np.logical_and(cut_hmi > POS_GAUSS_THRESHOLD, cut_hmi < 10000000)
+		r_mask = r_mask_1.astype(float) + r_mask_2.astype(float)
+		r_mask[r_mask == 2.] = 1.
+		r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+		r_mask = cv.morphologyEx(r_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+		r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+
 		RECORDER.info_text("Applying binary mask to HMI data...")
 
 		masked_hmi_data = cut_hmi * r_mask
 
-		RECORDER.write_image(2,
+		RECORDER.write_image(1,
 							 LOOP_ID,
 							 masked_hmi_data,
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
-		##### applies elliptical binary mask to the data
+		##### grows an elliptical binary mask for HMI data
+		RECORDER.info_text("Fitting elliptical mask to HMI data...")
+
+		center = com(r_mask)
+		x_center = int(center[0] + 0.5)
+		y_center = int(center[1] + 0.5)
+		dim = cut_hmi.shape[0]
+		threshold_percent_1 = 1.0
+		threshold_percent_2 = 0.94
+		threshold_percent_3 = 0.88
+
+		total = float(len(np.where(r_mask == 1)[0]))
+		rad = 2.0
+		y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
+		mask_in = None
+		mask_out = None
+
+
+		while True:
+			temp_in = x**2 + y**2 <= rad**2
+			if len(np.where(r_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
+				mask_in = temp_in
+				break
+			rad += 1.0
+
+		##### adjusts horizontal axis of ellipse
+		a = b = rad
+
+		RECORDER.info_text("Adjusting horizontal axis...")
+		while True:
+			temp_in = x**2/a**2 + y**2/b**2 <= 1
+			if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
+				mask_in = temp_in
+				break
+			a -= 1.0
+
+		##### adjusts vertical axis of ellipse
+		RECORDER.info_text("Adjusting vertical axis...")
+		while True:
+			temp_in = x**2/a**2 + y**2/b**2 <= 1
+			temp_out = x**2/a**2 + y**2/b**2 > 1
+			if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
+				mask_in = temp_in
+				mask_out = temp_out
+				break
+			b -= 1.0
+
+		##### applies elliptical binary mask
 		RECORDER.info_text("Applying elliptical mask to HMI data...")
+
+		e_mask = r_mask * mask_in
 
 		e_masked_hmi_data = cut_hmi * e_mask
 		e_masked_hmi_data[mask_out] = np.nan
 
-		RECORDER.write_image(4,
+		RECORDER.write_image(2,
 							 LOOP_ID,
 							 e_masked_hmi_data,
+							 DATA[PRODUCT][i].detector,
+							 DATA[PRODUCT][i].wavelength)
+
+		##### contour mask
+
+		RECORDER.info_text("Fitting contour mask to elliptical mask...")
+
+		contours = np.array(measure.find_contours(e_mask, 0.5))
+
+		L = len(contours)
+		max_area = 0.0
+		max_index = 0.0
+
+		for i in range(L):
+			n = len(contours[i])
+			area = 0.0
+			for j in range(n):
+				k = (j + 1) % n
+				area += contours[i][j][0] * contours[i][k][1]
+				area -= contours[i][k][0] * contours[i][j][1]
+			area = abs(area) / 2.0
+			if area > max_area:
+				max_area = area
+				max_index = i
+
+		second_max_area = 0.0
+		second_max_index = 0.0
+
+		for i in range(L):
+			n = len(contours[i])
+			area = 0.0
+			for j in range(n):
+				k = (j + 1) % n
+				area += contours[i][j][0] * contours[i][k][1]
+				area -= contours[i][k][0] * contours[i][j][1]
+			area = abs(area) / 2.0
+			if area > second_max_area and area < max_area:
+				second_max_area = area
+				second_max_index = i
+
+		contour1 = np.array([contours[max_index]])
+		contour2 = np.array([contours[second_max_index]])
+
+		x_dim = e_mask.shape[0]
+		y_dim = e_mask.shape[1]
+
+		x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+		x, y = x.flatten(), y.flatten()
+
+		points = np.vstack((x,y)).T
+
+		vertices1 = contour1[0]
+		vertices2 = contour2[0]
+
+		path1 = Path(vertices1)
+		path2 = Path(vertices2)
+
+		c_mask1 = path1.contains_points(points)
+		c_mask1 = np.rot90(np.flip(c_mask1.reshape((y_dim,x_dim)), 1))
+
+		c_mask2 = path2.contains_points(points)
+		c_mask2 = np.rot90(np.flip(c_mask2.reshape((y_dim,x_dim)), 1))
+
+		c_mask = c_mask1.astype(float) + c_mask2.astype(float)
+		c_mask[c_mask == 2.] = 1.
+
+		c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+
+		RECORDER.info_text("Applying contour mask to AIA304 data...")
+
+		c_masked_hmi_data = e_masked_hmi_data * c_mask
+
+		RECORDER.write_image(3,
+							 LOOP_ID,
+							 c_masked_hmi_data,
 							 DATA[PRODUCT][i].detector,
 							 DATA[PRODUCT][i].wavelength)
 
 		##### takes a few statistics for masked HMI data
 		RECORDER.info_text("Recording statistics for masked HMI data...")
 
-		temp_threshold_data = np.ma.array(e_masked_hmi_data,
-										  mask = np.isnan(e_masked_hmi_data))
+		temp_threshold_data = np.ma.array(c_masked_hmi_data,
+										  mask = np.isnan(c_masked_hmi_data))
 
 		unsig_gauss = np.sum(np.abs(temp_threshold_data))
 		average_gauss = np.average(temp_threshold_data)

@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 from astropy.coordinates import SkyCoord
 from copy import copy
 from datetime import datetime
-from helper import clear_filesystem
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
 from matplotlib.path import Path
 from os import listdir
@@ -32,7 +31,7 @@ RECORDER.display_start_time("go")
 RECORDER.sys_text("Importing data...")
 
 # IMAGE_SAVEPATH = "/Volumes/Nicholas Data/images/"
-IMAGE_SAVEPATH = "/Users/lockheedmartin/Desktop/images/"
+IMAGE_SAVEPATH = "/Users/padman/Desktop/images/"
 PATH171 = "/Volumes/Nicholas Data/AIA171/"
 PATH304 = "/Volumes/Nicholas Data/AIA304/"
 PATHHMI = "/Volumes/Nicholas Data/HMI/"
@@ -71,7 +70,7 @@ RECORDER.info_text("Generating pre-flare full-disk images...")
 ID = 0
 PREFLARE_COUNT = 1920
 
-for i in tqdm(range(PREFLARE_COUNT), desc = "Working"):
+for i in tqdm(range(PREFLARE_COUNT), desc = "Working..."):
 	AIA171 = smap.Map(PATH171 + AIA171_DIR[i])
 	AIA304 = smap.Map(PATH304 + AIA304_DIR[i])
 	HMI = smap.Map(PATHHMI + HMI_DIR[i])
@@ -208,10 +207,7 @@ NEW_ID += 1
 
 RECORDER.info_text("Generating AIA304 elliptical mask animation...")
 
-center = com(r_mask)
-x_center = int(center[0] + 0.5)
-y_center = int(center[1] + 0.5)
-dim = cut_aia.shape[0]
+dim = img304.shape[0]
 threshold_percent_1 = 1.0
 threshold_percent_2 = 0.98
 threshold_percent_3 = 0.96
@@ -367,8 +363,8 @@ NEG_GAUSS_THRESHOLD = POS_GAUSS_THRESHOLD * -1
 r_mask = None
 
 for i in tqdm(range(POS_GAUSS_THRESHOLD + 1), desc = "Working..."):
-	r_mask_1 = np.logical_and(crop < -1 * i, crop > -10000000)
-	r_mask_2 = np.logical_and(crop > i, crop < 10000000)
+	r_mask_1 = np.logical_and(imghmi < -1 * i, imghmi > -10000000)
+	r_mask_2 = np.logical_and(imghmi > i, imghmi < 10000000)
 	r_mask = r_mask_1.astype(float) + r_mask_2.astype(float)
 	r_mask[r_mask == 2.] = 1.
 	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower")
@@ -395,10 +391,7 @@ NEW_ID += 1
 
 RECORDER.info_text("Generating HMI elliptical mask animation...")
 
-center = com(r_mask)
-x_center = int(center[0] + 0.5)
-y_center = int(center[1] + 0.5)
-dim = crop.shape[0]
+dim = imghmi.shape[0]
 threshold_percent_1 = 1.0
 threshold_percent_2 = 0.94
 threshold_percent_3 = 0.88
@@ -536,7 +529,7 @@ L = len(vertices1)
 
 temp = copy(imghmi).astype(float)
 
-for i in range(L):
+for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices1[i][0] + 0.5), int(vertices1[i][1] + 0.5)] = -10000000
 	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower")
 	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower")
@@ -544,7 +537,8 @@ for i in range(L):
 	NEW_ID += 1
 
 L = len(vertices2)
-for i in range(L):
+
+for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices2[i][0] + 0.5), int(vertices2[i][1] + 0.5)] = -10000000
 	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower")
 	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower")
@@ -578,16 +572,339 @@ NEW_ID += 1
 #################################################
 #################################################
 
-# USE SUNPY SOLAR ROTATE COORDINATE TO FOLLOW AR
+RECORDER.info_text("Generating flare animation...")
+
+init_loc = None
+cx = None
+cy = None
+
+for i in tqdm(range(ID, 2040), desc = "Working..."):
+	AIA171 = smap.Map(PATH171 + AIA171_DIR[i])
+	AIA304 = smap.Map(PATH304 + AIA304_DIR[i])
+	HMI = smap.Map(PATHHMI + HMI_DIR[i])
+
+	if i == ID:
+		init_loc = AIA171.pixel_to_world(y_center * u.pixel, x_center * u.pixel)
+
+	new_loc = rot(init_loc, AIA171.date)
+	new_xy = AIA171.world_to_pixel(new_loc)
+
+	cx = int(new_xy[1].value)
+	cy = int(new_xy[0].value)
+
+	scale = (HMI.scale[0] / AIA304.scale[0]).value
+	scale = float("%.3f" % scale)
+	ALIGNED_RAW_HMI = hmialign(HMI.data, scale)
+
+	dim = 200
+
+	img171 = AIA171.data[cx-dim : cx+dim, cy-dim : cy+dim]
+	img304 = AIA304.data[cx-dim : cx+dim, cy-dim : cy+dim]
+	imghmi = ALIGNED_RAW_HMI[cx-dim : cx+dim, cy-dim : cy+dim]
+
+	img171[img171 < 1] = 1
+	img171 = np.sqrt(img171)
+
+	### AIA304 mask
+
+	r_mask = np.logical_and(img304 > LOW_BRIGHTNESS_THRESHOLD, img304 < np.inf)
+	r_mask = cv.dilate(r_mask,
+					   np.ones((3,3)).astype(bool).astype(int),
+					   iterations = 1)
+
+	img304 = img304 * r_mask
+
+	dim = img304.shape[0]
+	threshold_percent_1 = 1.0
+	threshold_percent_2 = 0.98
+	threshold_percent_3 = 0.96
+
+	total = float(len(np.where(r_mask == 1)[0]))
+	rad = 2.0
+	y, x = np.ogrid[-cx:dim - cx, -cy:dim - cy]
+	mask_in = None
+	mask_out = None
+
+	while True:
+		temp_in = x**2 + y**2 <= rad**2
+		if len(np.where(r_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
+			mask_in = temp_in
+			break
+		rad += 1.0
+
+	a = b = rad
+
+	while True:
+		temp_in = x**2/a**2 + y**2/b**2 <= 1
+		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
+			mask_in = temp_in
+			break
+		a -= 1.0
+
+	while True:
+		temp_in = x**2/a**2 + y**2/b**2 <= 1
+		temp_out = x**2/a**2 + y**2/b**2 > 1
+		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
+			mask_in = temp_in
+			mask_out = temp_out
+			break
+		b -= 1.0
+
+	img304 = img304 * mask_in
+	img304[mask_out] = np.nan
+
+	contours = np.array(measure.find_contours(e_masked_aia_data, 0.5))
+
+	L = len(contours)
+	max_area = 0.0
+	max_index = 0.0
+
+	for i in range(L):
+		n = len(contours[i])
+		area = 0.0
+		for j in range(n):
+			k = (j + 1) % n
+			area += contours[i][j][0] * contours[i][k][1]
+			area -= contours[i][k][0] * contours[i][j][1]
+		area = abs(area) / 2.0
+		if area > max_area:
+			max_area = area
+			max_index = i
+
+	contour = np.array([contours[max_index]])
+
+	x_dim = e_masked_aia_data.shape[0]
+	y_dim = e_masked_aia_data.shape[1]
+
+	x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+	x, y = x.flatten(), y.flatten()
+
+	points = np.vstack((x,y)).T
+
+	vertices = contour[0]
+	path = Path(vertices)
+	c_mask = path.contains_points(points)
+	c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
+
+	c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+
+	img304 = img304 * c_mask
+	img304[img304 < 1] = 1
+	img304 = np.log(img304)
+
+	### HMI mask
+
+	r_mask_1 = np.logical_and(imghmi < -125, imghmi > -10000000)
+	r_mask_2 = np.logical_and(imghmi > 125, imghmi < 10000000)
+	r_mask = r_mask_1.astype(float) + r_mask_2.astype(float)
+	r_mask[r_mask == 2.] = 1.
+
+	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+	r_mask = cv.morphologyEx(r_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+
+	imghmi = imghmi * r_mask
+
+	dim = imghmi.shape[0]
+	threshold_percent_1 = 1.0
+	threshold_percent_2 = 0.94
+	threshold_percent_3 = 0.88
+
+	total = float(len(np.where(r_mask == 1)[0]))
+	rad = 2.0
+	y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
+	mask_in = None
+	mask_out = None
+
+	while True:
+		temp_in = x**2 + y**2 <= rad**2
+		if len(np.where(r_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
+			mask_in = temp_in
+			break
+		rad += 1.0
+
+	a = b = rad
+
+	while True:
+		temp_in = x**2/a**2 + y**2/b**2 <= 1
+		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
+			mask_in = temp_in
+			break
+		a -= 1.0
+
+	while True:
+		temp_in = x**2/a**2 + y**2/b**2 <= 1
+		temp_out = x**2/a**2 + y**2/b**2 > 1
+		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
+			mask_in = temp_in
+			mask_out = temp_out
+			break
+		b -= 1.0
+
+	imghmi = imghmi * mask_in
+	imghmi[mask_out] = -10000000
+
+	contours = np.array(measure.find_contours(imghmi, 0.5))
+
+	L = len(contours)
+	max_area = 0.0
+	max_index = 0.0
+
+	for i in range(L):
+		n = len(contours[i])
+		area = 0.0
+		for j in range(n):
+			k = (j + 1) % n
+			area += contours[i][j][0] * contours[i][k][1]
+			area -= contours[i][k][0] * contours[i][j][1]
+		area = abs(area) / 2.0
+		if area > max_area:
+			max_area = area
+			max_index = i
+
+	second_max_area = 0.0
+	second_max_index = 0.0
+
+	for i in range(L):
+		n = len(contours[i])
+		area = 0.0
+		for j in range(n):
+			k = (j + 1) % n
+			area += contours[i][j][0] * contours[i][k][1]
+			area -= contours[i][k][0] * contours[i][j][1]
+		area = abs(area) / 2.0
+		if area > second_max_area and area < max_area:
+			second_max_area = area
+			second_max_index = i
+
+	contour1 = np.array([contours[max_index]])
+	contour2 = np.array([contours[second_max_index]])
+
+	x_dim = imghmi.shape[0]
+	y_dim = imghmi.shape[1]
+
+	x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+	x, y = x.flatten(), y.flatten()
+
+	points = np.vstack((x,y)).T
+
+	vertices1 = contour1[0]
+	vertices2 = contour2[0]
+
+	path1 = Path(vertices1)
+	path2 = Path(vertices2)
+
+	c_mask1 = path1.contains_points(points)
+	c_mask1 = np.rot90(np.flip(c_mask1.reshape((y_dim,x_dim)), 1))
+
+	c_mask2 = path2.contains_points(points)
+	c_mask2 = np.rot90(np.flip(c_mask2.reshape((y_dim,x_dim)), 1))
+
+	c_mask = c_mask1.astype(float) + c_mask2.astype(float)
+	c_mask[c_mask == 2.] = 1.
+
+	c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+
+	imghmi = imghmi * c_mask
+
+	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower")
+	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower")
+	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "bwr", origin = "lower", vmin = -120, vmax = 120)
+
+	NEW_ID += 1
 
 #################################################
 #################################################
 #################################################
 
-# zoom back out (reverse the earlier function)
+RECORDER.info_text("Generating reverse zoom animation...")
+
+AIA171 = smap.Map(PATH171 + AIA171_DIR[2040])
+AIA304 = smap.Map(PATH304 + AIA304_DIR[2040])
+HMI = smap.Map(PATHHMI + HMI_DIR[2040])
+
+aia171_img = AIA171.data
+aia171_img[aia171_img < 1] = 1
+aia171_img = np.sqrt(aia171_img)
+
+aia304_img = AIA304.data
+aia304_img[aia304_img < 1] = 1
+aia304_img = np.log(aia304_img)
+
+scale = (HMI.scale[0] / AIA304.scale[0]).value
+scale = float("%.3f" % scale)
+hmi_img = hmialign(HMI.data, scale)
+
+dim = 200
+
+d_bot = cx-dim
+d_top = 4096 - 2*dim - d_bot
+d_left = cy-dim
+d_right = 4096 - 2*dim - d_left
+
+N = min(d_top, d_bot, d_left, d_right)
+
+v_bot = float(d_bot) / N
+v_top = float(d_top) / N
+v_left = float(d_left) / N
+v_right = float(d_right) / N
+
+for i in tqdm(range(N), desc = "Working..."):
+	RECORDER.info_text("Iterating zoom on AIA171 image...")
+	img171 = aia171_img[int((N-i) * v_bot) : int(4096 - (N-i) * v_top),
+						int((N-i) * v_left) : int(4096 - (N-i) * v_right)]
+	RECORDER.sys_text("Writing zoomed AIA171 image #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower")
+
+	RECORDER.info_text("Iterating zoom on AIA304 image...")
+	img304 = aia304_img[int((N-i) * v_bot) : int(4096 - (N-i) * v_top),
+						int((N-i) * v_left) : int(4096 - (N-i) * v_right)]
+	RECORDER.sys_text("Writing zoomed AIA304 image #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower")
+
+	RECORDER.info_text("Iterating zoom on HMI image...")
+	imghmi = hmi_img[int((N-i) * v_bot) : int(4096 - (N-i) * v_top),
+					 int((N-i) * v_left) : int(4096 - (N-i) * v_right)]
+	RECORDER.sys_text("Writing zoomed HMI image #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "bwr", origin = "lower", vmin = -120, vmax = 120)
+
+	NEW_ID += 1
 
 #################################################
 #################################################
 #################################################
 
-# show fulldisk rotation for the remaining data
+RECORDER.info_text("Generating post-flare full-disk images...")
+
+for i in tqdm(range(2041, len(AIA171_DIR)), desc = "Working..."):
+	AIA171 = smap.Map(PATH171 + AIA171_DIR[i])
+	AIA304 = smap.Map(PATH304 + AIA304_DIR[i])
+	HMI = smap.Map(PATHHMI + HMI_DIR[i])
+
+	RECORDER.info_text("Current timestamp: %s" % AIA171.date)
+
+	img = AIA171.data
+	img[img < 1] = 1
+	img = np.sqrt(img)
+
+	RECORDER.sys_text("Writing full-disk AIA171 image (sqrt-adj) #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img, cmap = "sdoaia171", origin = "lower")
+
+	img = AIA304.data
+	img[img < 1] = 1
+	img = np.log(img)
+
+	RECORDER.sys_text("Writing full-disk AIA304 image (log-adj) #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img, cmap = "sdoaia304", origin = "lower")
+
+	RECORDER.info_text("Aligning HMI full-disk image #%05d" % NEW_ID)
+	scale = (HMI.scale[0] / AIA304.scale[0]).value
+	scale = float("%.3f" % scale)
+	ALIGNED_RAW_HMI = hmialign(HMI.data, scale)
+
+	RECORDER.sys_text("Writing full-disk HMI image #%05d..." % NEW_ID)
+	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, ALIGNED_RAW_HMI, cmap = "bwr", origin = "lower", vmin = -120, vmax = 120)
+
+	NEW_ID += 1
+
+RECORDER.display_end_time("go")

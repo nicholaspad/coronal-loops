@@ -114,32 +114,19 @@ class Recorder(object):
 			name = "raw image"
 			dir = "resources/region-data/raw-images"
 		elif type == 1:
-			name = "raw binary mask"
-			dir = "resources/region-data/r-masks"
-		elif type == 2:
 			name = "masked image"
 			dir = "resources/region-data/r-masked-images"
-		elif type == 3:
-			name = "elliptical binary mask"
-			dir = "resources/region-data/e-masks"
-		elif type == 4:
+		elif type == 2:
 			name = "elliptically-masked image"
 			dir = "resources/region-data/e-masked-images"
-		elif type == 5:
-			name = "contour binary mask"
-			dir = "resources/region-data/c-masks"
-		elif type == 6:
+		elif type == 3:
 			name = "contour-masked image"
 			dir = "resources/region-data/c-masked-images"
 		
 		print self.WRITE + "Saving '%s' to '%s'" % (name, dir)
 		
-		if type == 1 or type == 3 :
-			print self.INFO_TAB + "%05d.npy" % (id)
-			np.save("%s/%s/%05d" % (MAIN_DIR, dir, id), data)
-		else:
-			print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
-			np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)
+		print self.INFO_TAB + "%05d%s%d.npy" % (id, instr, int(wav.value))
+		np.save("%s/%s/%05d%s%d" % (MAIN_DIR, dir, id, instr, int(wav.value)), data)
 		self.rest()
 
 	def new_line(self):
