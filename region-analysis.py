@@ -274,11 +274,11 @@ for i in range(N):
 		##### calculates contour-fit binary mask from elliptical mask
 		RECORDER.info_text("Fitting contour mask to elliptical mask...")
 
-		contours = np.array(measure.find_contours(e_masked_aia_data, 0.5))
+		contours = np.array(measure.find_contours(e_mask, 0.5))
 
 		L = len(contours)
 		max_area = 0.0
-		max_index = 0.0
+		max_index = 0
 
 		for i in range(L):
 			n = len(contours[i])
@@ -469,7 +469,7 @@ for i in range(N):
 
 		L = len(contours)
 		max_area = 0.0
-		max_index = 0.0
+		max_index = 0
 
 		for i in range(L):
 			n = len(contours[i])
@@ -484,7 +484,7 @@ for i in range(N):
 				max_index = i
 
 		second_max_area = 0.0
-		second_max_index = 0.0
+		second_max_index = 0
 
 		for i in range(L):
 			n = len(contours[i])

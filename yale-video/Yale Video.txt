@@ -39,3 +39,73 @@ X-class flare
 FIT ELLIPTICAL MASK TO HMI DATA, CONTOUR MASK TO AIA304 DATA
 
 USE "bwr" COLORMAP FOR HMI VISUALIZATION
+
+---- VIDEO ----
+
+ffmpeg -r XX -start_number XXXX -i aia171-images/%05d.png -vframes XXXX -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k out.mp4
+
+size - 1024 x 1024
+
+PRE-FLARE
+start - 1760
+end - 1920
+fps - 60
+
+ZOOM IN
+start - 1921
+end - 3371
+fps - 240
+
+AIA304 r-mask
+start - 3372
+end - 3823
+fps - 80
+
+AIA304 e-mask
+start - 3824
+end - 4033
+fps - 40
+
+AIA304 c-mask
+start - 4034
+end - 6546
+fps - 240
+
+HMI r-mask
+start - 6547
+end - 6672
+fps - 25
+
+HMI e-mask
+start - 6673
+end - 6837
+fps - 40
+
+HMI c-mask
+start - 6838
+end - 10353
+fps - 480
+
+FLARE
+start - 10354
+end - 10473
+fps - 15
+
+ZOOM OUT
+start - 10474
+end - 11898
+fps - 240
+
+POST-FLARE
+start - 11899
+end - 12059
+fps - 30
+
+---- JOIN SEGMENTS ----
+
+ffmpeg -i aia304.mp4 -i aia171.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp1.mp4 \
+&& ffmpeg -i temp1.mp4 -i hmi.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp2.mp4 \
+&& ffmpeg -y -i temp2.mp4 -filter:v "crop=3072:1024:0:0" output.mp4 \
+&& rm temp1.mp4 \
+&& rm temp2.mp4 \
+&& mv output.mp4 ../ordered/.mp4
