@@ -46,12 +46,12 @@ ffmpeg -r XX -start_number XXXX -i aia171-images/%05d.png -vframes XXXX -vf scal
 
 size - 1024 x 1024
 
-PRE-FLARE
+PRE-FLARE - x
 start - 1760
 end - 1920
 fps - 60
 
-ZOOM IN
+ZOOM IN - x
 start - 1921
 end - 3371
 fps - 240
@@ -76,9 +76,19 @@ start - 6547
 end - 6672
 fps - 25
 
+NEW HMI r-mask
+start - 6696
+end - 6822
+fps - 25
+
 HMI e-mask
 start - 6673
 end - 6837
+fps - 40
+
+NEW HMI e-mask
+start - 6823
+end - 6987
 fps - 40
 
 HMI c-mask
@@ -86,9 +96,19 @@ start - 6838
 end - 10353
 fps - 480
 
+NEW HMI c-mask
+start - 6988
+end - 10502
+fps - 480
+
 FLARE
 start - 10354
 end - 10473
+fps - 15
+
+NEW FLARE
+start - 10503
+end - 10622
 fps - 15
 
 ZOOM OUT
@@ -96,9 +116,19 @@ start - 10474
 end - 11898
 fps - 240
 
+NEW ZOOM OUT
+start - 10623
+end - 12048
+fps - 240
+
 POST-FLARE
 start - 11899
 end - 12059
+fps - 30
+
+NEW POST-FLARE
+start - 12049
+end - 12209
 fps - 30
 
 ---- JOIN SEGMENTS ----
