@@ -31,7 +31,7 @@ RECORDER.display_start_time("go")
 RECORDER.sys_text("Importing data...")
 
 # IMAGE_SAVEPATH = "/Volumes/Nicholas Data/images/"
-IMAGE_SAVEPATH = "/Users/lockheedmartin/Desktop/images/"
+IMAGE_SAVEPATH = "/Users/padman/Desktop/images/"
 PATH171 = "/Volumes/Nicholas Data/AIA171/"
 PATH304 = "/Volumes/Nicholas Data/AIA304/"
 PATHHMI = "/Volumes/Nicholas Data/HMI/"
@@ -66,6 +66,7 @@ def hmialign(data, scale):
 #################################################
 
 RECORDER.info_text("Generating pre-flare full-disk images...")
+p = 1760
 
 ID = 0
 PREFLARE_COUNT = 1920
@@ -100,6 +101,10 @@ for i in tqdm(range(PREFLARE_COUNT), desc = "Working..."):
 	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % ID, ALIGNED_RAW_HMI, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	ID += 1
+
+RECORDER.sys_text("**** START-PRE %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % ID - 1 - p)
+p = copy(ID)
 
 # #################################################
 # #################################################
@@ -171,6 +176,10 @@ for i in tqdm(range(N), desc = "Working..."):
 	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	NEW_ID += 1
+
+RECORDER.sys_text("**** START-ZOOM-IN %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
 
 #################################################
 #################################################
@@ -259,6 +268,10 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 
 NEW_ID += 1
 
+RECORDER.sys_text("**** START-AIA304-RMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
+
 #################################################
 #################################################
 #################################################
@@ -280,7 +293,7 @@ x_center = 215
 y_center = 200
 
 total = float(len(np.where(r_mask == 1)[0]))
-rad = 290.0
+rad = 300.0
 y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
 mask_in = None
 mask_out = None
@@ -357,6 +370,10 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 
 NEW_ID += 1
 
+RECORDER.sys_text("**** START-AIA304-EMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
+
 #################################################
 #################################################
 #################################################
@@ -431,6 +448,10 @@ img304 = np.log(img304)
 
 NEW_ID += 1
 
+RECORDER.sys_text("**** START-AIA304-CMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
+
 #################################################
 #################################################
 #################################################
@@ -465,6 +486,10 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 
 NEW_ID += 1
 
+RECORDER.sys_text("**** START-HMI-RMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
+
 #################################################
 #################################################
 #################################################
@@ -477,7 +502,7 @@ threshold_percent_2 = 0.96
 threshold_percent_3 = 0.90
 
 total = float(len(np.where(r_mask == 1)[0]))
-rad = 290.0
+rad = 300.0
 x_center = 200
 y_center = 200
 
@@ -555,6 +580,10 @@ plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoai
 plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
+
+RECORDER.sys_text("**** START-HMI-EMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
 
 #################################################
 #################################################
@@ -747,6 +776,10 @@ plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoai
 plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
+
+RECORDER.sys_text("**** START-HMI-CMASK %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
 
 #################################################
 #################################################
@@ -969,7 +1002,9 @@ for i in tqdm(range(ID, 2040), desc = "Working..."):
 
 	NEW_ID += 1
 
-debug()
+RECORDER.sys_text("**** START-FLARE %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
 
 #################################################
 #################################################
@@ -1028,6 +1063,10 @@ for i in tqdm(range(N), desc = "Working..."):
 
 	NEW_ID += 1
 
+RECORDER.sys_text("**** START-ZOOM-OUT %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
+
 #################################################
 #################################################
 #################################################
@@ -1064,5 +1103,9 @@ for i in tqdm(range(2041, len(AIA171_DIR)), desc = "Working..."):
 	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, ALIGNED_RAW_HMI, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	NEW_ID += 1
+
+RECORDER.sys_text("**** START-POST %d" % p)
+RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+p = copy(NEW_ID)
 
 RECORDER.display_end_time("go")

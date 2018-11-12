@@ -46,12 +46,12 @@ ffmpeg -r XX -start_number XXXX -i aia171-images/%05d.png -vframes XXXX -vf scal
 
 size - 1024 x 1024
 
-PRE-FLARE - x
+PRE-FLARE
 start - 1760
 end - 1920
 fps - 60
 
-ZOOM IN - x
+ZOOM IN
 start - 1921
 end - 3371
 fps - 240
