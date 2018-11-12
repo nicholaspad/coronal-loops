@@ -177,6 +177,12 @@ for i in tqdm(range(N), desc = "Working..."):
 
 	NEW_ID += 1
 
+s = min(img304.shape[0], img304.shape[1])
+img304 = img304[0:s, 0:s]
+img171 = img171[0:s, 0:s]
+imghmi = imghmi[0:s, 0:s]
+r_mask = r_mask[0:s, 0:s]
+
 RECORDER.sys_text("**** START-ZOOM-IN %d" % p)
 RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
 p = copy(NEW_ID)
@@ -277,12 +283,6 @@ p = copy(NEW_ID)
 #################################################
 
 RECORDER.info_text("Generating AIA304 elliptical mask animation...")
-
-s = min(img304.shape[0], img304.shape[1])
-img304 = img304[0:s, 0:s]
-img171 = img171[0:s, 0:s]
-imghmi = imghmi[0:s, 0:s]
-r_mask = r_mask[0:s, 0:s]
 
 dim = img304.shape[0]
 threshold_percent_1 = 0.98

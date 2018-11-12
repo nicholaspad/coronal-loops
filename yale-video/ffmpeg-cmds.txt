@@ -120,7 +120,6 @@ ffmpeg -r 60 -start_number 1760 -i aia171-images/%05d.png -vframes 160 -vf scale
 && rm temp1.mp4 \
 && rm temp2.mp4 \
 && mv output.mp4 ordered-videos/11.mp4 \
-&& ffmpeg -f concat -i files.txt -c copy final.mp4
 
 
 
