@@ -1,5 +1,6 @@
 from colortext import Color
 from datetime import datetime
+from tqdm import tqdm
 import getpass
 import numpy as np
 import os
@@ -162,10 +163,10 @@ class Recorder(object):
 		time.sleep(0.05)
 
 	def info_text(self, text):
-		print "\n" + self.INFO + text
+		tqdm.write("\n" + self.INFO + text)
 
 	def sys_text(self, text):
-		print "\n" + self.SYS + text
+		tqdm.write("\n" + self.SYS + text)
 
 	def input_text(self, text):
 		return raw_input("\n" + self.INPUT + "%s:\n\t==> " % text + Color.YELLOW)

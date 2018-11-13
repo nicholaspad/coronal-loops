@@ -53,7 +53,6 @@ ffmpeg -r 60 -start_number 1760 -i aia171-images/%05d.png -vframes 160 -vf scale
 && ffmpeg -r 30 -start_number #### -i aia304-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/aia304.mp4 \
 && ffmpeg -r 30 -start_number #### -i hmi-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/hmi.mp4 \
 
-# side-by-side
 && ffmpeg -i raw-videos/pre/aia304.mp4 -i raw-videos/pre/aia171.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp1.mp4 \
 && ffmpeg -i temp1.mp4 -i raw-videos/pre/hmi.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp2.mp4 \
 && ffmpeg -y -i temp2.mp4 -filter:v "crop=3072:1024:0:0" output.mp4 \
@@ -120,29 +119,3 @@ ffmpeg -r 60 -start_number 1760 -i aia171-images/%05d.png -vframes 160 -vf scale
 && rm temp1.mp4 \
 && rm temp2.mp4 \
 && mv output.mp4 ordered-videos/11.mp4 \
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
