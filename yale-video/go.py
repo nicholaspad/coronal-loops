@@ -102,7 +102,7 @@ for i in tqdm(range(PREFLARE_COUNT), desc = "Working..."):
 	ID += 1
 
 RECORDER.sys_text("**** START-PRE %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (ID - 1 - p))
 p = copy(ID)
 
 # #################################################
@@ -183,7 +183,7 @@ imghmi = imghmi[0:s, 0:s]
 r_mask = r_mask[0:s, 0:s]
 
 RECORDER.sys_text("**** START-ZOOM-IN %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -274,7 +274,7 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-AIA304-RMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -370,7 +370,7 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-AIA304-EMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -448,7 +448,7 @@ img304 = np.log(img304)/AIA304.exposure_time.value
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-AIA304-CMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -486,7 +486,7 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-HMI-RMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -581,7 +581,7 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-HMI-EMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -777,7 +777,7 @@ plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", o
 NEW_ID += 1
 
 RECORDER.sys_text("**** START-HMI-CMASK %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -1002,7 +1002,7 @@ for i in tqdm(range(ID, 2040), desc = "Working..."):
 	NEW_ID += 1
 
 RECORDER.sys_text("**** START-FLARE %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -1063,7 +1063,7 @@ for i in tqdm(range(N), desc = "Working..."):
 	NEW_ID += 1
 
 RECORDER.sys_text("**** START-ZOOM-OUT %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 #################################################
@@ -1104,7 +1104,7 @@ for i in tqdm(range(2041, len(AIA171_DIR)), desc = "Working..."):
 	NEW_ID += 1
 
 RECORDER.sys_text("**** START-POST %d" % p)
-RECORDER.sys_text("**** VFRAMES %d" % NEW_ID - 1 - p)
+RECORDER.sys_text("**** VFRAMES %d" % (NEW_ID - 1 - p))
 p = copy(NEW_ID)
 
 RECORDER.display_end_time("go")
