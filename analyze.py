@@ -100,9 +100,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	LOW_BRIGHTNESS_THRESHOLD = 900./AIA171.exposure_time.value
 	r_mask = np.logical_and(img171 > LOW_BRIGHTNESS_THRESHOLD, img171 < np.inf)
 	r_mask = r_mask.astype(np.uint8)
-	r_mask = cv.dilate(r_mask,
-					   np.ones((3,3)).astype(bool).astype(int),
-					   iterations = 1)
+	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 
 	img171 *= r_mask
 
@@ -200,9 +198,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	LOW_BRIGHTNESS_THRESHOLD = 400
 	r_mask = np.logical_and(img304 > LOW_BRIGHTNESS_THRESHOLD, img304 < np.inf)
 	r_mask = r_mask.astype(np.uint8)
-	r_mask = cv.dilate(r_mask,
-					   np.ones((3,3)).astype(bool).astype(int),
-					   iterations = 1)
+	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 
 	img304 *= r_mask
 
