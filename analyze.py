@@ -29,10 +29,23 @@ RECORDER.display_start_time("analyze")
 
 RECORDER.sys_text("Importing data")
 
+## LOCKHEED ##
 IMAGE_SAVEPATH = "/Users/padman/Desktop/lmsal/resources/analyze-data/"
 PATH171 = "/Volumes/Nicholas Data/AIA171/"
 PATH304 = "/Volumes/Nicholas Data/AIA304/"
 PATHHMI = "/Volumes/Nicholas Data/HMI/"
+
+## PERSONAL MAC ##
+# IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
+# PATH171 = "/Volumes/Nicholas Data/AIA171/"
+# PATH304 = "/Volumes/Nicholas Data/AIA304/"
+# PATHHMI = "/Volumes/Nicholas Data/HMI/"
+
+## PERSONAL PC ##
+# IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
+# PATH171 = "/Volumes/Nicholas Data/AIA171/"
+# PATH304 = "/Volumes/Nicholas Data/AIA304/"
+# PATHHMI = "/Volumes/Nicholas Data/HMI/"
 
 AIA171_DIR = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]
 AIA304_DIR = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]
@@ -89,8 +102,7 @@ for id in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	imghmi = ALIGNED_RAW_HMI[cx-DIM+25 : cx+DIM+25, cy-DIM-20 : cy+DIM-20]
 
 	#*************************************#
-
-<<<<<<< HEAD
+	
 	RECORDER.sys_text("Producing AIA171 binary mask [r-mask]")
 
 	LOW_BRIGHTNESS_THRESHOLD = 900./AIA171.exposure_time.value

@@ -176,12 +176,12 @@ class Recorder(object):
 
 	def display_start_time(self, name):
 		self.start_time = datetime.now()
-		print "\n" + self.SYS + "Process %s started: %s" % (name, datetime.now().replace(microsecond = 0))
+		print "\n" + self.SYS + "Process %s started at %s" % (name, datetime.now().replace(microsecond = 0))
 		print self.NEW_LINE
 
 	def display_end_time(self, name):
 		self.delta = datetime.now() - self.start_time
-		print "\n" + self.SYS + "Process %s ended: %s" % (name, datetime.now().replace(microsecond = 0))
+		print "\n" + self.SYS + "Process %s ended at %s" % (name, datetime.now().replace(microsecond = 0))
 		print self.SYS + "Execution time: %s" % str(self.delta).split(".")[0]
 		print self.NEW_LINE
 		print Color.RESET
