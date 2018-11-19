@@ -1,28 +1,25 @@
 import warnings
+warnings.filterwarnings("ignore", message = "From scipy 0.13.0, the output shape of")
+warnings.filterwarnings("ignore", message = "invalid value encountered in greater")
+warnings.filterwarnings("ignore", message = "invalid value encountered in less")
 warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
-from astropy.coordinates import SkyCoord
-from copy import copy
-from datetime import datetime
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
 from matplotlib.path import Path
 from os import listdir
 from os.path import isfile, join
 from recorder import Recorder
+from scipy import ndimage
 from scipy.ndimage import zoom as interpolate
 from scipy.ndimage.measurements import center_of_mass as com
-from scipy.spatial import distance
 from skimage import measure
+from skimage.filters import laplace
 from sunpy.physics.differential_rotation import solar_rotate_coordinate as rot
 from tqdm import tqdm
 import astropy.units as u
 import cv2 as cv
-import getpass
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import scipy.ndimage as ndimage
-import scipy.ndimage.filters as filters
 import sunpy.map as smap
 
 #*************************************#
@@ -30,7 +27,7 @@ import sunpy.map as smap
 RECORDER = Recorder()
 RECORDER.display_start_time("analyze")
 
-RECORDER.sys_text("Importing data...")
+RECORDER.sys_text("Importing data")
 
 IMAGE_SAVEPATH = "/Users/padman/Desktop/lmsal/resources/analyze-data/"
 PATH171 = "/Volumes/Nicholas Data/AIA171/"
@@ -46,7 +43,6 @@ HMI_DIR = [f for f in listdir(PATHHMI) if isfile(join(PATHHMI, f))]
 def hmialign(data, scale):
 	ar = np.zeros((4096, 4096)).astype(float)
 
-	RECORDER.sys_text("Interpolating HMI data")
 	interpolated_hmi_data = interpolate(data, scale, order = 1)
 	interpolated_hmi_data = np.flip(interpolated_hmi_data, (0,1))
 
@@ -62,19 +58,20 @@ def hmialign(data, scale):
 
 #*************************************#
 
-RECORDER.info_text("Analyzing region...")
+RECORDER.info_text("Analyzing region")
 
 x_center_o = 1012
 y_center_o = 1630
+DIM = 300
 
-for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
-	AIA171 = smap.Map(PATH171 + AIA171_DIR[i])
-	AIA304 = smap.Map(PATH304 + AIA304_DIR[i])
-	HMI = smap.Map(PATHHMI + HMI_DIR[i])
+for id in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
+	AIA171 = smap.Map(PATH171 + AIA171_DIR[id])
+	AIA304 = smap.Map(PATH304 + AIA304_DIR[id])
+	HMI = smap.Map(PATHHMI + HMI_DIR[id])
 
 	RECORDER.info_text("Current timestamp: %s" % AIA171.date)
 
-	if i == 0:
+	if id == 0:
 		init_loc = AIA171.pixel_to_world(x_center_o * u.pixel, y_center_o * u.pixel)
 
 	new_loc = rot(init_loc, AIA171.date)
@@ -87,14 +84,13 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	scale = float("%.3f" % scale)
 	ALIGNED_RAW_HMI = hmialign(HMI.data, scale)
 
-	dim = 200
-
-	img171 = AIA171.data[cx-dim : cx+dim, cy-dim : cy+dim]
-	img304 = AIA304.data[cx-dim : cx+dim, cy-dim : cy+dim]
-	imghmi = ALIGNED_RAW_HMI[cx-dim : cx+dim, cy-dim : cy+dim]
+	img171 = AIA171.data[cx-DIM : cx+DIM, cy-DIM : cy+DIM]
+	img304 = AIA304.data[cx-DIM : cx+DIM, cy-DIM : cy+DIM]
+	imghmi = ALIGNED_RAW_HMI[cx-DIM+25 : cx+DIM+25, cy-DIM-20 : cy+DIM-20]
 
 	#*************************************#
 
+<<<<<<< HEAD
 	RECORDER.sys_text("Producing AIA171 binary mask [r-mask]")
 
 	LOW_BRIGHTNESS_THRESHOLD = 900./AIA171.exposure_time.value
@@ -122,78 +118,62 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	e_mask = None
 	mask_out = None
 
-	while True:
-		temp_in = x**2 + y**2 <= rad**2
-		if len(np.where(r_mask * temp_in == 1)[0]) / total >= threshold_percent_1:
-			e_mask = temp_in
-			break
-		rad += 1.0
+	# RECORDER.sys_text("Generating AIA171 binary mask [r-mask]")
 
-	a = b = rad
+	# LOW_BRIGHTNESS_THRESHOLD = 1250./AIA171.exposure_time.value
+	# r_mask = np.logical_and(img171 > LOW_BRIGHTNESS_THRESHOLD, img171 < np.inf)
+	# r_mask = r_mask.astype(np.uint8)
+	# r_mask = cv.dilate(r_mask,
+	# 				   np.ones((3,3)).astype(bool).astype(int),
+	# 				   iterations = 1)
 
-	while True:
-		temp_in = x**2/a**2 + y**2/b**2 <= 1
-		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
-			e_mask = temp_in
-			break
-		a -= 1.0
+	# img171 *= r_mask
 
-	while True:
-		temp_in = x**2/a**2 + y**2/b**2 <= 1
-		temp_out = x**2/a**2 + y**2/b**2 > 1
-		if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
-			e_mask = temp_in
-			mask_out = temp_out
-			break
-		b -= 1.0
+	# #*************************************#
 
-	img171 *= e_mask
+	# RECORDER.sys_text("Generating AIA171 contour mask [c-mask]")
 
-	#*************************************#
+	# contours = np.array(measure.find_contours(r_mask, 0.5))
+	# max_area = 0.0
+	# max_index = 0
 
-	RECORDER.sys_text("Producing AIA171 contour mask [c-mask]")
+	# for i in range(len(contours)):
+	# 	n = len(contours[i])
+	# 	area = 0.0
+	# 	for j in range(n):
+	# 		k = (j + 1) % n
+	# 		area += contours[i][j][0] * contours[i][k][1]
+	# 		area -= contours[i][k][0] * contours[i][j][1]
+	# 	area = abs(area) / 2.0
+	# 	if area > max_area:
+	# 		max_area = area
+	# 		max_index = i
 
-	contours = np.array(measure.find_contours(r_mask, 0.5))
-	max_area = 0.0
-	max_index = 0
+	# contour = np.array([contours[max_index]])
 
-	for i in range(len(contours)):
-		n = len(contours[i])
-		area = 0.0
-		for j in range(n):
-			k = (j + 1) % n
-			area += contours[i][j][0] * contours[i][k][1]
-			area -= contours[i][k][0] * contours[i][j][1]
-		area = abs(area) / 2.0
-		if area > max_area:
-			max_area = area
-			max_index = i
+	# x_dim = r_mask.shape[0]
+	# y_dim = r_mask.shape[1]
 
-	contour = np.array([contours[max_index]])
+	# x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+	# x, y = x.flatten(), y.flatten()
 
-	x_dim = r_mask.shape[0]
-	y_dim = r_mask.shape[1]
+	# points = np.vstack((x,y)).T
 
-	x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
-	x, y = x.flatten(), y.flatten()
+	# vertices = contour[0]
+	# path = Path(vertices)
+	# c_mask = path.contains_points(points)
+	# c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
 
-	points = np.vstack((x,y)).T
+	# c_mask = c_mask.astype(np.uint8)
+	# c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
 
-	vertices = contour[0]
-	path = Path(vertices)
-	c_mask = path.contains_points(points)
-	c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
-
-	c_mask = c_mask.astype(np.uint8)
-	c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
-
-	img171 *= c_mask
-	img171 = img171.astype(float)
-	img171[img171 == 0] = np.nan
+	# img171 *= c_mask
+	# img171 = img171.astype(float)
+	# img171[img171 == 0] = np.nan
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing AIA304 binary mask [r-mask]")
+	RECORDER.sys_text("Generating AIA304 binary mask [r-mask]")
 
 	LOW_BRIGHTNESS_THRESHOLD = 400
 	r_mask = np.logical_and(img304 > LOW_BRIGHTNESS_THRESHOLD, img304 < np.inf)
@@ -204,7 +184,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing AIA304 elliptical mask [e-mask]")
+	RECORDER.sys_text("Generating AIA304 elliptical mask [e-mask]")
 
 	center = com(r_mask)
 	x_center = int(center[0] + 0.5)
@@ -249,7 +229,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing AIA304 contour mask [c-mask]")
+	RECORDER.sys_text("Generating AIA304 contour mask [c-mask]")
 
 	contours = np.array(measure.find_contours(r_mask, 0.5))
 	max_area = 0.0
@@ -291,7 +271,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing HMI binary mask [r-mask]")
+	RECORDER.sys_text("Generating HMI binary mask [r-mask]")
 
 	POS_GAUSS_THRESHOLD = 120
 	NEG_GAUSS_THRESHOLD = -1 * POS_GAUSS_THRESHOLD
@@ -310,7 +290,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing HMI elliptical mask [e-mask]")
+	RECORDER.sys_text("Generating HMI elliptical mask [e-mask]")
 
 	center = com(r_mask)
 	x_center = int(center[0] + 0.5)
@@ -355,7 +335,7 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
-	RECORDER.sys_text("Producing HMI contour mask [c-mask]")
+	RECORDER.sys_text("Generating HMI contour mask [c-mask]")
 
 	contours = np.array(measure.find_contours(r_mask, 0.5))
 	L = len(contours)
@@ -467,12 +447,37 @@ for i in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 
 	#*************************************#
 
+	# statistical analysis
+
+	""" AIA171 """
+
+	img171
+
+	""" AIA304 """
+
+	img304
+
+	""" HMI """
+
+	imghmi
+
+	#*************************************#
+
+	RECORDER.sys_text("Doing final processing")
+
 	img304[img304 < 1] = 1
 	img304 = np.log(img304)/AIA304.exposure_time.value
 
-	img171[img171 < 1] = 1
-	img171 = np.log(img171)/AIA171.exposure_time.value
+	# sx = ndimage.sobel(img171, axis = 0, mode = "constant")
+	# sy = ndimage.sobel(img171, axis = 1, mode = "constant")
+	# img171 = np.hypot(sx, sy)
 
-	plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % i, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % i, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % i, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	img171 = laplace(img171) * 100
+
+	#*************************************#
+
+	RECORDER.info_text("Saving image ID %05d" % id)
+	plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % id, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 5)
+	plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % id, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+
