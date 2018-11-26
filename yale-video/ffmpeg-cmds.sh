@@ -1,6 +1,6 @@
-ffmpeg -y -r 60 -start_number 1760 -i aia171-images/%05d.png -vframes 160 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/aia171.mp4 \
-&& ffmpeg -y -r 60 -start_number 1760 -i aia304-images/%05d.png -vframes 160 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/aia304.mp4 \
-&& ffmpeg -y -r 60 -start_number 1760 -i hmi-images/%05d.png -vframes 160 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/hmi.mp4 \
+ffmpeg -y -r 60 -start_number 0 -i aia171-images/%05d.png -vframes 1920 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/aia171.mp4 \
+&& ffmpeg -y -r 60 -start_number 0 -i aia304-images/%05d.png -vframes 1920 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/aia304.mp4 \
+&& ffmpeg -y -r 60 -start_number 0 -i hmi-images/%05d.png -vframes 1920 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/pre/hmi.mp4 \
 && ffmpeg -y -r 240 -start_number 1921 -i aia171-images/%05d.png -vframes 1450 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-in/aia171.mp4 \
 && ffmpeg -y -r 240 -start_number 1921 -i aia304-images/%05d.png -vframes 1450 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-in/aia304.mp4 \
 && ffmpeg -y -r 240 -start_number 1921 -i hmi-images/%05d.png -vframes 1450 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-in/hmi.mp4 \
@@ -25,12 +25,12 @@ ffmpeg -y -r 60 -start_number 1760 -i aia171-images/%05d.png -vframes 160 -vf sc
 && ffmpeg -y -r 15 -start_number 10523 -i aia171-images/%05d.png -vframes 119 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/flare/aia171.mp4 \
 && ffmpeg -y -r 15 -start_number 10523 -i aia304-images/%05d.png -vframes 119 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/flare/aia304.mp4 \
 && ffmpeg -y -r 15 -start_number 10523 -i hmi-images/%05d.png -vframes 119 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/flare/hmi.mp4 \
-&& ffmpeg -y -r 240 -start_number 10643 -i aia171-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/aia171.mp4 \
-&& ffmpeg -y -r 240 -start_number 10643 -i aia304-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/aia304.mp4 \
-&& ffmpeg -y -r 240 -start_number 10643 -i hmi-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/hmi.mp4 \
-&& ffmpeg -y -r 30 -start_number #### -i aia171-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/aia171.mp4 \
-&& ffmpeg -y -r 30 -start_number #### -i aia304-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/aia304.mp4 \
-&& ffmpeg -y -r 30 -start_number #### -i hmi-images/%05d.png -vframes ### -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/hmi.mp4 \
+&& ffmpeg -y -r 240 -start_number 10643 -i aia171-images/%05d.png -vframes 1424 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/aia171.mp4 \
+&& ffmpeg -y -r 240 -start_number 10643 -i aia304-images/%05d.png -vframes 1424 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/aia304.mp4 \
+&& ffmpeg -y -r 240 -start_number 10643 -i hmi-images/%05d.png -vframes 1424 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/zoom-out/hmi.mp4 \
+&& ffmpeg -y -r 30 -start_number 12068 -i aia171-images/%05d.png -vframes 320 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/aia171.mp4 \
+&& ffmpeg -y -r 30 -start_number 12068 -i aia304-images/%05d.png -vframes 320 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/aia304.mp4 \
+&& ffmpeg -y -r 30 -start_number 12068 -i hmi-images/%05d.png -vframes 320 -vf scale=1024:1024 -q:v 2 -vcodec mpeg4 -b:v 800k raw-videos/post/hmi.mp4 \
 && ffmpeg -i raw-videos/pre/aia304.mp4 -i raw-videos/pre/aia171.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp1.mp4 \
 && ffmpeg -i temp1.mp4 -i raw-videos/pre/hmi.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast temp2.mp4 \
 && ffmpeg -y -i temp2.mp4 -filter:v "crop=3072:1024:0:0" output.mp4 \

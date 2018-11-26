@@ -31,21 +31,21 @@ RECORDER.sys_text("Importing data")
 
 ## LOCKHEED ##
 IMAGE_SAVEPATH = "/Users/padman/Desktop/lmsal/resources/analyze-data/"
-PATH171 = "/Volumes/Nicholas Data/AIA171/"
-PATH304 = "/Volumes/Nicholas Data/AIA304/"
-PATHHMI = "/Volumes/Nicholas Data/HMI/"
+PATH171 = "/Volumes/Nicholas-Data/AIA171/"
+PATH304 = "/Volumes/Nicholas-Data/AIA304/"
+PATHHMI = "/Volumes/Nicholas-Data/HMI/"
 
 ## PERSONAL MAC ##
 # IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
-# PATH171 = "/Volumes/Nicholas Data/AIA171/"
-# PATH304 = "/Volumes/Nicholas Data/AIA304/"
-# PATHHMI = "/Volumes/Nicholas Data/HMI/"
+# PATH171 = "/Volumes/Nicholas-Data/AIA171/"
+# PATH304 = "/Volumes/Nicholas-Data/AIA304/"
+# PATHHMI = "/Volumes/Nicholas-Data/HMI/"
 
 ## PERSONAL PC ##
 # IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
-# PATH171 = "/Volumes/Nicholas Data/AIA171/"
-# PATH304 = "/Volumes/Nicholas Data/AIA304/"
-# PATHHMI = "/Volumes/Nicholas Data/HMI/"
+# PATH171 = "/Volumes/Nicholas-Data/AIA171/"
+# PATH304 = "/Volumes/Nicholas-Data/AIA304/"
+# PATHHMI = "/Volumes/Nicholas-Data/HMI/"
 
 AIA171_DIR = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]
 AIA304_DIR = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]
@@ -77,7 +77,7 @@ x_center_o = 1012
 y_center_o = 1630
 DIM = 300
 
-for id in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
+for id in tqdm(range(0, len(AIA171_DIR), 1920), desc = "Analyzing"):
 	AIA171 = smap.Map(PATH171 + AIA171_DIR[id])
 	AIA304 = smap.Map(PATH304 + AIA304_DIR[id])
 	HMI = smap.Map(PATHHMI + HMI_DIR[id])
@@ -105,83 +105,12 @@ for id in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	
 	RECORDER.sys_text("Producing AIA171 binary mask [r-mask]")
 
-	LOW_BRIGHTNESS_THRESHOLD = 900./AIA171.exposure_time.value
+	LOW_BRIGHTNESS_THRESHOLD = 1500./AIA171.exposure_time.value
 	r_mask = np.logical_and(img171 > LOW_BRIGHTNESS_THRESHOLD, img171 < np.inf)
 	r_mask = r_mask.astype(np.uint8)
 	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 
 	img171 *= r_mask
-
-	#*************************************#
-
-	RECORDER.sys_text("Producing AIA171 elliptical mask [e-mask]")
-
-	center = com(r_mask)
-	x_center = int(center[0] + 0.5)
-	y_center = int(center[1] + 0.5)
-	dim = img171.shape[0]
-	threshold_percent_1 = 0.98
-	threshold_percent_2 = 0.96
-	threshold_percent_3 = 0.94
-
-	total = float(len(np.where(r_mask == 1)[0]))
-	rad = 2.0
-	y, x = np.ogrid[-x_center:dim - x_center, -y_center:dim - y_center]
-	e_mask = None
-	mask_out = None
-
-	# RECORDER.sys_text("Generating AIA171 binary mask [r-mask]")
-
-	# LOW_BRIGHTNESS_THRESHOLD = 1250./AIA171.exposure_time.value
-	# r_mask = np.logical_and(img171 > LOW_BRIGHTNESS_THRESHOLD, img171 < np.inf)
-	# r_mask = r_mask.astype(np.uint8)
-	# r_mask = cv.dilate(r_mask,
-	# 				   np.ones((3,3)).astype(bool).astype(int),
-	# 				   iterations = 1)
-
-	# img171 *= r_mask
-
-	# #*************************************#
-
-	# RECORDER.sys_text("Generating AIA171 contour mask [c-mask]")
-
-	# contours = np.array(measure.find_contours(r_mask, 0.5))
-	# max_area = 0.0
-	# max_index = 0
-
-	# for i in range(len(contours)):
-	# 	n = len(contours[i])
-	# 	area = 0.0
-	# 	for j in range(n):
-	# 		k = (j + 1) % n
-	# 		area += contours[i][j][0] * contours[i][k][1]
-	# 		area -= contours[i][k][0] * contours[i][j][1]
-	# 	area = abs(area) / 2.0
-	# 	if area > max_area:
-	# 		max_area = area
-	# 		max_index = i
-
-	# contour = np.array([contours[max_index]])
-
-	# x_dim = r_mask.shape[0]
-	# y_dim = r_mask.shape[1]
-
-	# x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
-	# x, y = x.flatten(), y.flatten()
-
-	# points = np.vstack((x,y)).T
-
-	# vertices = contour[0]
-	# path = Path(vertices)
-	# c_mask = path.contains_points(points)
-	# c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
-
-	# c_mask = c_mask.astype(np.uint8)
-	# c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
-
-	# img171 *= c_mask
-	# img171 = img171.astype(float)
-	# img171[img171 == 0] = np.nan
 
 	#*************************************#
 
@@ -480,16 +409,15 @@ for id in tqdm(range(len(AIA171_DIR)), desc = "Analyzing"):
 	img304[img304 < 1] = 1
 	img304 = np.log(img304)/AIA304.exposure_time.value
 
-	# sx = ndimage.sobel(img171, axis = 0, mode = "constant")
-	# sy = ndimage.sobel(img171, axis = 1, mode = "constant")
-	# img171 = np.hypot(sx, sy)
+	# img171[img171 < 1] = 1
+	# img171 = np.sqrt(img171)/AIA171.exposure_time.value
 
 	img171 = laplace(img171) * 100
 
 	#*************************************#
 
 	RECORDER.info_text("Saving image ID %05d" % id)
-	plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % id, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 5)
-	plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % id, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	#plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % id, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 4)
+	#plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % id, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
