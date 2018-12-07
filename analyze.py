@@ -20,6 +20,7 @@ import astropy.units as u
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import sunpy.map as smap
 
 #*************************************#
@@ -30,16 +31,16 @@ RECORDER.display_start_time("analyze")
 RECORDER.sys_text("Importing data")
 
 ## LOCKHEED ##
-IMAGE_SAVEPATH = "/Users/padman/Desktop/lmsal/resources/analyze-data/"
-PATH171 = "/Volumes/Nicholas-Data/AIA171/"
-PATH304 = "/Volumes/Nicholas-Data/AIA304/"
-PATHHMI = "/Volumes/Nicholas-Data/HMI/"
-
-## PERSONAL MAC ##
-# IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
+# IMAGE_SAVEPATH = "/Users/padman/Desktop/lmsal/resources/analyze-data/"
 # PATH171 = "/Volumes/Nicholas-Data/AIA171/"
 # PATH304 = "/Volumes/Nicholas-Data/AIA304/"
 # PATHHMI = "/Volumes/Nicholas-Data/HMI/"
+
+## PERSONAL MAC ##
+IMAGE_SAVEPATH = "/Users/lockheedmartin/Desktop/"
+PATH171 = "/Volumes/Nicholas-Data/AIA171/"
+PATH304 = "/Volumes/Nicholas-Data/AIA304/"
+PATHHMI = "/Volumes/Nicholas-Data/HMI/"
 
 ## PERSONAL PC ##
 # IMAGE_SAVEPATH = "/Users/Lockheed Martin/Desktop/lmsal/resources/analyze-data/"
@@ -102,15 +103,17 @@ for id in tqdm(range(0, len(AIA171_DIR), 1920), desc = "Analyzing"):
 	imghmi = ALIGNED_RAW_HMI[cx-DIM+25 : cx+DIM+25, cy-DIM-20 : cy+DIM-20]
 
 	#*************************************#
-	
-	RECORDER.sys_text("Producing AIA171 binary mask [r-mask]")
 
-	LOW_BRIGHTNESS_THRESHOLD = 1500./AIA171.exposure_time.value
-	r_mask = np.logical_and(img171 > LOW_BRIGHTNESS_THRESHOLD, img171 < np.inf)
-	r_mask = r_mask.astype(np.uint8)
-	r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+	RECORDER.sys_text("Edge-tracing AIA171 image")
+	# plt.imsave("temp", img171, cmap = "sdoaia171", vmin = 500, vmax = 3000)
+	# temp = cv.imread("temp.png")
+	# img171_edged = cv.Canny(temp, 300, 75)
+	# os.system("rm temp.png")
 
-	img171 *= r_mask
+	# THRESHOLD FIRST
+	# THEN SOBEL
+	# THEN CANNY @ 965, 50 (CAN CHANGE)
+	# GOOD SOBEL WAS @ 160, 10
 
 	#*************************************#
 
@@ -409,15 +412,11 @@ for id in tqdm(range(0, len(AIA171_DIR), 1920), desc = "Analyzing"):
 	img304[img304 < 1] = 1
 	img304 = np.log(img304)/AIA304.exposure_time.value
 
-	# img171[img171 < 1] = 1
-	# img171 = np.sqrt(img171)/AIA171.exposure_time.value
-
-	img171 = laplace(img171) * 100
-
 	#*************************************#
 
 	RECORDER.info_text("Saving image ID %05d" % id)
-	#plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % id, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 4)
-	#plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % id, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	plt.imsave(IMAGE_SAVEPATH + "aia171/%05d" % id, img171_edged, cmap = "gray", origin = "lower")
+	# plt.imsave(IMAGE_SAVEPATH + "aia304/%05d" % id, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 3000)
+	plt.imsave(IMAGE_SAVEPATH + "hmi/%05d" % id, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 

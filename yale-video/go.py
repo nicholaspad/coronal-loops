@@ -31,9 +31,9 @@ RECORDER.display_start_time("go")
 RECORDER.sys_text("Importing data...")
 
 IMAGE_SAVEPATH = "/Users/padman/Desktop/images/"
-PATH171 = "/Volumes/Nicholas Data/AIA171/"
-PATH304 = "/Volumes/Nicholas Data/AIA304/"
-PATHHMI = "/Volumes/Nicholas Data/HMI/"
+PATH171 = "/Volumes/Nicholas-Data/AIA171/"
+PATH304 = "/Volumes/Nicholas-Data/AIA304/"
+PATHHMI = "/Volumes/Nicholas-Data/HMI/"
 
 AIA171_DIR = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]
 AIA304_DIR = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]
@@ -49,8 +49,8 @@ def hmialign(data, scale):
 
 	x_size = interpolated_hmi_data.shape[1]
 	y_size = interpolated_hmi_data.shape[0]
-	x_center = int(AIA304.reference_pixel.y.value + 0.5)
-	y_center = int(AIA304.reference_pixel.x.value + 0.5)
+	x_center = 4096 - int(AIA304.reference_pixel.y.value + 0.5)
+	y_center = 4096 - int(AIA304.reference_pixel.x.value + 0.5)
 
 	RECORDER.info_text("Casting interpolated HMI data to 4k by 4k empty image...")
 	ALIGNED_RAW_HMI[(y_center - 1 - y_size / 2) : (y_center + y_size / 2),
@@ -191,59 +191,6 @@ p = copy(NEW_ID)
 #################################################
 #################################################
 
-# prerequisite code
-# ID = 1920
-# NEW_ID = 3372
-
-# AIA171 = smap.Map(PATH171 + AIA171_DIR[ID])
-# AIA304 = smap.Map(PATH304 + AIA304_DIR[ID])
-# HMI = smap.Map(PATHHMI + HMI_DIR[ID])
-
-# aia171_img = AIA171.data
-# aia171_img[aia171_img < 1] = 1
-# aia171_img = np.sqrt(aia171_img)
-
-# aia304_img = AIA304.data
-# aia304_img_o = AIA304.data
-# aia304_img[aia304_img < 1] = 1
-# aia304_img = np.log(aia304_img)
-
-# scale = (HMI.scale[0] / AIA304.scale[0]).value
-# scale = float("%.3f" % scale)
-# hmi_img = hmialign(HMI.data, scale)
-
-# x_center = 1652
-# y_center = 2381
-# dim = 200
-
-# d_bot = x_center-dim
-# d_top = 4096 - 2*dim - d_bot
-# d_left = y_center-dim
-# d_right = 4096 - 2*dim - d_left
-
-# N = min(d_top, d_bot, d_left, d_right)
-# i = N - 1
-
-# v_bot = float(d_bot) / N
-# v_top = float(d_top) / N
-# v_left = float(d_left) / N
-# v_right = float(d_right) / N
-
-# img171 = None
-# img304 = None
-# imghmi = None
-
-# img171 = aia171_img[int(i * v_bot) : int(4096 - i * v_top),
-# 					int(i * v_left) : int(4096 - i * v_right)]
-
-# img304 = aia304_img_o[int(i * v_bot) : int(4096 - i * v_top),
-# 					  int(i * v_left) : int(4096 - i * v_right)]
-
-# imghmi = hmi_img[int(i * v_bot) : int(4096 - i * v_top),
-# 				 int(i * v_left) : int(4096 - i * v_right)]
-
-#
-
 RECORDER.info_text("Generating AIA304 binary mask animation...")
 
 LOW_BRIGHTNESS_THRESHOLD = 600
@@ -253,9 +200,9 @@ for i in tqdm(range(LOW_BRIGHTNESS_THRESHOLD + 1), desc = "Working..."):
 	r_mask = np.logical_and(img304 > i, img304 < np.inf)
 	temp = img304 * r_mask
 	temp[temp < 1] = 1
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	NEW_ID += 1
 
@@ -270,9 +217,9 @@ r_mask = cv.dilate(r_mask,
 img304 = img304 * r_mask
 img304[img304 < 1] = 1
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img304)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img304)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
 
@@ -308,9 +255,9 @@ while True:
 	img = copy(img304).astype(float)
 	img = img * temp_in
 	img[temp_out] = np.nan
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total <= threshold_percent_1:
 		mask_in = temp_in
 		NEW_ID += 1
@@ -329,9 +276,9 @@ while True:
 	img = copy(img304).astype(float)
 	img = img * temp_in
 	img[temp_out] = np.nan
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total <= threshold_percent_2:
 		mask_in = temp_in
 		NEW_ID += 1
@@ -348,9 +295,9 @@ while True:
 	img = copy(img304).astype(float)
 	img = img * temp_in
 	img[temp_out] = np.nan
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
 		mask_in = temp_in
 		mask_out = temp_out
@@ -366,9 +313,9 @@ img304_o = copy(img304)
 img304 = (img304 * mask_in).astype(float)
 img304[mask_out] = np.nan
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img304)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(img304)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
 
@@ -426,9 +373,9 @@ for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices[i][0] + 0.5) + 1, int(vertices[i][1] + 0.5) - 1] = np.nan
 	temp[int(vertices[i][0] + 0.5) + 1, int(vertices[i][1] + 0.5)] = np.nan
 	temp[int(vertices[i][0] + 0.5) + 1, int(vertices[i][1] + 0.5) + 1] = np.nan
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	NEW_ID += 1
 
 path = Path(vertices)
@@ -442,9 +389,9 @@ RECORDER.info_text("Finalizing contour mask...")
 img304 = img304_o * c_mask
 img304[img304 < 1] = 1
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, np.log(temp)/AIA304.exposure_time.value, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 img304 = np.log(img304)/AIA304.exposure_time.value
 
@@ -460,7 +407,7 @@ p = copy(NEW_ID)
 
 RECORDER.info_text("Generating HMI binary mask animation...")
 
-POS_GAUSS_THRESHOLD = 125
+POS_GAUSS_THRESHOLD = 265
 NEG_GAUSS_THRESHOLD = POS_GAUSS_THRESHOLD * -1
 r_mask = None
 
@@ -469,22 +416,22 @@ for i in tqdm(range(POS_GAUSS_THRESHOLD + 1), desc = "Working..."):
 	r_mask_2 = np.logical_and(imghmi > i, imghmi < 10000000)
 	r_mask = r_mask_1.astype(float) + r_mask_2.astype(float)
 	r_mask[r_mask == 2.] = 1.
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi * r_mask, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi * r_mask, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 	NEW_ID += 1
 
-r_mask = r_mask.astype(np.uint8)
-r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
-r_mask = cv.morphologyEx(r_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
-r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+# r_mask = r_mask.astype(np.uint8)
+# r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
+# r_mask = cv.morphologyEx(r_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+# r_mask = cv.dilate(r_mask, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 
 imghmi = imghmi * r_mask
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
 
@@ -499,9 +446,9 @@ p = copy(NEW_ID)
 RECORDER.info_text("Generating HMI elliptical mask animation...")
 
 dim = imghmi.shape[0]
-threshold_percent_1 = 0.98
-threshold_percent_2 = 0.96
-threshold_percent_3 = 0.90
+threshold_percent_1 = 0.99
+threshold_percent_2 = 0.98
+threshold_percent_3 = 0.94
 
 total = float(len(np.where(r_mask == 1)[0]))
 rad = 300.0
@@ -520,9 +467,9 @@ while True:
 	img = copy(imghmi).astype(float)
 	img = img * temp_in
 	img[temp_out] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total <= threshold_percent_1:
 		mask_in = temp_in
 		NEW_ID += 1
@@ -541,9 +488,9 @@ while True:
 	img = copy(imghmi)
 	img = img * temp_in
 	img[temp_out] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_2:
 		mask_in = temp_in
 		NEW_ID += 1
@@ -560,9 +507,9 @@ while True:
 	img = copy(imghmi)
 	img = img * temp_in
 	img[temp_out] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, img, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	if len(np.where(r_mask * temp_in == 1)[0]) / total < threshold_percent_3:
 		mask_in = temp_in
 		mask_out = temp_out
@@ -574,12 +521,12 @@ while True:
 
 RECORDER.info_text("Finalizing elliptical mask...")
 
-imghmi = imghmi * mask_in
-imghmi[mask_out] = -10000000
+# imghmi = imghmi * mask_in
+# imghmi[mask_out] = np.nan
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
 
@@ -688,9 +635,9 @@ for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices1[i][0] + 0.5) + 1, int(vertices1[i][1] + 0.5) - 1] = -10000000
 	temp[int(vertices1[i][0] + 0.5) + 1, int(vertices1[i][1] + 0.5)] = -10000000
 	temp[int(vertices1[i][0] + 0.5) + 1, int(vertices1[i][1] + 0.5) + 1] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	NEW_ID += 1
 
 L = len(vertices2)
@@ -705,9 +652,9 @@ for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices2[i][0] + 0.5) + 1, int(vertices2[i][1] + 0.5) - 1] = -10000000
 	temp[int(vertices2[i][0] + 0.5) + 1, int(vertices2[i][1] + 0.5)] = -10000000
 	temp[int(vertices2[i][0] + 0.5) + 1, int(vertices2[i][1] + 0.5) + 1] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	NEW_ID += 1
 
 L = len(vertices3)
@@ -722,9 +669,9 @@ for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices3[i][0] + 0.5) + 1, int(vertices3[i][1] + 0.5) - 1] = -10000000
 	temp[int(vertices3[i][0] + 0.5) + 1, int(vertices3[i][1] + 0.5)] = -10000000
 	temp[int(vertices3[i][0] + 0.5) + 1, int(vertices3[i][1] + 0.5) + 1] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	NEW_ID += 1
 
 L = len(vertices4)
@@ -739,9 +686,9 @@ for i in tqdm(range(L), desc = "Working..."):
 	temp[int(vertices4[i][0] + 0.5) + 1, int(vertices4[i][1] + 0.5) - 1] = -10000000
 	temp[int(vertices4[i][0] + 0.5) + 1, int(vertices4[i][1] + 0.5)] = -10000000
 	temp[int(vertices4[i][0] + 0.5) + 1, int(vertices4[i][1] + 0.5) + 1] = -10000000
-	plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-	plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-	plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+	# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+	# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+	# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, temp, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 	NEW_ID += 1
 
 path1 = Path(vertices1)
@@ -761,6 +708,36 @@ c_mask3 = np.rot90(np.flip(c_mask3.reshape((y_dim,x_dim)), 1))
 c_mask4 = path4.contains_points(points)
 c_mask4 = np.rot90(np.flip(c_mask4.reshape((y_dim,x_dim)), 1))
 
+#################################################
+#################################################
+#################################################
+
+weight1 = np.flip(c_mask1 * imghmi, 0)
+weight2 = np.flip(c_mask2 * imghmi, 0)
+weight3 = np.flip(c_mask3 * imghmi, 0)
+weight4 = np.flip(c_mask4 * imghmi, 0)
+
+cm1 = np.array(com(weight1)).astype(int)
+cm2 = np.array(com(weight2)).astype(int)
+cm3 = np.array(com(weight3)).astype(int)
+cm4 = np.array(com(weight4)).astype(int)
+
+combined = weight1 + weight2 + weight3 + weight4
+
+plt.imshow(combined, cmap = "gray", vmin = -120, vmax = 120)
+plt.autoscale(False)
+plt.plot(cm1[1], cm1[0], 'g+')
+plt.plot(cm2[1], cm2[0], 'g+')
+plt.plot(cm3[1], cm3[0], 'g+')
+plt.plot(cm4[1], cm4[0], 'g+')
+plt.savefig('resulthmi3.png', bbox_inches = 'tight', dpi = 300)
+
+debug()
+
+#################################################
+#################################################
+#################################################
+
 c_mask = c_mask1.astype(float) + c_mask2.astype(float) + c_mask3.astype(float) + c_mask4.astype(float)
 c_mask[c_mask == 2.] = 1.
 c_mask[c_mask == 3.] = 1.
@@ -771,11 +748,13 @@ c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).ast
 
 RECORDER.info_text("Finalizing contour mask...")
 imghmi = imghmi * c_mask
-imghmi[mask_out] = -10000000
+# imghmi[mask_out] = -10000000
 
-plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
-plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
-plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
+debug()
+
+# plt.imsave(IMAGE_SAVEPATH + "aia304-images/%05d" % NEW_ID, img304, cmap = "sdoaia304", origin = "lower", vmin = 0, vmax = 3)
+# plt.imsave(IMAGE_SAVEPATH + "aia171-images/%05d" % NEW_ID, img171, cmap = "sdoaia171", origin = "lower", vmin = 0, vmax = 40)
+# plt.imsave(IMAGE_SAVEPATH + "hmi-images/%05d" % NEW_ID, imghmi, cmap = "gray", origin = "lower", vmin = -120, vmax = 120)
 
 NEW_ID += 1
 
