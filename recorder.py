@@ -25,6 +25,12 @@ class Recorder(object):
 			with open(self.DATABASE_NAME, "w") as db:
 				db.write("ID,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,304_LOW_THRESH_INTEN,304_AVG_INTEN,304_MED_INTEN,304_MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,MED_GAUSS\n")
 
+	def info_text(self, text):
+		tqdm.write("\n" + self.INFO + text)
+
+	def sys_text(self, text):
+		tqdm.write("\n" + self.SYS + text)
+
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
 		with open(self.DATABASE_NAME, "a") as db:
@@ -161,12 +167,6 @@ class Recorder(object):
 
 	def rest(self):
 		time.sleep(0.05)
-
-	def info_text(self, text):
-		tqdm.write("\n" + self.INFO + text)
-
-	def sys_text(self, text):
-		tqdm.write("\n" + self.SYS + text)
 
 	def input_text(self, text):
 		return raw_input("\n" + self.INPUT + "%s:\n\t==> " % text + Color.YELLOW)

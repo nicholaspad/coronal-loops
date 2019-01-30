@@ -3,7 +3,6 @@ warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
 from astropy.coordinates import SkyCoord
 from datetime import datetime
-from helper import clear_filesystem
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
 from matplotlib.path import Path
 from recorder import Recorder
@@ -26,7 +25,11 @@ import sunpy.map as smap
 MAIN_DIR = "/Users/%s/Desktop/lmsal" % getpass.getuser()
 RECORDER = Recorder("database.csv")
 RECORDER.display_start_time("region-analysis")
-clear_filesystem()
+
+os.system("rm -rf resources/region-data/raw-images && mkdir resources/region-data/raw-images")
+os.system("rm -rf resources/region-data/r-masked-images && mkdir resources/region-data/r-masked-images")
+os.system("rm -rf resources/region-data/e-masked-images && mkdir resources/region-data/e-masked-images")
+os.system("rm -rf resources/region-data/c-masked-images && mkdir resources/region-data/c-masked-images")
 
 ##### import data
 
