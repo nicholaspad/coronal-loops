@@ -3,21 +3,23 @@ from os import listdir
 from os.path import isfile, join
 from recorder import Recorder
 from sunpy.map import Map
+from tqdm import tqdm
 import astropy.units as u
+import matplotlib.pyplot as plt
 import numpy as np
 
 RECORDER = Recorder()
 RECORDER.display_start_time("structure")
 
 RECORDER.sys_text("Importing data directories")
-IMAGE_PATH = "/Volumes/Nicholas-Data/output/"
-PATH94 = "/Volumes/Nicholas-Data/AIA94/"
-PATH131 = "/Volumes/Nicholas-Data/AIA131/"
-PATH171 = "/Volumes/Nicholas-Data/AIA171/"
-PATH193 = "/Volumes/Nicholas-Data/AIA193/"
-PATH211 = "/Volumes/Nicholas-Data/AIA211/"
-PATH304 = "/Volumes/Nicholas-Data/AIA304/"
-PATH335 = "/Volumes/Nicholas-Data/AIA335/"
+SAVEPATH = "data/outputs/"
+PATH94 = "data/AIA94/"
+PATH131 = "data/AIA131/"
+PATH171 = "data/AIA171/"
+PATH193 = "data/AIA193/"
+PATH211 = "data/AIA211/"
+PATH304 = "data/AIA304/"
+PATH335 = "data/AIA335/"
 
 DIR94 = [f for f in listdir(PATH94) if isfile(join(PATH94, f))]
 DIR131 = [f for f in listdir(PATH131) if isfile(join(PATH131, f))]
@@ -30,24 +32,18 @@ DIR335 = [f for f in listdir(PATH335) if isfile(join(PATH335, f))]
 N = len(DIR94)
 
 for K in tqdm(range(N), desc = "Working"):
-	RECORDER.sys_text("Importing AIA94")
+	RECORDER.sys_text("Importing FITS data")
 	K94 = Map(PATH94 + DIR94[K])
-	RECORDER.sys_text("Importing AIA131")
 	K131 = Map(PATH131 + DIR131[K])
-	RECORDER.sys_text("Importing AIA171")
 	K171 = Map(PATH171 + DIR171[K])
-	RECORDER.sys_text("Importing AIA193")
 	K193 = Map(PATH193 + DIR193[K])
-	RECORDER.sys_text("Importing AIA211")
 	K211 = Map(PATH211 + DIR211[K])
-	RECORDER.sys_text("Importing AIA304")
 	K304 = Map(PATH304 + DIR304[K])
-	RECORDER.sys_text("Importing AIA335")
 	K335 = Map(PATH335 + DIR335[K])
 
-	RECORDER.info_text("Current datetime: %s" % K94.date)
+	RECORDER.info_text("Current datetime - %s" % K94.date)
 	
-	RECORDER.sys_text("Reading data")
+	RECORDER.info_text("Reading raw image data")
 	I94 = K94.data
 	I131 = K131.data
 	I171 = K171.data
@@ -55,6 +51,9 @@ for K in tqdm(range(N), desc = "Working"):
 	I211 = K211.data
 	I304 = K304.data
 	I335 = K335.data
+
+	RECORDER.sys_text("Exporting corrected raw images")
+	plt.imsave(SAVEPATH + "AIA94/%04d" % K, )
 
 	"""
 	1. Corrected raw images
