@@ -31,6 +31,9 @@ class Recorder(object):
 	def sys_text(self, text):
 		tqdm.write("\t" + self.SYS + text)
 
+	def warn_text(self, text):
+		tqdm.write("\t" + self.WARN + text)
+
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID
 		with open(self.DATABASE_NAME, "a") as db:
