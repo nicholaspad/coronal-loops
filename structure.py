@@ -14,6 +14,7 @@ from os.path import isfile, join
 from recorder import Recorder
 from skimage import measure
 from sunpy.map import Map
+from timeit import default_timer as timer
 from tqdm import tqdm
 import astropy.units as u
 import cv2 as cv
@@ -78,9 +79,14 @@ def make_cmask(b_mask, img_data):
 
 	points = np.vstack((x,y)).T
 
+	start = timer()
 	vertices = contour[0]
 	path = Path(vertices)
-	c_mask = path.contains_points(points)
+	c_mask = path.contains_points(points) #this step takes too long. fix.
+	end = timer()
+	print (end-start)
+	debug()
+	###################################
 	c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
 
 	c_mask = c_mask.astype(np.uint8)
@@ -88,7 +94,10 @@ def make_cmask(b_mask, img_data):
 
 	return img_data * c_mask
 
-N = 30; len(DIR94)
+def save_images(type, imgs):
+	pass
+
+N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
 	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date])
@@ -101,27 +110,27 @@ for K in tqdm(range(N), desc = "Importing data"):
 
 for K in tqdm(range(N), desc = "Generating intensity distribution"):
 	if K94[K][1] > 0:
-		AVG94 = np.append(AVG94, np.average(K94[K][0] / K94[K][1]))
+		AVG94 = np.append(AVG94, np.mean(K94[K][0] / K94[K][1]))
 	if K131[K][1] > 0:
-		AVG131 = np.append(AVG131, np.average(K131[K][0] / K131[K][1]))
+		AVG131 = np.append(AVG131, np.mean(K131[K][0] / K131[K][1]))
 	if K171[K][1] > 0:
-		AVG171 = np.append(AVG171, np.average(K171[K][0] / K171[K][1]))
+		AVG171 = np.append(AVG171, np.mean(K171[K][0] / K171[K][1]))
 	if K193[K][1] > 0:
-		AVG193 = np.append(AVG193, np.average(K193[K][0] / K193[K][1]))
+		AVG193 = np.append(AVG193, np.mean(K193[K][0] / K193[K][1]))
 	if K211[K][1] > 0:
-		AVG211 = np.append(AVG211, np.average(K211[K][0] / K211[K][1]))
+		AVG211 = np.append(AVG211, np.mean(K211[K][0] / K211[K][1]))
 	if K304[K][1] > 0:
-		AVG304 = np.append(AVG304, np.average(K304[K][0] / K304[K][1]))
+		AVG304 = np.append(AVG304, np.mean(K304[K][0] / K304[K][1]))
 	if K335[K][1] > 0:
-		AVG335 = np.append(AVG335, np.average(K335[K][0] / K335[K][1]))
+		AVG335 = np.append(AVG335, np.mean(K335[K][0] / K335[K][1]))
 
-MEAN94 = np.average(AVG94); SDEV94 = np.std(AVG94)
-MEAN131 = np.average(AVG131); SDEV131 = np.std(AVG131)
-MEAN171 = np.average(AVG171); SDEV171 = np.std(AVG171)
-MEAN193 = np.average(AVG193); SDEV193 = np.std(AVG193)
-MEAN211 = np.average(AVG211); SDEV211 = np.std(AVG211)
-MEAN304 = np.average(AVG304); SDEV304 = np.std(AVG304)
-MEAN335 = np.average(AVG335); SDEV335 = np.std(AVG335)
+MEAN94 = np.mean(AVG94); SDEV94 = np.std(AVG94)
+MEAN131 = np.mean(AVG131); SDEV131 = np.std(AVG131)
+MEAN171 = np.mean(AVG171); SDEV171 = np.std(AVG171)
+MEAN193 = np.mean(AVG193); SDEV193 = np.std(AVG193)
+MEAN211 = np.mean(AVG211); SDEV211 = np.std(AVG211)
+MEAN304 = np.mean(AVG304); SDEV304 = np.std(AVG304)
+MEAN335 = np.mean(AVG335); SDEV335 = np.std(AVG335)
 
 """
 [ID]: [MEAN] [SDEV]
@@ -246,7 +255,7 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	"""
 	1. Corrected raw images [X]
 	2. Binary masked images [X]
-	3. Contour masked images
+	3. Contour masked images [X]
 	4. Structural images
 	"""
 
