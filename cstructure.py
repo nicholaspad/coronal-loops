@@ -8,13 +8,10 @@ warnings.filterwarnings("ignore", message = "invalid value encountered in multip
 warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
 
 from IPython.core import debugger; debug = debugger.Pdb().set_trace
-from matplotlib.colors import LogNorm
 from matplotlib.path import Path
 from os import listdir
 from os.path import isfile, join
 from recorder import Recorder
-from scipy import ndimage
-from skimage import feature
 from skimage import measure
 from sunpy.map import Map
 from timeit import default_timer as timer
@@ -54,10 +51,53 @@ K211 = []; AVG211 = []
 K304 = []; AVG304 = []
 K335 = []; AVG335 = []
 
+def make_cmask(b_mask, img_data):
+	contours = np.array(measure.find_contours(b_mask, 0.5))
+	L = len(contours)
+	max_area = 0.0
+	max_index = 0
+
+	for i in range(L):
+		n = len(contours[i])
+		area = 0.0
+		for j in range(n):
+			k = (j + 1) % n
+			area += contours[i][j][0] * contours[i][k][1]
+			area -= contours[i][k][0] * contours[i][j][1]
+		area = abs(area) / 2.0
+		if area > max_area:
+			max_area = area
+			max_index = i
+
+	contour = np.array([contours[max_index]])
+
+	x_dim = b_mask.shape[0]
+	y_dim = b_mask.shape[1]
+
+	x, y = np.meshgrid(np.arange(x_dim), np.arange(y_dim))
+	x, y = x.flatten(), y.flatten()
+
+	points = np.vstack((x,y)).T
+
+	start = timer()
+	vertices = contour[0]
+	path = Path(vertices)
+	c_mask = path.contains_points(points) #this step takes too long. fix.
+	end = timer()
+	print (end-start)
+	debug()
+	###################################
+	c_mask = np.rot90(np.flip(c_mask.reshape((y_dim,x_dim)), 1))
+
+	c_mask = c_mask.astype(np.uint8)
+	c_mask = cv.morphologyEx(c_mask, cv.MORPH_CLOSE, np.ones((3,3)).astype(bool).astype(int))
+
+	return img_data * c_mask
+
 def save_images(type, imgs):
 	pass
 
-N = 30 #len(DIR94)
+N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
 	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date])
@@ -125,106 +165,101 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 		continue
 
 	RECORDER.info_text("Correcting raw image data")
-	corrected_D94[corrected_D94 < 1] = 1
-	corrected_D94 = np.log(corrected_D94)
-
-	corrected_D131[corrected_D131 < 1] = 1
-	corrected_D131 = np.log(corrected_D131)
-
-	corrected_D171[corrected_D171 < 1] = 1
-	corrected_D171 = np.log(corrected_D171)
-
-	corrected_D193[corrected_D193 < 1] = 1
-	corrected_D193 = np.log(corrected_D193)
-
-	corrected_D211[corrected_D211 < 1] = 1
-	corrected_D211 = np.log(corrected_D211)
-
-	corrected_D304[corrected_D304 < 1] = 1
-	corrected_D304 = np.log(corrected_D304)
-
-	corrected_D335[corrected_D335 < 1] = 1
-	corrected_D335 = np.log(corrected_D335)
+	corrected_D94 = np.log(corrected_D94); corrected_D94[np.isnan(corrected_D94)] = 0
+	corrected_D131 = np.log(corrected_D131); corrected_D131[np.isnan(corrected_D131)] = 0
+	corrected_D171 = np.power(corrected_D171, np.e)
+	corrected_D193 = np.power(corrected_D193, np.e)
+	corrected_D211 = np.power(corrected_D211, np.e)
+	corrected_D304 = np.power(corrected_D304, np.e)
+	corrected_D335 = np.log(corrected_D335); corrected_D335[np.isnan(corrected_D335)] = 0
 
 	RECORDER.sys_text("Exporting corrected raw images")
-	plt.imsave(SAVEPATH + "raw/AIA94/raw_%04d" % (K - offset), corrected_D94, origin = "lower", cmap = "sdoaia94", vmin = int(corrected_D94.min() + 0.5), vmax =  1.25 * int(corrected_D94.max()))
-	plt.imsave(SAVEPATH + "raw/AIA131/raw_%04d" % (K - offset), corrected_D131, origin = "lower", cmap = "sdoaia131", vmin = int(corrected_D131.min() + 0.5), vmax =  1.25 * int(corrected_D131.max()))
-	plt.imsave(SAVEPATH + "raw/AIA171/raw_%04d" % (K - offset), corrected_D171, origin = "lower", cmap = "sdoaia171", vmin = int(corrected_D171.min() + 0.5), vmax =  1.25 * int(corrected_D171.max()))
-	plt.imsave(SAVEPATH + "raw/AIA193/raw_%04d" % (K - offset), corrected_D193, origin = "lower", cmap = "sdoaia193", vmin = int(corrected_D193.min() + 0.5), vmax =  1.25 * int(corrected_D193.max()))
-	plt.imsave(SAVEPATH + "raw/AIA211/raw_%04d" % (K - offset), corrected_D211, origin = "lower", cmap = "sdoaia211", vmin = int(corrected_D211.min() + 0.5), vmax =  1.25 * int(corrected_D211.max()))
-	plt.imsave(SAVEPATH + "raw/AIA304/raw_%04d" % (K - offset), corrected_D304, origin = "lower", cmap = "sdoaia304", vmin = int(corrected_D304.min() + 0.5), vmax =  1.25 * int(corrected_D304.max()))
-	plt.imsave(SAVEPATH + "raw/AIA335/raw_%04d" % (K - offset), corrected_D335, origin = "lower", cmap = "sdoaia335", vmin = int(corrected_D335.min() + 0.5), vmax =  1.25 * int(corrected_D335.max()))
+	plt.imsave(SAVEPATH + "raw/AIA94/raw_%04d" % (K - offset), corrected_D94, origin = "lower", cmap = "sdoaia94", vmin = 1, vmax = 8)
+	plt.imsave(SAVEPATH + "raw/AIA131/raw_%04d" % (K - offset), corrected_D131, origin = "lower", cmap = "sdoaia131", vmin = 1, vmax = 12)
+	plt.imsave(SAVEPATH + "raw/AIA171/raw_%04d" % (K - offset), corrected_D171, origin = "lower", cmap = "sdoaia171", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "raw/AIA193/raw_%04d" % (K - offset), corrected_D193, origin = "lower", cmap = "sdoaia193", vmin = 1, vmax = 800000000)
+	plt.imsave(SAVEPATH + "raw/AIA211/raw_%04d" % (K - offset), corrected_D211, origin = "lower", cmap = "sdoaia211", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "raw/AIA304/raw_%04d" % (K - offset), corrected_D304, origin = "lower", cmap = "sdoaia304", vmin = 1, vmax = 50000000)
+	plt.imsave(SAVEPATH + "raw/AIA335/raw_%04d" % (K - offset), corrected_D335, origin = "lower", cmap = "sdoaia335", vmin = 1, vmax = 7)
 
 	RECORDER.info_text("Generating binary-masked images")
-	threshold_94 = int(corrected_D94.max()) / 3.0
-	threshold_131 = int(corrected_D131.max()) / 3.0
-	threshold_171 = int(corrected_D171.max()) / 3.0
-	threshold_193 = int(corrected_D193.max()) / 3.0
-	threshold_211 = int(corrected_D211.max()) / 3.0
-	threshold_304 = int(corrected_D304.max()) / 3.0
-	threshold_335 = int(corrected_D335.max()) / 3.0
+	threshold_94 = 2
+	threshold_131 = 2.5
+	threshold_171 = 15000000
+	threshold_193 = 30000000
+	threshold_211 = 15000000
+	threshold_304 = 40000000
+	threshold_335 = 3.5
 
 	b_mask94 = np.logical_and(corrected_D94 > threshold_94, corrected_D94 < np.inf).astype(np.uint8)
+	b_mask94 = cv.dilate(b_mask94, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B94 = corrected_D94 * b_mask94
 	corrected_B94[np.isnan(corrected_B94)] = 0
 
 	b_mask131 = np.logical_and(corrected_D131 > threshold_131, corrected_D131 < np.inf).astype(np.uint8)
+	b_mask131 = cv.dilate(b_mask131, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B131 = corrected_D131 * b_mask131
 	corrected_B131[np.isnan(corrected_B131)] = 0
 
 	b_mask171 = np.logical_and(corrected_D171 > threshold_171, corrected_D171 < np.inf).astype(np.uint8)
+	b_mask171 = cv.dilate(b_mask171, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B171 = corrected_D171 * b_mask171
 
 	b_mask193 = np.logical_and(corrected_D193 > threshold_193, corrected_D193 < np.inf).astype(np.uint8)
+	b_mask193 = cv.dilate(b_mask193, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B193 = corrected_D193 * b_mask193
 
 	b_mask211 = np.logical_and(corrected_D211 > threshold_211, corrected_D211 < np.inf).astype(np.uint8)
+	b_mask211 = cv.dilate(b_mask211, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B211 = corrected_D211 * b_mask211
 
 	b_mask304 = np.logical_and(corrected_D304 > threshold_304, corrected_D304 < np.inf).astype(np.uint8)
+	b_mask304 = cv.dilate(b_mask304, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B304 = corrected_D304 * b_mask304
 
 	b_mask335 = np.logical_and(corrected_D335 > threshold_335, corrected_D335 < np.inf).astype(np.uint8)
+	b_mask335 = cv.dilate(b_mask335, np.ones((3,3)).astype(bool).astype(int), iterations = 1)
 	corrected_B335 = corrected_D335 * b_mask335
 	corrected_B335[np.isnan(corrected_B335)] = 0
 
 	RECORDER.sys_text("Exporting corrected binary images")
-	plt.imsave(SAVEPATH + "binary/AIA94/binary_%04d" % (K - offset), corrected_B94, origin = "lower", cmap = "sdoaia94", vmin = int(corrected_D94.min() + 0.5), vmax =  1.25 * int(corrected_D131.max()))
-	plt.imsave(SAVEPATH + "binary/AIA131/binary_%04d" % (K - offset), corrected_B131, origin = "lower", cmap = "sdoaia131", vmin = int(corrected_D131.min() + 0.5), vmax =  1.25 * int(corrected_D131.max()))
-	plt.imsave(SAVEPATH + "binary/AIA171/binary_%04d" % (K - offset), corrected_B171, origin = "lower", cmap = "sdoaia171", vmin = int(corrected_D171.min() + 0.5), vmax =  1.25 * int(corrected_D171.max()))
-	plt.imsave(SAVEPATH + "binary/AIA193/binary_%04d" % (K - offset), corrected_B193, origin = "lower", cmap = "sdoaia193", vmin = int(corrected_D193.min() + 0.5), vmax =  1.25 * int(corrected_D193.max()))
-	plt.imsave(SAVEPATH + "binary/AIA211/binary_%04d" % (K - offset), corrected_B211, origin = "lower", cmap = "sdoaia211", vmin = int(corrected_D211.min() + 0.5), vmax =  1.25 * int(corrected_D211.max()))
-	plt.imsave(SAVEPATH + "binary/AIA304/binary_%04d" % (K - offset), corrected_B304, origin = "lower", cmap = "sdoaia304", vmin = int(corrected_D304.min() + 0.5), vmax =  1.25 * int(corrected_D304.max()))
-	plt.imsave(SAVEPATH + "binary/AIA335/binary_%04d" % (K - offset), corrected_B335, origin = "lower", cmap = "sdoaia335", vmin = int(corrected_D335.min() + 0.5), vmax =  1.25 * int(corrected_D335.max()))
+	plt.imsave(SAVEPATH + "binary/AIA94/binary_%04d" % (K - offset), corrected_B94, origin = "lower", cmap = "sdoaia94", vmin = 1, vmax = 8)
+	plt.imsave(SAVEPATH + "binary/AIA131/binary_%04d" % (K - offset), corrected_B131, origin = "lower", cmap = "sdoaia131", vmin = 1, vmax = 12)
+	plt.imsave(SAVEPATH + "binary/AIA171/binary_%04d" % (K - offset), corrected_B171, origin = "lower", cmap = "sdoaia171", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "binary/AIA193/binary_%04d" % (K - offset), corrected_B193, origin = "lower", cmap = "sdoaia193", vmin = 1, vmax = 800000000)
+	plt.imsave(SAVEPATH + "binary/AIA211/binary_%04d" % (K - offset), corrected_B211, origin = "lower", cmap = "sdoaia211", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "binary/AIA304/binary_%04d" % (K - offset), corrected_B304, origin = "lower", cmap = "sdoaia304", vmin = 1, vmax = 50000000)
+	plt.imsave(SAVEPATH + "binary/AIA335/binary_%04d" % (K - offset), corrected_B335, origin = "lower", cmap = "sdoaia335", vmin = 1, vmax = 7)
 
-	RECORDER.info_text("Generating edge images")
-	SIGMA = 20
-	edge94 = feature.canny(corrected_D94, sigma = SIGMA)
-	edge131 = feature.canny(corrected_D131, sigma = SIGMA)
-	edge171 = feature.canny(corrected_D171, sigma = SIGMA)
-	edge193 = feature.canny(corrected_D193, sigma = SIGMA)
-	edge211 = feature.canny(corrected_D211, sigma = SIGMA)
-	edge304 = feature.canny(corrected_D304, sigma = SIGMA)
-	edge335 = feature.canny(corrected_D335, sigma = SIGMA)
+	RECORDER.info_text("Generating contour-masked images")
 
-	RECORDER.sys_text("Exporting edge images")
-	plt.imsave(SAVEPATH + "edge/AIA94/edge_%04d" % (K - offset), edge94, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA131/edge_%04d" % (K - offset), edge131, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA171/edge_%04d" % (K - offset), edge171, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA193/edge_%04d" % (K - offset), edge193, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA211/edge_%04d" % (K - offset), edge211, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA304/edge_%04d" % (K - offset), edge304, origin = "lower", cmap = "gray")
-	plt.imsave(SAVEPATH + "edge/AIA335/edge_%04d" % (K - offset), edge335, origin = "lower", cmap = "gray")
+	corrected_C94 = make_cmask(b_mask94, corrected_B94)
+	corrected_C131 = make_cmask(b_mask131, corrected_B131)
+	corrected_C171 = make_cmask(b_mask171, corrected_B171)
+	corrected_C193 = make_cmask(b_mask193, corrected_B193)
+	corrected_C211 = make_cmask(b_mask211, corrected_B211)
+	corrected_C304 = make_cmask(b_mask304, corrected_B304)
+	corrected_C335 = make_cmask(b_mask335, corrected_B335)
+
+	RECORDER.sys_text("Exporting corrected contour images")
+	plt.imsave(SAVEPATH + "contour/AIA94/contour_%04d" % (K - offset), corrected_C94, origin = "lower", cmap = "sdoaia94", vmin = 1, vmax = 8)
+	plt.imsave(SAVEPATH + "contour/AIA131/contour_%04d" % (K - offset), corrected_C131, origin = "lower", cmap = "sdoaia131", vmin = 1, vmax = 12)
+	plt.imsave(SAVEPATH + "contour/AIA171/contour_%04d" % (K - offset), corrected_C171, origin = "lower", cmap = "sdoaia171", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "contour/AIA193/contour_%04d" % (K - offset), corrected_C193, origin = "lower", cmap = "sdoaia193", vmin = 1, vmax = 800000000)
+	plt.imsave(SAVEPATH + "contour/AIA211/contour_%04d" % (K - offset), corrected_C211, origin = "lower", cmap = "sdoaia211", vmin = 1, vmax = 100000000)
+	plt.imsave(SAVEPATH + "contour/AIA304/contour_%04d" % (K - offset), corrected_C304, origin = "lower", cmap = "sdoaia304", vmin = 1, vmax = 50000000)
+	plt.imsave(SAVEPATH + "contour/AIA335/contour_%04d" % (K - offset), corrected_C335, origin = "lower", cmap = "sdoaia335", vmin = 1, vmax = 7)
 
 	RECORDER.info_text("********** Processing completed on image %04d **********" % K)
 
 	"""
 	1. Corrected raw images [X]
 	2. Binary masked images [X]
-	4. Structural images [WIP]
+	3. Contour masked images [X]
+	4. Structural images
 	"""
 
-FPS = 15
+FPS = 12
 
 RECORDER.sys_text("********** Generating raw videos **********")
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/AIA94/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/AIA94_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
@@ -262,22 +297,22 @@ os.system("ffmpeg -loglevel panic -y -i %sbinary/temp4.mp4 -i %sbinary/temp5.mp4
 os.system("ffmpeg -loglevel panic -y -i %sbinary/temp6.mp4 -filter:v 'crop=4200:600:0:0' %sbinary/COMBINED_binary.mp4" % (SAVEPATH, SAVEPATH))
 os.system("rm %sbinary/temp1.mp4 %sbinary/temp2.mp4 %sbinary/temp3.mp4 %sbinary/temp4.mp4 %sbinary/temp5.mp4 %sbinary/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
-RECORDER.sys_text("********** Generating edge videos **********")
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA94/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA94_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA131/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA131_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA171/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA171_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA193/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA193_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA211/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA211_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA304/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA304_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA335/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA335_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+RECORDER.sys_text("********** Generating contour-mask videos **********")
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA94/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA94_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA131/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA131_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA171/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA171_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA193/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA193_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA211/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA211_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA304/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA304_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %scontour/AIA335/contour_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %scontour/AIA335_contour.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
 
-os.system("ffmpeg -loglevel panic -y -i %sedge/AIA94_edge.mp4 -i %sedge/AIA131_edge.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp1.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/AIA171_edge.mp4 -i %sedge/AIA193_edge.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp2.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/AIA211_edge.mp4 -i %sedge/AIA304_edge.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp3.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/temp1.mp4 -i %sedge/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/temp3.mp4 -i %sedge/AIA335_edge.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/temp4.mp4 -i %sedge/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/temp6.mp4 -filter:v 'crop=4200:600:0:0' %sedge/COMBINED_edge.mp4" % (SAVEPATH, SAVEPATH))
-os.system("rm %sedge/temp1.mp4 %sedge/temp2.mp4 %sedge/temp3.mp4 %sedge/temp4.mp4 %sedge/temp5.mp4 %sedge/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/AIA94_contour.mp4 -i %scontour/AIA131_contour.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp1.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/AIA171_contour.mp4 -i %scontour/AIA193_contour.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp2.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/AIA211_contour.mp4 -i %scontour/AIA304_contour.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp3.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/temp1.mp4 -i %scontour/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/temp3.mp4 -i %scontour/AIA335_contour.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/temp4.mp4 -i %scontour/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %scontour/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %scontour/temp6.mp4 -filter:v 'crop=4200:600:0:0' %scontour/COMBINED_contour.mp4" % (SAVEPATH, SAVEPATH))
+os.system("rm %scontour/temp1.mp4 %scontour/temp2.mp4 %scontour/temp3.mp4 %scontour/temp4.mp4 %scontour/temp5.mp4 %scontour/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.display_end_time("structure")
