@@ -55,21 +55,24 @@ K211 = []; t211 = []
 K304 = []; t304 = []
 K335 = []; t335 = []
 
-def save_images(type, imgs, vmax_C):
+def save_images(type, imgs, meds):
 	if type != "edge":
 		cmaps = ["sdoaia94", "sdoaia131", "sdoaia171", "sdoaia193", "sdoaia211", "sdoaia304", "sdoaia335"]
+		mults = [500,100,30,10,30,35,50]
+		vmaxs = [mults[i] * meds[i] for i in range(len(meds))]		
 	else:
 		cmaps = ["gray", "gray", "gray", "gray", "gray", "gray", "gray"]
+		vmaxs = [1,1,1,1,1,1,1]
 
-	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = int(imgs[0].min() + 0.5), vmax =  vmax_C * int(imgs[0].max()))
-	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = int(imgs[1].min() + 0.5), vmax =  vmax_C * int(imgs[1].max()))
-	plt.imsave(SAVEPATH + "%s/AIA171/%s_%04d" % (type, type, K - offset), imgs[2], origin = "lower", cmap = cmaps[2], vmin = int(imgs[2].min() + 0.5), vmax =  vmax_C * int(imgs[2].max()))
-	plt.imsave(SAVEPATH + "%s/AIA193/%s_%04d" % (type, type, K - offset), imgs[3], origin = "lower", cmap = cmaps[3], vmin = int(imgs[3].min() + 0.5), vmax =  vmax_C * int(imgs[3].max()))
-	plt.imsave(SAVEPATH + "%s/AIA211/%s_%04d" % (type, type, K - offset), imgs[4], origin = "lower", cmap = cmaps[4], vmin = int(imgs[4].min() + 0.5), vmax =  vmax_C * int(imgs[4].max()))
-	plt.imsave(SAVEPATH + "%s/AIA304/%s_%04d" % (type, type, K - offset), imgs[5], origin = "lower", cmap = cmaps[5], vmin = int(imgs[5].min() + 0.5), vmax =  vmax_C * int(imgs[5].max()))
-	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = int(imgs[6].min() + 0.5), vmax =  vmax_C * int(imgs[6].max()))
+	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = vmaxs[0])
+	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = vmaxs[1])
+	plt.imsave(SAVEPATH + "%s/AIA171/%s_%04d" % (type, type, K - offset), imgs[2], origin = "lower", cmap = cmaps[2], vmin = 0, vmax = vmaxs[2])
+	plt.imsave(SAVEPATH + "%s/AIA193/%s_%04d" % (type, type, K - offset), imgs[3], origin = "lower", cmap = cmaps[3], vmin = 0, vmax = vmaxs[3])
+	plt.imsave(SAVEPATH + "%s/AIA211/%s_%04d" % (type, type, K - offset), imgs[4], origin = "lower", cmap = cmaps[4], vmin = 0, vmax = vmaxs[4])
+	plt.imsave(SAVEPATH + "%s/AIA304/%s_%04d" % (type, type, K - offset), imgs[5], origin = "lower", cmap = cmaps[5], vmin = 0, vmax = vmaxs[5])
+	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = 0, vmax = vmaxs[6])
 
-N = 5 #len(DIR94)
+N = 6 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
 	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date])
@@ -104,15 +107,18 @@ MED211 = np.median(t211); IQR211 = iqr(t211)
 MED304 = np.median(t304); IQR304 = iqr(t304)
 MED335 = np.median(t335); IQR335 = iqr(t335)
 
+meds = [MED94, MED131, MED171, MED193, MED211, MED304, MED335]
+iqrs = [IQR94, IQR131, IQR171, IQR193, IQR211, IQR304, IQR335]
+
 print "\t********************"
 print "\tID\tMED\tIQR"
-print "\t94\t%d\t%.1f" % (MED94, IQR94)
-print "\t131\t%d\t%.1f" % (MED131, IQR131)
-print "\t171\t%d\t%.1f" % (MED171, IQR171)
-print "\t193\t%d\t%.1f" % (MED193, IQR193)
-print "\t211\t%d\t%.1f" % (MED211, IQR211)
-print "\t304\t%d\t%.1f" % (MED304, IQR304)
-print "\t335\t%d\t%.1f" % (MED335, IQR335)
+print "\t94\t%.3f\t%.3f" % (MED94, IQR94)
+print "\t131\t%.3f\t%.3f" % (MED131, IQR131)
+print "\t171\t%.3f\t%.3f" % (MED171, IQR171)
+print "\t193\t%.3f\t%.3f" % (MED193, IQR193)
+print "\t211\t%.3f\t%.3f" % (MED211, IQR211)
+print "\t304\t%.3f\t%.3f" % (MED304, IQR304)
+print "\t335\t%.3f\t%.3f" % (MED335, IQR335)
 print "\t********************"
 
 """
@@ -140,41 +146,27 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	corrected_D304 = K304[K][0] / K304[K][1]
 	corrected_D335 = K335[K][0] / K335[K][1]
 
-	RECORDER.info_text("Checking for brightness")
-	CRITVALUE = 2.5
-	if np.abs(MED94 - np.median(corrected_D94)) > CRITVALUE * IQR94 or np.abs(MED131 - np.median(corrected_D131)) > CRITVALUE * IQR131 or np.abs(MED171 - np.median(corrected_D171)) > CRITVALUE * IQR171 or np.abs(MED193 - np.median(corrected_D193)) > CRITVALUE * IQR193 or np.abs(MED211 - np.median(corrected_D211)) > CRITVALUE * IQR211 or np.abs(MED304 - np.median(corrected_D304)) > CRITVALUE * IQR304 or np.abs(MED335 - np.median(corrected_D335)) > CRITVALUE * IQR335:
-		RECORDER.warn_text("Bright image %04d" % K)
-		offset += 1
-		continue
-
 	RECORDER.info_text("Correcting raw image data")
 	corrected_D94[corrected_D94 < 1] = 1
-	corrected_D94 = np.log(corrected_D94)
 	corrected_D131[corrected_D131 < 1] = 1
-	corrected_D131 = np.log(corrected_D131)
 	corrected_D171[corrected_D171 < 1] = 1
-	corrected_D171 = np.log(corrected_D171)
 	corrected_D193[corrected_D193 < 1] = 1
-	corrected_D193 = np.log(corrected_D193)
 	corrected_D211[corrected_D211 < 1] = 1
-	corrected_D211 = np.log(corrected_D211)
 	corrected_D304[corrected_D304 < 1] = 1
-	corrected_D304 = np.log(corrected_D304)
 	corrected_D335[corrected_D335 < 1] = 1
-	corrected_D335 = np.log(corrected_D335)
 
 	RECORDER.sys_text("Exporting corrected raw images")
-	save_images("raw", [corrected_D94, corrected_D131, corrected_D171, corrected_D193, corrected_D211, corrected_D304, corrected_D335], 1.25)
+	save_images("raw", [corrected_D94, corrected_D131, corrected_D171, corrected_D193, corrected_D211, corrected_D304, corrected_D335], meds)
 
 	RECORDER.info_text("Generating enhanced images")
 	###############
-	threshold_94 = MED94 - 1.5 * IQR94
-	threshold_131 = MED131 - 1.5 * IQR131
-	threshold_171 = MED171 - 1.5 * IQR171
-	threshold_193 = MED193 - 1.5 * IQR193
-	threshold_211 = MED211 - 1.5 * IQR211
-	threshold_304 = MED304 - 1.5 * IQR304
-	threshold_335 = MED335 - 1.5 * IQR335
+	threshold_94 = 0 #MED94 - 1.5 * IQR94
+	threshold_131 = 0 #MED131 - 1.5 * IQR131
+	threshold_171 = 0 #MED171 - 1.5 * IQR171
+	threshold_193 = 0 #MED193 - 1.5 * IQR193
+	threshold_211 = 0 #MED211 - 1.5 * IQR211
+	threshold_304 = 0 #MED304 - 1.5 * IQR304
+	threshold_335 = 0 #MED335 - 1.5 * IQR335
 
 	b_mask94 = np.logical_and(corrected_D94 > threshold_94, corrected_D94 < np.inf).astype(np.uint8)
 	corrected_E94 = corrected_D94 * b_mask94
@@ -198,21 +190,21 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	corrected_E335 = corrected_D335 * b_mask335
 
 	RECORDER.sys_text("Exporting enhanced images")
-	save_images("enhanced", [corrected_E94, corrected_E131, corrected_E171, corrected_E193, corrected_E211, corrected_E304, corrected_E335], 1.25)
+	save_images("enhanced", [corrected_E94, corrected_E131, corrected_E171, corrected_E193, corrected_E211, corrected_E304, corrected_E335], meds)
 
 	RECORDER.info_text("Generating edge images")
 	SIGMA = 20
 	# CHANGE D TO E LATER
-	edge94 = feature.canny(corrected_D94, sigma = SIGMA)
-	edge131 = feature.canny(corrected_D131, sigma = SIGMA)
-	edge171 = feature.canny(corrected_D171, sigma = SIGMA)
-	edge193 = feature.canny(corrected_D193, sigma = SIGMA)
-	edge211 = feature.canny(corrected_D211, sigma = SIGMA)
-	edge304 = feature.canny(corrected_D304, sigma = SIGMA)
-	edge335 = feature.canny(corrected_D335, sigma = SIGMA)
+	edge94 = feature.canny(corrected_E94, sigma = SIGMA)
+	edge131 = feature.canny(corrected_E131, sigma = SIGMA)
+	edge171 = feature.canny(corrected_E171, sigma = SIGMA)
+	edge193 = feature.canny(corrected_E193, sigma = SIGMA)
+	edge211 = feature.canny(corrected_E211, sigma = SIGMA)
+	edge304 = feature.canny(corrected_E304, sigma = SIGMA)
+	edge335 = feature.canny(corrected_E335, sigma = SIGMA)
 
 	RECORDER.sys_text("Exporting edge images")
-	save_images("edge", [edge94, edge131, edge171, edge193, edge211, edge304, edge335], 1.25)
+	save_images("edge", [edge94, edge131, edge171, edge193, edge211, edge304, edge335], meds)
 
 	RECORDER.info_text("================ Processing completed on image %04d ================" % K)
 
