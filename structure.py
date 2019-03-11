@@ -39,13 +39,28 @@ PATH211 = "data/AIA211/"
 PATH304 = "data/AIA304/"
 PATH335 = "data/AIA335/"
 
-DIR94 = [f for f in listdir(PATH94) if isfile(join(PATH94, f))]; DIR94.sort(); DIR94 = DIR94[1:]
-DIR131 = [f for f in listdir(PATH131) if isfile(join(PATH131, f))]; DIR131.sort(); DIR131 = DIR131[1:]
-DIR171 = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]; DIR171.sort(); DIR171 = DIR171[1:]
-DIR193 = [f for f in listdir(PATH193) if isfile(join(PATH193, f))]; DIR193.sort(); DIR193 = DIR193[1:]
-DIR211 = [f for f in listdir(PATH211) if isfile(join(PATH211, f))]; DIR211.sort(); DIR211 = DIR211[1:]
-DIR304 = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]; DIR304.sort(); DIR304 = DIR304[1:]
-DIR335 = [f for f in listdir(PATH335) if isfile(join(PATH335, f))]; DIR335.sort(); DIR335 = DIR335[1:]
+DIR94 = [f for f in listdir(PATH94) if isfile(join(PATH94, f))]; DIR94.sort()
+DIR131 = [f for f in listdir(PATH131) if isfile(join(PATH131, f))]; DIR131.sort()
+DIR171 = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]; DIR171.sort()
+DIR193 = [f for f in listdir(PATH193) if isfile(join(PATH193, f))]; DIR193.sort()
+DIR211 = [f for f in listdir(PATH211) if isfile(join(PATH211, f))]; DIR211.sort()
+DIR304 = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]; DIR304.sort()
+DIR335 = [f for f in listdir(PATH335) if isfile(join(PATH335, f))]; DIR335.sort()
+
+if DIR94[0] == ".DS_Store":
+	DIR94 = DIR94[1:]
+if DIR131[0] == ".DS_Store":
+	DIR131 = DIR131[1:]
+if DIR171[0] == ".DS_Store":
+	DIR171 = DIR171[1:]
+if DIR193[0] == ".DS_Store":
+	DIR193 = DIR193[1:]
+if DIR211[0] == ".DS_Store":
+	DIR211 = DIR211[1:]
+if DIR304[0] == ".DS_Store":
+	DIR304 = DIR304[1:]
+if DIR335[0] == ".DS_Store":
+	DIR335 = DIR335[1:]
 
 K94 = []; t94 = []
 K131 = []; t131 = []
@@ -64,24 +79,24 @@ def save_images(type, imgs, meds):
 		cmaps = ["gray", "gray", "gray", "gray", "gray", "gray", "gray"]
 		vmaxs = [1,1,1,1,1,1,1]
 
-	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = vmaxs[0])
-	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = vmaxs[1])
+	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = 100)
+	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = 100)
 	plt.imsave(SAVEPATH + "%s/AIA171/%s_%04d" % (type, type, K - offset), imgs[2], origin = "lower", cmap = cmaps[2], vmin = 0, vmax = vmaxs[2])
 	plt.imsave(SAVEPATH + "%s/AIA193/%s_%04d" % (type, type, K - offset), imgs[3], origin = "lower", cmap = cmaps[3], vmin = 0, vmax = vmaxs[3])
 	plt.imsave(SAVEPATH + "%s/AIA211/%s_%04d" % (type, type, K - offset), imgs[4], origin = "lower", cmap = cmaps[4], vmin = 0, vmax = vmaxs[4])
 	plt.imsave(SAVEPATH + "%s/AIA304/%s_%04d" % (type, type, K - offset), imgs[5], origin = "lower", cmap = cmaps[5], vmin = 0, vmax = vmaxs[5])
 	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = 0, vmax = vmaxs[6])
 
-N = 6 #len(DIR94)
+N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
-	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH131 + DIR131[K]); K131.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH171 + DIR171[K]); K171.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH193 + DIR193[K]); K193.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH211 + DIR211[K]); K211.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH304 + DIR304[K]); K304.append([temp.data, temp.exposure_time.value, temp.date])
-	temp = Map(PATH335 + DIR335[K]); K335.append([temp.data, temp.exposure_time.value, temp.date])
+	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA94")
+	temp = Map(PATH131 + DIR131[K]); K131.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA131")
+	temp = Map(PATH171 + DIR171[K]); K171.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA171")
+	temp = Map(PATH193 + DIR193[K]); K193.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA193")
+	temp = Map(PATH211 + DIR211[K]); K211.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA211")
+	temp = Map(PATH304 + DIR304[K]); K304.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA304")
+	temp = Map(PATH335 + DIR335[K]); K335.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA335")
 
 for K in tqdm(range(N), desc = "Generating intensity distribution"):
 	if K94[K][1] > 0:
@@ -110,7 +125,7 @@ MED335 = np.median(t335); IQR335 = iqr(t335)
 meds = [MED94, MED131, MED171, MED193, MED211, MED304, MED335]
 iqrs = [IQR94, IQR131, IQR171, IQR193, IQR211, IQR304, IQR335]
 
-print "\t********************"
+print "\t*********************"
 print "\tID\tMED\tIQR"
 print "\t94\t%.3f\t%.3f" % (MED94, IQR94)
 print "\t131\t%.3f\t%.3f" % (MED131, IQR131)
@@ -119,7 +134,7 @@ print "\t193\t%.3f\t%.3f" % (MED193, IQR193)
 print "\t211\t%.3f\t%.3f" % (MED211, IQR211)
 print "\t304\t%.3f\t%.3f" % (MED304, IQR304)
 print "\t335\t%.3f\t%.3f" % (MED335, IQR335)
-print "\t********************"
+print "\t*********************"
 
 """
 [ID]: [MED] [SDEV]
@@ -136,7 +151,7 @@ offset = 0
 for K in tqdm(range(N), desc = "Processing dataset"):
 	RECORDER.info_text("Processing datetime %s" % K94[K][2])
 
-	RECORDER.info_text("Reading raw image data")
+	RECORDER.info_text("Raw image data saved")
 
 	corrected_D94 = K94[K][0] / K94[K][1]
 	corrected_D131 = K131[K][0] / K131[K][1]
@@ -155,8 +170,8 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	corrected_D304[corrected_D304 < 1] = 1
 	corrected_D335[corrected_D335 < 1] = 1
 
-	RECORDER.sys_text("Exporting corrected raw images")
-	save_images("raw", [corrected_D94, corrected_D131, corrected_D171, corrected_D193, corrected_D211, corrected_D304, corrected_D335], meds)
+	# RECORDER.sys_text("Exporting corrected raw images")
+	# save_images("raw", [corrected_D94, corrected_D131, corrected_D171, corrected_D193, corrected_D211, corrected_D304, corrected_D335], meds)
 
 	RECORDER.info_text("Generating enhanced images")
 	###############
@@ -194,7 +209,6 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 
 	RECORDER.info_text("Generating edge images")
 	SIGMA = 20
-	# CHANGE D TO E LATER
 	edge94 = feature.canny(corrected_E94, sigma = SIGMA)
 	edge131 = feature.canny(corrected_E131, sigma = SIGMA)
 	edge171 = feature.canny(corrected_E171, sigma = SIGMA)
@@ -225,7 +239,7 @@ os.system("ffmpeg -loglevel panic -y -i %sraw/AIA211_raw.mp4 -i %sraw/AIA304_raw
 os.system("ffmpeg -loglevel panic -y -i %sraw/temp1.mp4 -i %sraw/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %sraw/temp3.mp4 -i %sraw/AIA335_raw.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %sraw/temp4.mp4 -i %sraw/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sraw/temp6.mp4 -filter:v 'crop=4200:600:0:0' %sraw/COMBINED_raw.mp4" % (SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %sraw/temp6.mp4 -filter:v 'crop=3360:480:0:0' %sraw/COMBINED_raw.mp4" % (SAVEPATH, SAVEPATH))
 os.system("rm %sraw/temp1.mp4 %sraw/temp2.mp4 %sraw/temp3.mp4 %sraw/temp4.mp4 %sraw/temp5.mp4 %sraw/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.sys_text("================ Generating enhanced videos ================")
@@ -243,7 +257,7 @@ os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA211_enhanced.mp4 -i %senha
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp1.mp4 -i %senhanced/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp3.mp4 -i %senhanced/AIA335_enhanced.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp4.mp4 -i %senhanced/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/temp6.mp4 -filter:v 'crop=4200:600:0:0' %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %senhanced/temp6.mp4 -filter:v 'crop=3360:480:0:0' %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH))
 os.system("rm %senhanced/temp1.mp4 %senhanced/temp2.mp4 %senhanced/temp3.mp4 %senhanced/temp4.mp4 %senhanced/temp5.mp4 %senhanced/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.sys_text("================ Generating edge videos ================")
@@ -261,7 +275,7 @@ os.system("ffmpeg -loglevel panic -y -i %sedge/AIA211_edge.mp4 -i %sedge/AIA304_
 os.system("ffmpeg -loglevel panic -y -i %sedge/temp1.mp4 -i %sedge/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %sedge/temp3.mp4 -i %sedge/AIA335_edge.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %sedge/temp4.mp4 -i %sedge/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sedge/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sedge/temp6.mp4 -filter:v 'crop=4200:600:0:0' %sedge/COMBINED_edge.mp4" % (SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %sedge/temp6.mp4 -filter:v 'crop=3360:480:0:0' %sedge/COMBINED_edge.mp4" % (SAVEPATH, SAVEPATH))
 os.system("rm %sedge/temp1.mp4 %sedge/temp2.mp4 %sedge/temp3.mp4 %sedge/temp4.mp4 %sedge/temp5.mp4 %sedge/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.display_end_time("structure")
