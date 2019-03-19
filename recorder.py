@@ -12,13 +12,13 @@ class Recorder(object):
 
 	def __init__(self, database_name = ""):
 		self.DATABASE_NAME = "/Users/%s/Desktop/lmsal/resources/region-data/%s" % (getpass.getuser(), database_name)
-		self.INFO = Color.RESET + Color.GREEN + Color.BOLD + "[INFO]\t" + Color.RESET + Color.WHITE
+		self.INFO = Color.RESET + Color.GREEN + Color.BOLD + "[INFO]\t" + Color.RESET + Color.WHITE + Color.BOLD
 		self.INPUT = Color.RESET + Color.RED + Color.BOLD + "[INPUT]\t" + Color.RESET + Color.YELLOW
-		self.INFO_TAB = Color.RESET + Color.BLUE + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW
-		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW
+		self.INFO_TAB = Color.RESET + Color.BLUE + Color.BOLD + "[INFO]\t==> " + Color.RESET + Color.YELLOW + Color.BOLD
+		self.WRITE = Color.RESET + Color.GREEN + Color.BOLD + "[WRITE]\t" + Color.RESET + Color.YELLOW + Color.BOLD
 		self.PARAM = Color.RESET + Color.GREEN + "[PARAM]\t" + Color.RESET + Color.YELLOW
-		self.SYS = Color.RESET + Color.YELLOW + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE
-		self.WARN = Color.RESET + Color.RED + Color.BOLD + "[WARN]\t" + Color.RESET + Color.YELLOW
+		self.SYS = Color.RESET + Color.YELLOW + Color.BOLD + "[SYS]\t" + Color.RESET + Color.WHITE + Color.BOLD
+		self.WARN = Color.RESET + Color.RED + Color.BOLD + "[WARN]\t" + Color.RESET + Color.YELLOW + Color.BOLD
 		self.NEW_LINE = Color.RESET + Color.WHITE + "\n" + "-" * 75
 
 		if database_name != "":
@@ -26,13 +26,13 @@ class Recorder(object):
 				db.write("ID,DATE,TIME,PXL_X,PXL_Y,HPC_X,HPC_Y,PXL_SIZE_X,PXL_SIZE_Y,HPC_SIZE_X,HPC_SIZE_Y,304_LOW_THRESH_INTEN,304_AVG_INTEN,304_MED_INTEN,304_MAX_INTEN,UNSIG_GAUSS,AVG_GAUSS,MED_GAUSS\n")
 
 	def info_text(self, text):
-		tqdm.write("\t" + self.INFO + text)
+		tqdm.write("\t" + self.INFO + text + Color.RESET + Color.WHITE)
 
 	def sys_text(self, text):
-		tqdm.write("\t" + self.SYS + text)
+		tqdm.write("\t" + self.SYS + text + Color.RESET + Color.WHITE)
 
 	def warn_text(self, text):
-		tqdm.write("\t" + self.WARN + text)
+		tqdm.write("\t" + self.WARN + text + Color.RESET + Color.WHITE)
 
 	def write_ID(self, ID):
 		print self.INFO + "Loop %05d" % ID

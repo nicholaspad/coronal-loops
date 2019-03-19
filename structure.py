@@ -89,18 +89,19 @@ def save_images(type, imgs, meds):
 	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = 0, vmax = vmaxs[6])
 
 def print_raw_info(fits):
-	print "\t\t\t" + "*** " * 10
-	print "\t\t\t%s\t%s\t%s" % (fits.observatory, fits.detector, fits.measurement)
-	print "\t\t\tDatetime:\t%s" % (fits.date)
-	print "\t\t\tExposure time:\t%s s" % (fits.exposure_time.value)
-	print "\t\t\tLocation:\t(%d, %d) arcsec" % ((fits.top_right_coord.Tx.value + fits.bottom_left_coord.Tx.value) / 2, (fits.top_right_coord.Ty.value + fits.bottom_left_coord.Ty.value) / 2)
-	print "\t\t\tMedian val:\t%.3f" % (np.median(fits.data))
+	tqdm.write("\t\t\t" + "*** " * 11)
+	tqdm.write("\t\t\t%s %s %d" % (fits.observatory, fits.detector, int(fits.measurement.value)))
+	tqdm.write("\t\t\tDatetime:\t%s" % (fits.date))
+	tqdm.write("\t\t\tExposure time:\t%s s" % (fits.exposure_time.value))
+	tqdm.write("\t\t\tLocation:\t(%d, %d) arcsec" % ((fits.top_right_coord.Tx.value + fits.bottom_left_coord.Tx.value) / 2, (fits.top_right_coord.Ty.value + fits.bottom_left_coord.Ty.value) / 2))
+	tqdm.write("\t\t\tMedian val:\t%.3f" % (np.median(fits.data)))
+	tqdm.write("\t\t\t" + "*** " * 11)
 
 N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
 	temp = Map(PATH94 + DIR94[K])
-	RECORDER.info_text("================ Processing datetime %s (#%d) ================" % (temp.date, K))
+	RECORDER.info_text("|===================== Processing datetime %s (#%d) =====================|" % (temp.date, K))
 	K94.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH94 + DIR94[K])[1]])
 	print_raw_info(temp)
 	tempdata = K94[-1][0] / K94[-1][1]
@@ -201,45 +202,36 @@ print "\t304\t%.3f\t%.3f" % (MED304, IQR304)
 print "\t335\t%.3f\t%.3f" % (MED335, IQR335)
 print "\t*********************"
 
-"""
-[ID]: [MED] [SDEV]
-94: 
-131: 
-171: 
-193: 
-211: 
-304: 
-335: 
-"""
+# IMPLEMENT SOBEL SUNPY FILTER, APPLY BINARY MASKS BELOW
 
-offset = 0
-for K in tqdm(range(N), desc = "Processing dataset"):
-	RECORDER.info_text("Processing datetime %s" % K94[K][2])
+for K in tqdm(range(N), desc = "Generating enhanced images"):
+	# RECORDER.info_text("Processing datetime %s" % K94[K][2])
 
-	RECORDER.info_text("Raw image data saved")
+	# RECORDER.info_text("Raw image data saved")
 
-	corrected_D94 = K94[K][0] / K94[K][1]
-	corrected_D131 = K131[K][0] / K131[K][1]
-	corrected_D171 = K171[K][0] / K171[K][1]
-	corrected_D193 = K193[K][0] / K193[K][1]
-	corrected_D211 = K211[K][0] / K211[K][1]
-	corrected_D304 = K304[K][0] / K304[K][1]
-	corrected_D335 = K335[K][0] / K335[K][1]
+	# corrected_D94 = K94[K][0] / K94[K][1]
+	# corrected_D131 = K131[K][0] / K131[K][1]
+	# corrected_D171 = K171[K][0] / K171[K][1]
+	# corrected_D193 = K193[K][0] / K193[K][1]
+	# corrected_D211 = K211[K][0] / K211[K][1]
+	# corrected_D304 = K304[K][0] / K304[K][1]
+	# corrected_D335 = K335[K][0] / K335[K][1]
 
-	RECORDER.info_text("Correcting raw image data")
-	corrected_D94[corrected_D94 < 1] = 1
-	corrected_D131[corrected_D131 < 1] = 1
-	corrected_D171[corrected_D171 < 1] = 1
-	corrected_D193[corrected_D193 < 1] = 1
-	corrected_D211[corrected_D211 < 1] = 1
-	corrected_D304[corrected_D304 < 1] = 1
-	corrected_D335[corrected_D335 < 1] = 1
+	# RECORDER.info_text("Correcting raw image data")
+
+	# corrected_D94[corrected_D94 < 1] = 1
+	# corrected_D131[corrected_D131 < 1] = 1
+	# corrected_D171[corrected_D171 < 1] = 1
+	# corrected_D193[corrected_D193 < 1] = 1
+	# corrected_D211[corrected_D211 < 1] = 1
+	# corrected_D304[corrected_D304 < 1] = 1
+	# corrected_D335[corrected_D335 < 1] = 1
 
 	# RECORDER.sys_text("Exporting corrected raw images")
 	# save_images("raw", [corrected_D94, corrected_D131, corrected_D171, corrected_D193, corrected_D211, corrected_D304, corrected_D335], meds)
 
-	RECORDER.info_text("Generating enhanced images")
-	###############
+	# RECORDER.info_text("Generating enhanced images")
+
 	threshold_94 = 0 #MED94 - 1.5 * IQR94
 	threshold_131 = 0 #MED131 - 1.5 * IQR131
 	threshold_171 = 0 #MED171 - 1.5 * IQR171
@@ -285,7 +277,7 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	# RECORDER.sys_text("Exporting edge images")
 	# save_images("edge", [edge94, edge131, edge171, edge193, edge211, edge304, edge335], meds)
 
-	RECORDER.info_text("================ Processing completed on image %04d ================" % K)
+	RECORDER.info_text("|===================== Processing completed on image %04d =====================|" % K)
 
 FPS = 15
 
