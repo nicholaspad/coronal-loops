@@ -17,6 +17,7 @@ from scipy import ndimage
 from scipy.stats import iqr
 from skimage import feature
 from skimage import measure
+from sunpy.io import read_file_header
 from sunpy.map import Map
 from timeit import default_timer as timer
 from tqdm import tqdm
@@ -79,24 +80,88 @@ def save_images(type, imgs, meds):
 		cmaps = ["gray", "gray", "gray", "gray", "gray", "gray", "gray"]
 		vmaxs = [1,1,1,1,1,1,1]
 
-	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = 100)
-	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = 100)
+	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = vmaxs[0])
+	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = vmaxs[1])
 	plt.imsave(SAVEPATH + "%s/AIA171/%s_%04d" % (type, type, K - offset), imgs[2], origin = "lower", cmap = cmaps[2], vmin = 0, vmax = vmaxs[2])
 	plt.imsave(SAVEPATH + "%s/AIA193/%s_%04d" % (type, type, K - offset), imgs[3], origin = "lower", cmap = cmaps[3], vmin = 0, vmax = vmaxs[3])
 	plt.imsave(SAVEPATH + "%s/AIA211/%s_%04d" % (type, type, K - offset), imgs[4], origin = "lower", cmap = cmaps[4], vmin = 0, vmax = vmaxs[4])
 	plt.imsave(SAVEPATH + "%s/AIA304/%s_%04d" % (type, type, K - offset), imgs[5], origin = "lower", cmap = cmaps[5], vmin = 0, vmax = vmaxs[5])
 	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = 0, vmax = vmaxs[6])
 
+def print_raw_info(fits):
+	print "\t\t\t" + "*** " * 10
+	print "\t\t\t%s\t%s\t%s" % (fits.observatory, fits.detector, fits.measurement)
+	print "\t\t\tDatetime:\t%s" % (fits.date)
+	print "\t\t\tExposure time:\t%s s" % (fits.exposure_time.value)
+	print "\t\t\tLocation:\t(%d, %d) arcsec" % ((fits.top_right_coord.Tx.value + fits.bottom_left_coord.Tx.value) / 2, (fits.top_right_coord.Ty.value + fits.bottom_left_coord.Ty.value) / 2)
+	print "\t\t\tMedian val:\t%.3f" % (np.median(fits.data))
+
 N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Importing data"):
-	temp = Map(PATH94 + DIR94[K]); K94.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA94")
-	temp = Map(PATH131 + DIR131[K]); K131.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA131")
-	temp = Map(PATH171 + DIR171[K]); K171.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA171")
-	temp = Map(PATH193 + DIR193[K]); K193.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA193")
-	temp = Map(PATH211 + DIR211[K]); K211.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA211")
-	temp = Map(PATH304 + DIR304[K]); K304.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA304")
-	temp = Map(PATH335 + DIR335[K]); K335.append([temp.data, temp.exposure_time.value, temp.date]); temp.raw_img(K, SAVEPATH + "raw/AIA335")
+	temp = Map(PATH94 + DIR94[K])
+	RECORDER.info_text("================ Processing datetime %s (#%d) ================" % (temp.date, K))
+	K94.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH94 + DIR94[K])[1]])
+	print_raw_info(temp)
+	tempdata = K94[-1][0] / K94[-1][1]
+	tempheader = K94[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA94")
+	RECORDER.info_text("Raw AIA94 image data saved")
+
+	temp = Map(PATH131 + DIR131[K])
+	K131.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH131 + DIR131[K])[1]])
+	print_raw_info(temp)
+	tempdata = K131[-1][0] / K131[-1][1]
+	tempheader = K131[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA131")
+	RECORDER.info_text("Raw AIA131 image data saved")
+
+	temp = Map(PATH171 + DIR171[K])
+	K171.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH171 + DIR171[K])[1]])
+	print_raw_info(temp)
+	tempdata = K171[-1][0] / K171[-1][1]
+	tempheader = K171[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA171")
+	RECORDER.info_text("Raw AIA171 image data saved")
+
+	temp = Map(PATH193 + DIR193[K])
+	K193.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH193 + DIR193[K])[1]])
+	print_raw_info(temp)
+	tempdata = K193[-1][0] / K193[-1][1]
+	tempheader = K193[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA193")
+	RECORDER.info_text("Raw AIA193 image data saved")
+
+	temp = Map(PATH211 + DIR211[K])
+	K211.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH211 + DIR211[K])[1]])
+	print_raw_info(temp)
+	tempdata = K211[-1][0] / K211[-1][1]
+	tempheader = K211[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA211")
+	RECORDER.info_text("Raw AIA211 image data saved")
+
+	temp = Map(PATH304 + DIR304[K])
+	K304.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH304 + DIR304[K])[1]])
+	print_raw_info(temp)
+	tempdata = K304[-1][0] / K304[-1][1]
+	tempheader = K304[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA304")
+	RECORDER.info_text("Raw AIA304 image data saved")
+
+	temp = Map(PATH335 + DIR335[K])
+	K335.append([temp.data, temp.exposure_time.value, temp.date, read_file_header(PATH335 + DIR335[K])[1]])
+	print_raw_info(temp)
+	tempdata = K335[-1][0] / K335[-1][1]
+	tempheader = K335[-1][3]
+	temp = Map((tempdata, tempheader))
+	temp.raw_img(K, SAVEPATH + "raw/AIA335")
+	RECORDER.info_text("Raw AIA335 image data saved")
 
 for K in tqdm(range(N), desc = "Generating intensity distribution"):
 	if K94[K][1] > 0:
@@ -138,13 +203,13 @@ print "\t*********************"
 
 """
 [ID]: [MED] [SDEV]
-94: X 9.992
-131: X 44.985
-171: X 32.219
-193: X 360.449
-211: X 23.465
-304: X 24.411
-335: X 6.197
+94: 
+131: 
+171: 
+193: 
+211: 
+304: 
+335: 
 """
 
 offset = 0
@@ -204,8 +269,8 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	b_mask335 = np.logical_and(corrected_D335 > threshold_335, corrected_D335 < np.inf).astype(np.uint8)
 	corrected_E335 = corrected_D335 * b_mask335
 
-	RECORDER.sys_text("Exporting enhanced images")
-	save_images("enhanced", [corrected_E94, corrected_E131, corrected_E171, corrected_E193, corrected_E211, corrected_E304, corrected_E335], meds)
+	# RECORDER.sys_text("Exporting enhanced images")
+	# save_images("enhanced", [corrected_E94, corrected_E131, corrected_E171, corrected_E193, corrected_E211, corrected_E304, corrected_E335], meds)
 
 	RECORDER.info_text("Generating edge images")
 	SIGMA = 20
@@ -217,8 +282,8 @@ for K in tqdm(range(N), desc = "Processing dataset"):
 	edge304 = feature.canny(corrected_E304, sigma = SIGMA)
 	edge335 = feature.canny(corrected_E335, sigma = SIGMA)
 
-	RECORDER.sys_text("Exporting edge images")
-	save_images("edge", [edge94, edge131, edge171, edge193, edge211, edge304, edge335], meds)
+	# RECORDER.sys_text("Exporting edge images")
+	# save_images("edge", [edge94, edge131, edge171, edge193, edge211, edge304, edge335], meds)
 
 	RECORDER.info_text("================ Processing completed on image %04d ================" % K)
 
@@ -257,7 +322,7 @@ os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA211_enhanced.mp4 -i %senha
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp1.mp4 -i %senhanced/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp3.mp4 -i %senhanced/AIA335_enhanced.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -i %senhanced/temp4.mp4 -i %senhanced/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/temp6.mp4 -filter:v 'crop=3360:480:0:0' %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %senhanced/temp6.mp4 -filter:v 'crop=4550:650:0:0' %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH))
 os.system("rm %senhanced/temp1.mp4 %senhanced/temp2.mp4 %senhanced/temp3.mp4 %senhanced/temp4.mp4 %senhanced/temp5.mp4 %senhanced/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.sys_text("================ Generating edge videos ================")
