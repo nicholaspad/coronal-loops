@@ -87,6 +87,23 @@ if args.cleardirs:
 	os.system("rm %sraw/AIA335/*" % SAVEPATH); os.system("rm %senhanced/AIA335/*" % SAVEPATH); os.system("rm %sedge/AIA335/*" % SAVEPATH)
 	RECORDER.sys_text("Image directories cleared")
 
+def save_images(type, imgs, meds):
+	if type != "edge":
+		cmaps = ["sdoaia94", "sdoaia131", "sdoaia171", "sdoaia193", "sdoaia211", "sdoaia304", "sdoaia335"]
+		mults = [500,100,30,10,30,35,50]
+		vmaxs = [mults[i] * meds[i] for i in range(len(meds))]		
+	else:
+		cmaps = ["gray", "gray", "gray", "gray", "gray", "gray", "gray"]
+		vmaxs = [1,1,1,1,1,1,1]
+
+	plt.imsave(SAVEPATH + "%s/AIA94/%s_%04d" % (type, type, K - offset), imgs[0], origin = "lower", cmap = cmaps[0], vmin = 0, vmax = vmaxs[0])
+	plt.imsave(SAVEPATH + "%s/AIA131/%s_%04d" % (type, type, K - offset), imgs[1], origin = "lower", cmap = cmaps[1], vmin = 0, vmax = vmaxs[1])
+	plt.imsave(SAVEPATH + "%s/AIA171/%s_%04d" % (type, type, K - offset), imgs[2], origin = "lower", cmap = cmaps[2], vmin = 0, vmax = vmaxs[2])
+	plt.imsave(SAVEPATH + "%s/AIA193/%s_%04d" % (type, type, K - offset), imgs[3], origin = "lower", cmap = cmaps[3], vmin = 0, vmax = vmaxs[3])
+	plt.imsave(SAVEPATH + "%s/AIA211/%s_%04d" % (type, type, K - offset), imgs[4], origin = "lower", cmap = cmaps[4], vmin = 0, vmax = vmaxs[4])
+	plt.imsave(SAVEPATH + "%s/AIA304/%s_%04d" % (type, type, K - offset), imgs[5], origin = "lower", cmap = cmaps[5], vmin = 0, vmax = vmaxs[5])
+	plt.imsave(SAVEPATH + "%s/AIA335/%s_%04d" % (type, type, K - offset), imgs[6], origin = "lower", cmap = cmaps[6], vmin = 0, vmax = vmaxs[6])
+
 def print_raw_info(fits):
 	tqdm.write("\t\t\t" + "*** " * 11)
 	tqdm.write("\t\t\t%s %s %d" % (fits.observatory, fits.detector, int(fits.measurement.value)))
@@ -109,7 +126,7 @@ def print_sdata(sx, sy, e):
 	tqdm.write("\t\t\tMed sobel_hypot val:\t%.3f" % (np.median(e)))
 	tqdm.write("\t\t\t" + "*** " * 11)
 
-N = 30 #len(DIR94)
+N = 1 #len(DIR94)
 
 for K in tqdm(range(N), desc = "Generating raw images"):
 	temp = Map(PATH94 + DIR94[K])

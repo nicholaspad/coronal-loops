@@ -4,19 +4,19 @@
 [X] Download data at three-minute cadence
 [X] Write short python script to align and delete extraneous data files
 [X] Locate data files containing large flare
-[] Full-disk animation until large flare (AIA171)
-[] Pause at large flare and zoom into flare smoothly
-[] Introduce AIA304 and HMI-M images beside AIA171
-[] MAYBE: apply Sobel algorithm to AIA171
-[] Adjust titles of graphs accordingly to the animations performed below
-[] Animate raw mask generation iteration-by-iteration (AIA304 and HMI-M)
-[] Animate elliptical mask generation iteration-by-iteration (AIA304 and HMI-M)
-[] Animate contour mask generation - trace points of main contour (AIA304 and HMI-M)
-[] Introduce plots of intensity vs. time and flux vs. time
-[] Pause for two seconds
-[] Continue to show flare (new mask generated for each frame)
-[] Show ~two seconds of aftermath
-[] Zoom back out to full-disk and animate until the last data file (AIA171)
+[X] Full-disk animation until large flare (AIA171)
+[X] Pause at large flare and zoom into flare smoothly
+[X] Introduce AIA304 and HMI-M images beside AIA171
+[X] MAYBE: apply Sobel algorithm to AIA171
+[X] Adjust titles of graphs accordingly to the animations performed below
+[X] Animate raw mask generation iteration-by-iteration (AIA304 and HMI-M)
+[X] Animate elliptical mask generation iteration-by-iteration (AIA304 and HMI-M)
+[X] Animate contour mask generation - trace points of main contour (AIA304 and HMI-M)
+[X] Introduce plots of intensity vs. time and flux vs. time
+[X] Pause for two seconds
+[X] Continue to show flare (new mask generated for each frame)
+[X] Show ~two seconds of aftermath
+[X] Zoom back out to full-disk and animate until the last data file (AIA171)
 
 [ === NOTES === ]
 
