@@ -114,6 +114,7 @@ venv.bak/
 *.zip
 *.json
 *.npy
+.DS_Store
 
 # directories
 model-generator/
