@@ -12,6 +12,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.path import Path
 from os import listdir
 from os.path import isfile, join
+from PIL import Image
 from recorder import Recorder
 from scipy import ndimage
 from scipy.stats import iqr
@@ -287,7 +288,46 @@ for K in tqdm(range(N), desc = "Generating enhanced images"):
 	RECORDER.info_text("Enhanced AIA335 image data saved")
 
 for K in tqdm(range(N), desc = "Generating masked images"):
-	pass
+	temp_im = Image.open("%senhanced/AIA94/enhanced_%04d.png" % (SAVEPATH, K))
+	proc_im = temp_im.convert("1")
+	proc_im.save("%sbinary/AIA94/binary_%04d.png" % (SAVEPATH, K))
+
+	f = lambda x : 255 if x > threshold else 0
+
+	temp_im = Image.open("%senhanced/AIA94/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA94/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA131/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA131/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA171/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 100
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA171/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA193/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA193/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA211/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA211/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA304/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA304/binary_%04d.png" % (SAVEPATH, K))
+
+	temp_im = Image.open("%senhanced/AIA335/enhanced_%04d.png" % (SAVEPATH, K))
+	threshold = 200
+	proc_im = temp_im.convert("L").point(f, mode = "1")
+	proc_im.save("%sbinary/AIA335/binary_%04d.png" % (SAVEPATH, K))
 
 for K in tqdm(range(N), desc = "Generating traced images"):
 	pass
