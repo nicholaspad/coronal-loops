@@ -20,7 +20,7 @@ import pandas as pd
 import xml.etree.cElementTree as ET
 
 import pprint
-pp = pprint.PrettyPrinter(indent=4)
+pp = pprint.PrettyPrinter(indent = 4)
 
 class HER_Event:
 
@@ -32,11 +32,6 @@ class HER_Event:
 		self.Reference_Types = np.zeros(shape = 20, dtype = str)
 		self.Description = ""
 		self.Citations = np.zeros(shape = 20, dtype = str)
-
-		# self.contactName = ""
-		# self.contactEmail = ""
-		# self.contactPhone = ""
-		# self.Date = ""
 
 		self.__voevent_spec = pd.read_csv("VOEvent_Spec.txt", skiprows = 2)
 		self.__vals = self.__voevent_spec[self.eventType]
@@ -93,19 +88,6 @@ class HER_Event:
 			self.optional[defaulted_opt_keys[i]] = defaulted_opt_values[i]
 
 	def exportEvent(self, filename = None, suffix = ""):
-		self.data = {
-			"REQUIRED" : self.required,
-			"OPTIONAL" : self.optional,
-			"SPECFILE" : self.specFile,
-			"REFERENCE_NAMES" : self.Reference_Names,
-			"REFERENCE_LINKS" : self.Reference_Links,
-			"REFERENCE_TYPES" : self.Reference_Types,
-			"DESCRIPTION" : self.Description,
-			"CITATIONS" : self.Citations
-		}
-
-		pp.pprint(self.data)
-
 		remove_chars = [' ',':',';','/','\\', '{{','}}' ,'[[',']]', '~', '=', '.', ',', '-', '+']
 		for r in remove_chars:
 			self.required["FRM_NAME"] = self.required["FRM_NAME"].replace(r,"")
@@ -114,6 +96,8 @@ class HER_Event:
 		eventIdentifier = (self.eventType.split(':'))[0] + "_" + self.required["FRM_NAME"] + "_" + d + suffix
 		self.required["KB_ARCHIVID"] = "ivo://helio-informatics.org/{}".format(eventIdentifier)
 		print(self.required["KB_ARCHIVID"])
+
+		""" Sets up the XML data tree using Python's cElementTree library """
 
 		voe = ET.Element("voe:VOEvent")
 		voe_info = ET.Comment("This is a VOEvent, generated from the annotation process")
@@ -126,9 +110,9 @@ class HER_Event:
 		voe.set("role", "observation")
 		voe.set("version", "1.1")
 		voe.set("xsi:schemaLocation", "http://www.ivoa.net/xml/VOEvent/v1.1 http://www.lmsal.com/helio-informatics/VOEvent-v1.1.xsd")
-		voe.set("ivorn", " ") ####### WHAT GOES HERE ##########
+		voe.set("ivorn", self.required["KB_ARCHIVID"])
 
-		###
+		""" Who section """
 
 		Who = ET.SubElement(voe, "Who")
 		who_info = ET.Comment("Data pertaining to curation")
@@ -145,7 +129,7 @@ class HER_Event:
 		contactEmail.text = self.required["FRM_CONTACT"]
 		Date.text = d
 
-		###
+		""" What section """
 
 		What = ET.SubElement(voe, "What")
 		what_info = ET.Comment("Data about what was measured/observed")
@@ -175,7 +159,7 @@ class HER_Event:
 					t.set("name", param)
 					t.set("value", str(self.optional[param]))
 
-		###
+		""" Where-When section """
 
 		WhereWhen = ET.SubElement(voe, "WhereWhen")
 		where_when_info = ET.Comment("Data pertaining to where and when something occurred")
@@ -239,7 +223,7 @@ class HER_Event:
 					t.set("value", str(self.optional[param]))
 
 		ObservationLocation.set("id", self.required["OBS_OBSERVATORY"])
-		TimeInstant_ISOTime.text = "-"
+		TimeInstant_ISOTime.text = str(self.required["EVENT_STARTTIME"])
 		Position2D.set("unit", self.required["EVENT_COORDUNIT"])
 		Position2D_Value_C1.text = str(self.required["EVENT_COORD1"])
 		Position2D_Value_C2.text = str(self.required["EVENT_COORD2"])
@@ -248,9 +232,10 @@ class HER_Event:
 		StartTime_ISOTime.text = str(self.required["EVENT_STARTTIME"])
 		StopTime_ISOTime.text = str(self.required["EVENT_ENDTIME"])
 
-		## MATH HERE????????????
 		"""
-		comment here about math
+		The user-inputted data requires the lower-left and upper-right coordinates of the bounding box.
+		The XML output contains the bounding box center and size.
+		The below four lines use the lower-left and upper-right coordinates to calculate the center and size of the bounding box.
 		"""
 		Box_Center_C1.text = "%f" % ((float(self.required["BOUNDBOX_C1LL"]) + float(self.required["BOUNDBOX_C1UR"])) / 2.0)
 		Box_Center_C2.text = "%f" % ((float(self.required["BOUNDBOX_C2LL"]) + float(self.required["BOUNDBOX_C2UR"])) / 2.0)
@@ -261,7 +246,7 @@ class HER_Event:
 		ObservatoryLocation_AstroCoords.set("coord_system_id", self.required["EVENT_COORDSYS"])
 		ObservationLocation_AstroCoords.set("coord_system_id", self.required["EVENT_COORDSYS"])
 
-		##
+		""" How section """
 
 		How = ET.SubElement(voe, "How")
 		how_info = ET.Comment("Data pertaining to how the feature/event detection was performed")
@@ -269,9 +254,6 @@ class HER_Event:
 
 		lmsal_data = ET.SubElement(How, "lmsal:data")
 		lmsal_method = ET.SubElement(How, "lmsal:method")
-
-		# How_Group_Required = ET.SubElement(How, "Group")
-		# How_Group_Required.set("name", "{}_required".format(self.__vals[0]))
 
 		How_Group_Optional = ET.SubElement(How, "Group")
 		How_Group_Optional.set("name", "{}_optional".format(self.__vals[0]))
@@ -295,7 +277,7 @@ class HER_Event:
 					t.set("name", param)
 					t.set("value", str(self.optional[param]))
 
-		##
+		""" Why section """
 
 		Why = ET.SubElement(voe, "Why")
 		Inference = ET.SubElement(Why, "Inference")
@@ -329,28 +311,88 @@ class HER_Event:
 					t.set("name", param)
 					t.set("value", str(self.optional[param]))
 
-		##
+		""" Citations section - omitted for now """
 
-		Citations = ET.SubElement(voe, "Citations")
+		# Citations = ET.SubElement(voe, "Citations")
 
-		for citation in self.Citations:
-			if citation != "":
-				pass ### HOW TO USE REFERENCE TYPE/LINK/TYPE??
+		# for citation in self.Citations:
+		# 	if citation != "":
+		# 		pass
 
-		##
+		""" References section """
+
+		for i in range(len(self.Reference_Names)):
+			if self.Reference_Names[i] != "":
+				Reference = ET.SubElement(voe, "Reference")
+				Reference.set("name", self.Reference_Names[i])
+				Reference.set("type", self.Reference_Types[i])
+				Reference.set("uri", self.Reference_Links[i])
+
+		if self.required["FRM_URL"] == "blank":
+			self.required["FRM_URL"] = "n/a"
+
+		Reference = ET.SubElement(voe, "Reference")
+		Reference.set("name", "FRM_URL")
+		Reference.set("uri", self.required["FRM_URL"])
+
+		if self.optional["OBS_DATAPREPURL"] != "blank":
+			Reference = ET.SubElement(voe, "Reference")
+			Reference.set("name", "OBS_DATAPREPURL")
+			Reference.set("uri", self.optional["OBS_DATAPREPURL"])
+
+		if self.optional["EVENT_MAPURL"] != "blank":
+			Reference = ET.SubElement(voe, "Reference")
+			Reference.set("name", "EVENT_MAPURL")
+			Reference.set("uri", self.optional["EVENT_MAPURL"])
+
+		""" Clean up and export the XML file """
 
 		self.__indentxml(voe)
 		tree = ET.ElementTree(voe)
 
+		""" Checks if all required values have been inputted """
+		to_add = []
+		for param in self.required:
+			i = pd.Index(self.__params).get_loc(param)
+			if self.required[param] == float("inf") or self.required[param] == "blank" or self.required[param] == -9999 or self.required[param] == -999999 or self.required[param] == "1492-10-12 00:00:00":
+				to_add.append(param)
+		
+		if len(to_add) != 0:
+			print("\n*** Error - required value(s) not entered:")
+			pp.pprint(to_add)
+			return
+
+		""" Removes empty required/optional elements """
+		for i in range(len(voe)):
+			for group in voe[i].findall("Group"):
+				if group.getchildren() == []:
+					voe[i].remove(group)
+
+		""" Removes Inference element if no probability is entered """
+		if voe[5][0].attrib == {}:
+			voe[5].remove(voe[5][0])
+
 		if filename is None:
 			filename = eventIdentifier + ".xml"
-			print filename
+			print(filename)
 
 		tree.write(filename)
+
 		os.system("open {}".format(filename))
 
-	def print_dict(self):
+	def __str__(self):
+		self.data = {
+			"REQUIRED" : self.required,
+			"OPTIONAL" : self.optional,
+			"SPECFILE" : self.specFile,
+			"REFERENCE_NAMES" : self.Reference_Names,
+			"REFERENCE_LINKS" : self.Reference_Links,
+			"REFERENCE_TYPES" : self.Reference_Types,
+			"DESCRIPTION" : self.Description,
+			"CITATIONS" : self.Citations
+		}
 		pp.pprint(self.data)
+		return ""
 
 	def __indentxml(self, elem, level = 0):
 		i = "\n" + level * "	"

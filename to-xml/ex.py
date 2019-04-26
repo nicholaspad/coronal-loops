@@ -28,13 +28,9 @@ event.required["BOUNDBOX_C1UR"] = '-360'
 event.required["BOUNDBOX_C2UR"] = '340'
 event.Description="My first flare"
 
-event.exportEvent()
+# print event
 
-# complain if required value is still default
-# check for empty fields, delete if so
-# references section use all three arrays
-# do references section
-# ask again about required/optional values, e.g. event peaktime?
+event.exportEvent()
 
 # EventIVORN in Citations ...?
 # leave citations off for now
