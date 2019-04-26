@@ -32,5 +32,5 @@ event.Description="My first flare"
 
 event.exportEvent()
 
-# EventIVORN in Citations ...?
-# leave citations off for now
+# EventIVORN in Citations?
+# leave Citations off for now

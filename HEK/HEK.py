@@ -1,18 +1,6 @@
 # Module for the Heliophysics Events Knowledgebase
 # Contributors: Nicholas Padmanabhan, Mark Cheung
 
-import warnings
-warnings.filterwarnings("ignore", message = "divide by zero encountered in log")
-warnings.filterwarnings("ignore", message = "From scipy 0.13.0, the output shape of")
-warnings.filterwarnings("ignore", message = "invalid value encountered in greater")
-warnings.filterwarnings("ignore", message = "invalid value encountered in less")
-warnings.filterwarnings("ignore", message = "invalid value encountered in log")
-warnings.filterwarnings("ignore", message = "invalid value encountered in multiply")
-warnings.filterwarnings("ignore", message = "numpy.dtype size changed")
-
-from IPython.core import debugger; debug = debugger.Pdb().set_trace
-import os
-
 import argparse
 import datetime
 import numpy as np
@@ -33,7 +21,7 @@ class HER_Event:
 		self.Description = ""
 		self.Citations = np.zeros(shape = 20, dtype = str)
 
-		self.__voevent_spec = pd.read_csv("VOEvent_Spec.txt", skiprows = 2)
+		self.__voevent_spec = pd.read_csv(self.specFile, skiprows = 2)
 		self.__vals = self.__voevent_spec[self.eventType]
 		self.__params = self.__voevent_spec["Parameter"].str.upper()
 		self.__categories = self.__voevent_spec["VOParamType"]
@@ -377,8 +365,6 @@ class HER_Event:
 			print(filename)
 
 		tree.write(filename)
-
-		os.system("open {}".format(filename))
 
 	def __str__(self):
 		self.data = {
