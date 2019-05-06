@@ -28,9 +28,6 @@ event.required["BOUNDBOX_C1UR"] = '-360'
 event.required["BOUNDBOX_C2UR"] = '340'
 event.Description="My first flare"
 
-# print event
+print (event)
 
 event.exportEvent()
-
-# EventIVORN in Citations?
-# leave Citations off for now
