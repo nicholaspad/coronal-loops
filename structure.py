@@ -24,6 +24,7 @@ from tqdm import tqdm
 import argparse
 import astropy.units as u
 import cv2 as cv
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -37,18 +38,16 @@ args = parser.parse_args()
 
 RECORDER.sys_text("Importing data directories")
 SAVEPATH = "data/outputs/"
-PATH94 = "data/AIA94/"; PATH131 = "data/AIA131/"; PATH171 = "data/AIA171/"; PATH193 = "data/AIA193/"; PATH211 = "data/AIA211/"; PATH304 = "data/AIA304/"; PATH335 = "data/AIA335/"
+PATH131 = "data/AIA131/"; PATH171 = "data/AIA171/"; PATH193 = "data/AIA193/"; PATH211 = "data/AIA211/"; PATH304 = "data/AIA304/"; PATH335 = "data/AIA335/"; PATHHMI = "data/HMI/"
 
-DIR94 = [f for f in listdir(PATH94) if isfile(join(PATH94, f))]; DIR94.sort()
 DIR131 = [f for f in listdir(PATH131) if isfile(join(PATH131, f))]; DIR131.sort()
 DIR171 = [f for f in listdir(PATH171) if isfile(join(PATH171, f))]; DIR171.sort()
 DIR193 = [f for f in listdir(PATH193) if isfile(join(PATH193, f))]; DIR193.sort()
 DIR211 = [f for f in listdir(PATH211) if isfile(join(PATH211, f))]; DIR211.sort()
 DIR304 = [f for f in listdir(PATH304) if isfile(join(PATH304, f))]; DIR304.sort()
 DIR335 = [f for f in listdir(PATH335) if isfile(join(PATH335, f))]; DIR335.sort()
+DIRHMI = [f for f in listdir(PATHHMI) if isfile(join(PATHHMI, f))]; DIRHMI.sort()
 
-if DIR94[0] == ".DS_Store":
-	DIR94 = DIR94[1:]
 if DIR131[0] == ".DS_Store":
 	DIR131 = DIR131[1:]
 if DIR171[0] == ".DS_Store":
@@ -61,25 +60,27 @@ if DIR304[0] == ".DS_Store":
 	DIR304 = DIR304[1:]
 if DIR335[0] == ".DS_Store":
 	DIR335 = DIR335[1:]
+if DIRHMI[0] == ".DS_Store":
+	DIRHMI = DIRHMI[1:]
 
-K94 = []; t94 = []
 K131 = []; t131 = []
 K171 = []; t171 = []
 K193 = []; t193 = []
 K211 = []; t211 = []
 K304 = []; t304 = []
 K335 = []; t335 = []
+KHMI = []
 
 if args.cleardirs:
 	RECORDER.sys_text("Clearing image directories")
-	# os.system("rm %sraw/AIA94/*" % SAVEPATH); os.system("rm %senhanced/AIA94/*" % SAVEPATH); os.system("rm %sedge/AIA94/*" % SAVEPATH); os.system("rm %sbinary/AIA94/*" % SAVEPATH)
 	os.system("rm %sraw/AIA131/*" % SAVEPATH); os.system("rm %senhanced/AIA131/*" % SAVEPATH); os.system("rm %sedge/AIA131/*" % SAVEPATH); os.system("rm %sbinary/AIA131/*" % SAVEPATH)
 	os.system("rm %sraw/AIA171/*" % SAVEPATH); os.system("rm %senhanced/AIA171/*" % SAVEPATH); os.system("rm %sedge/AIA171/*" % SAVEPATH); os.system("rm %sbinary/AIA171/*" % SAVEPATH)
 	os.system("rm %sraw/AIA193/*" % SAVEPATH); os.system("rm %senhanced/AIA193/*" % SAVEPATH); os.system("rm %sedge/AIA193/*" % SAVEPATH); os.system("rm %sbinary/AIA193/*" % SAVEPATH)
 	os.system("rm %sraw/AIA211/*" % SAVEPATH); os.system("rm %senhanced/AIA211/*" % SAVEPATH); os.system("rm %sedge/AIA211/*" % SAVEPATH); os.system("rm %sbinary/AIA211/*" % SAVEPATH)
 	os.system("rm %sraw/AIA304/*" % SAVEPATH); os.system("rm %senhanced/AIA304/*" % SAVEPATH); os.system("rm %sedge/AIA304/*" % SAVEPATH); os.system("rm %sbinary/AIA304/*" % SAVEPATH)
 	os.system("rm %sraw/AIA335/*" % SAVEPATH); os.system("rm %senhanced/AIA335/*" % SAVEPATH); os.system("rm %sedge/AIA335/*" % SAVEPATH); os.system("rm %sbinary/AIA335/*" % SAVEPATH)
-	RECORDER.sys_text("Image directories cleared")
+	os.system("rm %sraw/HMI/*" % SAVEPATH); os.system("rm %senhanced/HMI/*" % SAVEPATH); os.system("rm %sedge/HMI/*" % SAVEPATH); os.system("rm %sbinary/HMI/*" % SAVEPATH)
+	RECORDER.sys_text("Image directories successfully emptied")
 
 def print_raw_info(fits, avg):
 	tqdm.write("\t\t\t%s %s %d" % (fits.observatory, fits.detector, int(fits.measurement.value)))
@@ -93,48 +94,68 @@ def print_sdata(sx, sy, e):
 	sx = sx.round(decimals = 1)
 	sy = sy.round(decimals = 1)
 	e = e.round(decimals = 1)
-	tqdm.write("\n\t\t*** sobel_x ***")
+	tqdm.write("\n\t*** sobel_x ***")
 	tqdm.write("%s" % sx)
-	tqdm.write("\n\t\t*** sobel_y ***")
+	tqdm.write("\n\t*** sobel_y ***")
 	tqdm.write("%s" % sy)
-	tqdm.write("\n\t\t*** sobel_hypot ***")
+	tqdm.write("\n\t*** sobel_hypot ***")
 	tqdm.write("%s" % e)
-	tqdm.write("\t\tMed sobel_hypot val:\t%.3f\n" % (np.median(e)))
+	tqdm.write("\tMed sobel_hypot val:\t%.3f\n" % (np.median(e)))
+
+def print_bin_info(img):
+	blackcount = np.count_nonzero(img == 0)/4.
+	blackpercent = 100. * blackcount / 650.**2
+	tqdm.write("\t\t\t%d (%.2f%%) pixels masked" % (blackcount, blackpercent))
 
 def print_dist(meds, iqrs):
 	print "\t\t\t====================="
 	print "\t\t\tID\tMED\tIQR"
-	# print "\t\t\t94\t%.3f\t%.3f" % (meds[0], iqrs[0])
-	print "\t\t\t131\t%.3f\t%.3f" % (meds[1], iqrs[1])
-	print "\t\t\t171\t%.3f\t%.3f" % (meds[2], iqrs[2])
-	print "\t\t\t193\t%.3f\t%.3f" % (meds[3], iqrs[3])
-	print "\t\t\t211\t%.3f\t%.3f" % (meds[4], iqrs[4])
-	print "\t\t\t304\t%.3f\t%.3f" % (meds[5], iqrs[5])
-	print "\t\t\t335\t%.3f\t%.3f" % (meds[6], iqrs[6])
+	print "\t\t\t131\t%.3f\t%.3f" % (meds[0], iqrs[0])
+	print "\t\t\t171\t%.3f\t%.3f" % (meds[1], iqrs[1])
+	print "\t\t\t193\t%.3f\t%.3f" % (meds[2], iqrs[2])
+	print "\t\t\t211\t%.3f\t%.3f" % (meds[3], iqrs[3])
+	print "\t\t\t304\t%.3f\t%.3f" % (meds[4], iqrs[4])
+	print "\t\t\t335\t%.3f\t%.3f" % (meds[5], iqrs[5])
 	print "\t\t\t====================="
 
+def rgb2gray(rgb):
+	return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
+
 def make_raw_img(map, data, wav, id, vmax):
-	print_raw_info(map, vmax)
 	plt.imsave("%sraw/AIA%d/raw_%04d" % (SAVEPATH, wav, id), tempdata, cmap = "sdoaia%d" % wav, vmin = 2, vmax = vmax, origin = "lower")
 	RECORDER.info_text("%sraw/AIA%d/raw_%04d saved" % (SAVEPATH, wav, id))
+	print_raw_info(map, vmax)
 
 def make_enh_img(sx, sy, wav, id, vmax):
 	e = np.hypot(sx, sy)
 	print_sdata(sx, sy, e)
-	# TO DO: MORE ENHANCEMENT
+	# MORE ENHANCEMENT
 	plt.imsave("%senhanced/AIA%d/enhanced_%04d" % (SAVEPATH, wav, id), e, cmap = "sdoaia%d" % wav, vmin = 5, vmax = vmax, origin = "lower")
 	RECORDER.info_text("%senhanced/AIA%d/enhanced_%04d saved" % (SAVEPATH, wav, id))
 
+def make_bin_img(img, wav, id, lowpercentile, highpercentile=100.):
+	inten_ar = rgb2gray(img)
+	low_cut = np.percentile(inten_ar, lowpercentile)
+	high_cut = np.percentile(inten_ar, highpercentile)
+	inten_ar[inten_ar <= low_cut] = 0.
+	inten_ar[inten_ar >= high_cut] = 0.
+	inten_ar[inten_ar != 0] = 1.
+	plt.imsave("%sbinary/AIA%d/binary_%04d" % (SAVEPATH, wav, id), inten_ar, cmap = "gray")
+	RECORDER.info_text("%sbinary/AIA%d/binary_%04d saved" % (SAVEPATH, wav, id))
+	print_bin_info(inten_ar)
+
 ##### ----- #####
-N = 5 #len(DIR131)
+##### ----- #####
+N = len(DIR211)
+##### ----- #####
 ##### ----- #####
 
-C = 0.75
-med_94 = []; med_131 = []; med_171 = []; med_193 = []; med_211 = []; med_304 = []; med_335 = []
+C = 0.6
+med_131 = []; med_171 = []; med_193 = []; med_211 = []; med_304 = []; med_335 = []
 
 for K in tqdm(range(N), desc = "Generating raw images"):
 	temp = Map(PATH131 + DIR131[K])
-	RECORDER.info_text("|===================== Processing datetime %s =====================|" % temp.date)
+	RECORDER.sys_text("|===================== Processing datetime %s =====================|" % temp.date)
 	K131.append([temp.data, temp.exposure_time.value, temp.date, temp.meta])
 	tempdata = K131[-1][0] / K131[-1][1]
 	med_131.append(tempdata.max())
@@ -182,6 +203,11 @@ for K in tqdm(range(N), desc = "Generating raw images"):
 		med_335.pop(0)
 	make_raw_img(temp, tempdata, 335, K, C * np.median(med_335))
 
+	tempdata = Map(PATHHMI + DIRHMI[K]).data
+	KHMI.append(tempdata)
+	plt.imsave("%sraw/HMI/raw_%04d" % (SAVEPATH, K), tempdata, cmap = "gray", vmin = -125, vmax = 125, origin = "lower")
+	RECORDER.info_text("%sraw/HMI/raw_%04d saved" % (SAVEPATH, K))
+
 for K in tqdm(range(N), desc = "Generating intensity distribution"):
 	if K131[K][1] > 0:
 		t131 = np.append(t131, np.median(K131[K][0] / K131[K][1]))
@@ -196,13 +222,12 @@ for K in tqdm(range(N), desc = "Generating intensity distribution"):
 	if K335[K][1] > 0:
 		t335 = np.append(t335, np.median(K335[K][0] / K335[K][1]))
 
-meds = [np.median(t94), np.median(t131), np.median(t171), np.median(t193), np.median(t211), np.median(t304), np.median(t335)]
-iqrs = [iqr(t94), iqr(t131), iqr(t171), iqr(t193), iqr(t211), iqr(t304), iqr(t335)]
-
+meds = [np.median(t131), np.median(t171), np.median(t193), np.median(t211), np.median(t304), np.median(t335)]
+iqrs = [iqr(t131), iqr(t171), iqr(t193), iqr(t211), iqr(t304), iqr(t335)]
 print_dist(meds, iqrs)
 
 for K in tqdm(range(N), desc = "Generating enhanced images"):
-	RECORDER.info_text("|===================== Processing datetime %s (#%d) =====================|" % (K131[K][2], K))
+	RECORDER.sys_text("|===================== Processing datetime %s (#%d) =====================|" % (K131[K][2], K))
 
 	sx = ndimage.sobel(K131[K][0], axis = 0, mode = "constant")
 	sy = ndimage.sobel(K131[K][0], axis = 1, mode = "constant")
@@ -228,39 +253,42 @@ for K in tqdm(range(N), desc = "Generating enhanced images"):
 	sy = ndimage.sobel(K335[K][0], axis = 1, mode = "constant")
 	make_enh_img(sx, sy, 335, K, 210)
 
-# for K in tqdm(range(N), desc = "Generating binary images"):
-# 	temp_im = Image.open("%senhanced/AIA94/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA94/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+	hmi_absthresh_mask = np.logical_or(KHMI[K] > 600, KHMI[K] < -600)
+	KHMI.append(hmi_absthresh_mask)
+	hmi_thresh_data = hmi_absthresh_mask * KHMI[K]
+	# debug()
+	plt.imsave("%senhanced/HMI/enhanced_%04d" % (SAVEPATH, K), hmi_thresh_data, cmap = "gray", vmin = -125, vmax = 125, origin = "lower")
+	RECORDER.info_text("%senhanced/HMI/enhanced_%04d saved" % (SAVEPATH, K))
 
-# 	temp_im = Image.open("%senhanced/AIA131/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA131/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+# percentile corresponding to 50:
+# 85.4, 85.9, 89.65, 91.55, 96.18, 99.65
 
-# 	temp_im = Image.open("%senhanced/AIA171/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA171/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+for K in tqdm(range(N), desc = "Generating binary images"):
+	img = imageio.imread("%senhanced/AIA131/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 131, K, 94.4 - 0.02*K)
 
-# 	temp_im = Image.open("%senhanced/AIA193/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA193/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+	img = imageio.imread("%senhanced/AIA171/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 171, K, 94.9 - 0.02*K)
 
-# 	temp_im = Image.open("%senhanced/AIA211/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA211/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+	img = imageio.imread("%senhanced/AIA193/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 193, K, 95.4 - 0.02*K)
 
-# 	temp_im = Image.open("%senhanced/AIA304/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA304/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+	img = imageio.imread("%senhanced/AIA211/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 211, K, 96.1 - 0.02*K)
 
-# 	temp_im = Image.open("%senhanced/AIA335/enhanced_%04d.png" % (SAVEPATH, K))
-# 	gr = gen_bin_img(temp_im)
-# 	plt.imsave("%sbinary/AIA335/binary_%04d.png" % (SAVEPATH, K), gr, cmap = "gray")
+	img = imageio.imread("%senhanced/AIA304/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 304, K, 97.2 - 0.02*K)
+
+	img = imageio.imread("%senhanced/AIA335/enhanced_%04d.png" % (SAVEPATH, K))
+	make_bin_img(img, 335, K, 99.6 - 0.02*K)
+
+	plt.imsave("%sbinary/HMI/binary_%04d" % (SAVEPATH, K), KHMI[K], cmap = "gray", origin = "lower")
+	RECORDER.info_text("%sbinary/HMI/binary_%04d saved" % (SAVEPATH, K))
 
 for K in tqdm(range(N), desc = "Generating traced images"):
 	pass
 
-FPS = 15
+FPS = 24
 
 RECORDER.sys_text("|================ Generating raw videos =====================|")
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/AIA131/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/AIA131_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
@@ -269,13 +297,8 @@ os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i 
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/AIA211/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/AIA211_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/AIA304/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/AIA304_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/AIA335/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/AIA335_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-
-os.system("ffmpeg -loglevel panic -y -i %sraw/AIA131_raw.mp4 -i %sraw/AIA171_raw.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp1.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sraw/AIA193_raw.mp4 -i %sraw/AIA211_raw.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp2.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sraw/temp1.mp4 -i %sraw/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp3.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sraw/AIA304_raw.mp4 -i %sraw/AIA335_raw.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sraw/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %sraw/temp3.mp4 -i %sraw/temp4.mp4 -filter_complex hstack %sraw/COMBINED_raw.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("rm %sraw/temp1.mp4 %sraw/temp2.mp4 %sraw/temp3.mp4 %sraw/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sraw/HMI/raw_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sraw/HMI_raw.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %sraw/AIA131_raw.mp4 -i %sraw/AIA171_raw.mp4 -i %sraw/AIA193_raw.mp4 -i %sraw/AIA211_raw.mp4 -i %sraw/AIA304_raw.mp4 -i %sraw/AIA335_raw.mp4 -i %sraw/HMI_raw.mp4 -filter_complex hstack=inputs=7 %sraw/COMBINED_raw.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.sys_text("|================ Generating enhanced videos ================|")
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %senhanced/AIA131/enhanced_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %senhanced/AIA131_enhanced.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
@@ -284,34 +307,21 @@ os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i 
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %senhanced/AIA211/enhanced_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %senhanced/AIA211_enhanced.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %senhanced/AIA304/enhanced_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %senhanced/AIA304_enhanced.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
 os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %senhanced/AIA335/enhanced_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %senhanced/AIA335_enhanced.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %senhanced/HMI/enhanced_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %senhanced/HMI_enhanced.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA131_enhanced.mp4 -i %senhanced/AIA171_enhanced.mp4 -i %senhanced/AIA193_enhanced.mp4 -i %senhanced/AIA211_enhanced.mp4 -i %senhanced/AIA304_enhanced.mp4 -i %senhanced/AIA335_enhanced.mp4 -i %senhanced/HMI_enhanced.mp4 -filter_complex hstack=inputs=7 %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
-os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA131_enhanced.mp4 -i %senhanced/AIA171_enhanced.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp1.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA193_enhanced.mp4 -i %senhanced/AIA211_enhanced.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp2.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/temp1.mp4 -i %senhanced/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp3.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/AIA304_enhanced.mp4 -i %senhanced/AIA335_enhanced.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %senhanced/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("ffmpeg -loglevel panic -y -i %senhanced/temp3.mp4 -i %senhanced/temp4.mp4 -filter_complex hstack %senhanced/COMBINED_enhanced.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-os.system("rm %senhanced/temp1.mp4 %senhanced/temp2.mp4 %senhanced/temp3.mp4 %senhanced/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
+RECORDER.sys_text("|================ Generating binary videos ==================|")
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA131/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA131_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA171/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA171_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA193/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA193_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA211/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA211_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA304/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA304_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA335/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA335_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/HMI/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/HMI_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %sbinary/AIA131_binary.mp4 -i %sbinary/AIA171_binary.mp4 -i %sbinary/AIA193_binary.mp4 -i %sbinary/AIA211_binary.mp4 -i %sbinary/AIA304_binary.mp4 -i %sbinary/AIA335_binary.mp4 -i %sbinary/HMI_binary.mp4 -filter_complex hstack=inputs=7 %sbinary/COMBINED_binary.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 RECORDER.sys_text("|================ Generating stacked video ================|")
-os.system("ffmpeg -loglevel panic -y -i %sraw/COMBINED_raw.mp4 -i %senhanced/COMBINED_enhanced.mp4 -filter_complex vstack %s/STACKED.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-
-# RECORDER.sys_text("|================ Generating binary videos ==================|")
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA94/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA94_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA131/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA131_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA171/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA171_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA193/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA193_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA211/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA211_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA304/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA304_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sbinary/AIA335/binary_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sbinary/AIA335_binary.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
-
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/AIA94_binary.mp4 -i %sbinary/AIA131_binary.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp1.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/AIA171_binary.mp4 -i %sbinary/AIA193_binary.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp2.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/AIA211_binary.mp4 -i %sbinary/AIA304_binary.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp3.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/temp1.mp4 -i %sbinary/temp2.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp4.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/temp3.mp4 -i %sbinary/AIA335_binary.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp5.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/temp4.mp4 -i %sbinary/temp5.mp4 -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 -crf 23 -preset veryfast %sbinary/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH))
-# os.system("ffmpeg -loglevel panic -y -i %sbinary/temp6.mp4 -filter:v 'crop=4550:650:0:0' %sbinary/COMBINED_binary.mp4" % (SAVEPATH, SAVEPATH))
-# os.system("rm %sbinary/temp1.mp4 %sbinary/temp2.mp4 %sbinary/temp3.mp4 %sbinary/temp4.mp4 %sbinary/temp5.mp4 %sbinary/temp6.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
+os.system("ffmpeg -loglevel panic -y -i %sraw/COMBINED_raw.mp4 -i %senhanced/COMBINED_enhanced.mp4 -i %sbinary/COMBINED_binary.mp4 -filter_complex vstack=inputs=3 %s/STACKED.mp4" % (SAVEPATH, SAVEPATH, SAVEPATH, SAVEPATH))
 
 # RECORDER.sys_text("|================ Generating edge videos ====================|")
 # os.system("ffmpeg -loglevel panic -y -f image2 -start_number 0 -framerate %d -i %sedge/AIA94/edge_%%04d.png -vframes %d -q:v 2 -vcodec mpeg4 -b:v 800k %sedge/AIA94_edge.mp4" % (FPS, SAVEPATH, N, SAVEPATH))
