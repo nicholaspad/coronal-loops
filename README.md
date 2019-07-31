@@ -1,3 +1,3 @@
-# Lockheed Martin Solar and Astrophysics Laboratory
+## Lockheed Martin Solar and Astrophysics Laboratory
 ### Nicholas Padmanabhan
-Contains some Python programs
+### June 2018 – August 2019
