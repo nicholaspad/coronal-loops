@@ -26,7 +26,7 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 	ind_pos = np.where(image1 > 0)
 	zmed = np.median(image1[ind_pos])
 	thresh = zmed * qthresh1
-	image1[image1 < (thresh)] = thresh
+	image1[image1 < thresh] = thresh
 
 	# Highpass filter
 	if nsm1 <= 2:
@@ -57,6 +57,7 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 		zstart = [np.max(residual), int(str(np.unravel_index(np.argmax(residual, axis=None), residual.shape)[1]) + str(np.unravel_index(np.argmax(residual, axis=None), residual.shape)[0]))]
 		if zstart[0] <= thresh:
 			end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop)
+			quit()
 		
 		if istruc % 100 == 0:
 			ipix = np.where(residual > 0)
@@ -103,27 +104,107 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 					x_lin = x_
 					y_lin = y_
 
-	# Curvature radius
-	xx_curv = np.zeros((nlen, nb, npmax))
-	yy_curv = np.zeros((nlen, nb, npmax))
+			# Curvature radius
+			xx_curv = np.zeros((nlen, nb, npmax))
+			yy_curv = np.zeros((nlen, nb, npmax))
 
-	for ip in range(npmax):
-		if ip == 0:
-			ib1 = 0
-			ib2 = nb - 1
+			for ip in range(npmax):
+				if ip == 0:
+					ib1 = 0
+					ib2 = nb - 1
 
-		if ip >= 1:
-			ib1 = (ir[ip] - 1) > 0
-			ib2 = (ir[ip] + 1) < (nb - 1)
+				if ip >= 1:
+					ib1 = (ir[ip] - 1) > 0
+					ib2 = (ir[ip] + 1) < (nb - 1)
 
-		beta0 = al[ip] + np.pi / 2.0
-		xcen = xl[ip] + rmin * np.cos(beta0)
-		ycen = yl[ip] + rmin * np.sin(beta0)
-		flux_max = 0.0
+				beta0 = al[ip] + np.pi / 2.0
+				xcen = xl[ip] + rmin * np.cos(beta0)
+				ycen = yl[ip] + rmin * np.sin(beta0)
+				flux_max = 0.0
 
-	for ib in range(ib1, ib2 + 1):
-		pass [...] # continue here
+				for ib in range(ib1, ib2 + 1):
+					rad_i = rmin / (-1.0 + 2.0 * float(ib) / float(nb - 1))
+					xcen_i = xl[ip] + (xcen - xl[ip]) * (rad_i / rmin)
+					ycen_i = yl[ip] + (ycen - yl[ip]) * (rad_i / rmin)
+					beta_i = beta0 + sign_dir * s_loop / rad_i
+					x_ = xcen_i - rad_i * np.cos(beta_i)
+					y_ = ycen_i - rad_i * np.sin(beta_i)
+					ix = (x_ + 0.5).astype(int)
+					iy = (y_ + 0.5).astype(int)
+					flux_ = copy(residual)
+					flux_[flux_ < 0] = 0.0
+					flux = np.sum(flux_) / float(nlen)
 
+					if idir == 1:
+						xx_curv[ib, :, ip] = x_
+						yy_curv[ib, :, ip] = y_
+
+					if flux > flux_max:
+						flux_max = flux
+						al[ip + 1] = al[ip] + sign_dir * (step / rad_i)
+						ir[ip + 1] = ib
+						al_mid = (al[ip] + al[ip + 1]) / 2.0
+						xl[ip + 1] = xl[ip] + step * np.cos(al_mid + np.pi * idir)
+						yl[ip + 1] = yl[ip] + step * np.cos(al_mid + np.pi * idir)
+						ix_ip = (int(xl[ip + 1] + 0.5) > 0) < (nx - 1)
+						iy_ip = (int(yl[ip + 1] + 0.5) > 0) < (ny - 1)
+						zl[ip + 1] = residual[iy_ip][ix_ip]
+
+						if ip == 0:
+							x_curv = x_
+							y_curv = y_
+
+				iz1 = (np + 1 - ngap) > 0
+
+				if np.max(zl[iz1:ip+2]) <= 0:
+					ip = (izl - 1) > 0
+					break
+
+			# Re-ordering loop coordinates
+			if idir == 0:
+				xloop = np.flip(xl[0:ip+1])
+				yloop = np.flip(yl[0:ip+1])
+				zloop = np.flip(zl[0:ip+1])
+
+			if idir == 1 and ip >= 1:
+				xloop = np.array([xloop, xl[1:ip+1]])
+				yloop = np.array([yloop, yl[1:ip+1]])
+				zloop = np.array([zloop, zl[1:ip+1]])
+
+		ind = np.where(np.logical_and(xloop != 0, yloop != 0))
+		nind = len(ind)
+		looplen = 0
+
+		if nind <= 1:
+			# SKIP_STRUCT
+			# Store loop coordinates
+			if looplen >= lmin:
+				nn = int(ns / reso + 0.5)
+				ii = np.arange(nn) * reso
+				## interpol
+		else:
+			xloop = xloop[ind]
+			yloop = yloop[ind]
+			zloop = zloop[ind]
+
+			if iloop >= nloopmax:
+				end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop)
+				quit()
+
+			# Loop completed - loop length
+			np = len(xloop)
+			s = np.zeros(np)
+			looplen = 0
+
+			if np >= 2:
+				for ip in range(1, np):
+					s[ip] = s[ip-1] + np.sqrt(np.power(xloop[ip] - xloop[ip-1], 2) + np.power(yloop[ip] - yloop[ip-1], 2))
+
+			looplen = s[np-1]
+			ns = int(looplen) > 3
+			ss = np.arange(ns)
+
+# END_TRACE
 def end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop):
 	fluxmin = np.min(image1)
 	fluxmax = np.max(image1)
