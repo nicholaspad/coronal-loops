@@ -1,4 +1,4 @@
 ## Lockheed Martin Solar and Astrophysics Laboratory
 ### Nicholas Padmanabhan
-#### Data Analyst and Software Research Intern
+#### Software Development and Data Analyst Intern
 #### June 2018 – August 2019
