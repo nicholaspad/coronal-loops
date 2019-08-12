@@ -129,7 +129,6 @@ def make_raw_img(map, data, wav, id, vmax):
 def make_enh_img(sx, sy, wav, id, vmax):
 	e = np.hypot(sx, sy)
 	print_sdata(sx, sy, e)
-	# MORE ENHANCEMENT
 	plt.imsave("%senhanced/AIA%d/enhanced_%04d" % (SAVEPATH, wav, id), e, cmap = "sdoaia%d" % wav, vmin = 5, vmax = vmax, origin = "lower")
 	RECORDER.info_text("%senhanced/AIA%d/enhanced_%04d saved" % (SAVEPATH, wav, id))
 
@@ -146,7 +145,7 @@ def make_bin_img(img, wav, id, lowpercentile, highpercentile=100.):
 
 ##### ----- #####
 ##### ----- #####
-N = len(DIR131)
+N = 1 # len(DIR131)
 ##### ----- #####
 ##### ----- #####
 

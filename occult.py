@@ -1,5 +1,6 @@
-import numpy as np
+from IPython.core import debugger; debug = debugger.Pdb().set_trace
 from astropy.convolution import convolve, Box2DKernel
+import numpy as np
 from copy import copy
 
 """
@@ -7,6 +8,8 @@ Default values are for SDO-AIA images.
 rmin, qthresh1, and qthresh2 default values are unknown.
 """
 def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qthresh1=1, qthresh2=1):
+	import numpy as np
+
 	# Control parameters
 	nloop = nloopw
 	reso = 1
@@ -54,7 +57,7 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 	loop_len = np.zeros(nloopmax)
 
 	for istruc in range(nstruc):
-		zstart = [np.max(residual), int(str(np.unravel_index(np.argmax(residual, axis=None), residual.shape)[1]) + str(np.unravel_index(np.argmax(residual, axis=None), residual.shape)[0]))]
+		zstart = [np.max(residual), np.unravel_index(residual.argmax(), residual.shape)]
 		if zstart[0] <= thresh:
 			end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop)
 			quit()
@@ -65,8 +68,8 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 			flux_sigma = zstart[0] / zmed
 			print "Struct#%04d Loop#%04d Signal/noise=%.3f" % (istruc, iloop, flux_sigma)
 		
-		jstart = int(zstart[1] / nx)
-		istart = int(zstart[1] % nx)
+		jstart = zstart[1][1]
+		istart = zstart[1][0]
 
 		# Tracing loop structure stepwise
 		ip = 0
@@ -145,7 +148,7 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 						ir[ip + 1] = ib
 						al_mid = (al[ip] + al[ip + 1]) / 2.0
 						xl[ip + 1] = xl[ip] + step * np.cos(al_mid + np.pi * idir)
-						yl[ip + 1] = yl[ip] + step * np.cos(al_mid + np.pi * idir)
+						yl[ip + 1] = yl[ip] + step * np.sin(al_mid + np.pi * idir)
 						ix_ip = (int(xl[ip + 1] + 0.5) > 0) < (nx - 1)
 						iy_ip = (int(yl[ip + 1] + 0.5) > 0) < (ny - 1)
 						zl[ip + 1] = residual[iy_ip][ix_ip]
@@ -181,7 +184,18 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 			if looplen >= lmin:
 				nn = int(ns / reso + 0.5)
 				ii = np.arange(nn) * reso
-				## interpol
+				## INTERPOL FUNCTIONS
+				x_rsun = xx
+				y_rsun = yy
+				s_rsun = ii
+
+				for i in range(nn):
+					print iloop, xx[ip], yy[ip], ff[ip], ii[ip]
+
+				iloop_nstruc[istruc] = iloop
+				loop_len[iloop] = looplen
+				iloop += 1
+
 		else:
 			xloop = xloop[ind]
 			yloop = yloop[ind]
@@ -204,12 +218,55 @@ def trace(image1, nsm1=3, rmin=10, lmin=25, nstruc=1000, nloopw=100, ngap=3, qth
 			ns = int(looplen) > 3
 			ss = np.arange(ns)
 
+			if looplen >= lmin:
+				nn = int(ns / reso + 0.5)
+				ii = np.arange(nn) * reso
+				## INTERPOL FUNCTIONS
+				x_rsun = xx
+				y_rsun = yy
+				s_rsun = ii
+
+				for i in range(nn):
+					print iloop, xx[i], yy[i], ff[i], ii[i]
+
+				iloop_nstruc[istruc] = iloop
+				loop_len[iloop] = looplen
+				iloop += 1
+
+		i3 = (istart - wid) > 0
+		i4 = (istart + wid) < (nx - 1)
+		j3 = (jstart - wid) > 0
+		j4 = (jstart + wid) < (ny - 1)
+		residual[j3:j4+1][i3:i4+1] = 0.0
+		nn = len(xloop)
+
+		for k in range(nn):
+			i0 = (int(xloop[k]) > 0) < (nx - 1)
+			i3 = int(i0 - wid) > 0
+			i4 = int(i0 + wid) < (nx - 1)
+			j0 = (int(yloop[k]) > 0) < (ny - 1)
+			j3 = int(j0 - wid) > 0
+			j4 = int(j0 + wid) < (ny - 1)
+			residual[j3:j4+1][i3:i4+1] = 0.0
+
+	end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop)
+
 # END_TRACE
 def end_trace(image1, wid, nsm2, nlen, na, nb, loop_len, nloop):
 	fluxmin = np.min(image1)
 	fluxmax = np.max(image1)
 	output = np.array[wid, fluxmin, fluxmax, nsm2, nlen, na, nb]
 
-	#Select longest loops
+	debug()
 
-# trace(np.load("image.npy"))
+	#Select longest loops
+	# ind_det = np.where(loop_len > 0)
+
+	# if len(ind_det) >= 1:
+	# 	isort = np.sort(-1 * loop_len)
+
+	# 	nlist = nloop < ndet
+	# 	print "nloop,ndet,nlist=", nloop, ndet, nlist
+
+
+trace(np.load("test.npy"))
