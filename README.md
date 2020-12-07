@@ -1,4 +1,5 @@
 <img src="https://i.imgur.com/84etiAu.png" width="400"/>
+
 ### Solar and Astrophysics Laboratory
 
 A collection of data and image analysis algorithms, video generation scripts, and various other modules for studying large coronal loops and organizing solar event data.
